@@ -1,0 +1,109 @@
+[workspace]
+resolver = "3"
+members = [
+    "shared/base",
+    "shared/i18n",
+    "shared/defs",
+    "shared/protocol",
+    "shared/world",
+    "shared/combat",
+    "shared/progression",
+    "server/sim",
+    "server/persistence",
+    "server/server-net",
+    "server/server",
+    "client/client-state",
+    "client/client-render",
+    "client/client-audio",
+    "client/client-ui",
+    "client/client-net",
+    "client/client",
+    "tools/validate",
+    "tools/bots",
+    "tools/pack",
+    "tools/replay",
+    "tools/admin",
+    "tools/editor",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+
+[workspace.dependencies]
+# Project crates. Allowed edges live in arch.ron (checked by `validate arch`).
+base = { path = "shared/base" }
+i18n = { path = "shared/i18n" }
+defs = { path = "shared/defs" }
+protocol = { path = "shared/protocol" }
+world = { path = "shared/world" }
+combat = { path = "shared/combat" }
+progression = { path = "shared/progression" }
+sim = { path = "server/sim" }
+persistence = { path = "server/persistence" }
+server-net = { path = "server/server-net" }
+client-state = { path = "client/client-state" }
+client-render = { path = "client/client-render" }
+client-audio = { path = "client/client-audio" }
+client-ui = { path = "client/client-ui" }
+client-net = { path = "client/client-net" }
+# Tools used as libraries by the editor.
+admin = { path = "tools/admin" }
+replay = { path = "tools/replay" }
+
+# External crates. Every one is listed in the doc of the crate that uses it
+# and must not need system tools or libraries to build.
+serde = { version = "1", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+# Content schemas for tools/editor only (feature `editor` of defs).
+schemars = { version = "1", default-features = false, features = ["derive", "std"] }
+ron = { version = "0.8", default-features = false }
+fontdue = { version = "0.9", default-features = false, features = ["std"] }
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+lz4_flex = { version = "0.11", default-features = false, features = ["std", "safe-encode", "safe-decode"] }
+bytes = { version = "1", default-features = false, features = ["std", "serde"] }
+rayon = { version = "1", default-features = false }
+hecs = { version = "0.10", default-features = false, features = ["std"] }
+smallvec = { version = "1", default-features = false, features = ["union", "const_generics"] }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "net", "io-util", "sync", "time", "macros", "signal"] }
+clap = { version = "4", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }
+tracing = { version = "0.1", default-features = false, features = ["std", "attributes"] }
+# Client window, input and GPU. winit without the Adwaita
+# decorations (they pull ttf-parser); window libraries load at run time.
+wgpu = { version = "30" }
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen"] }
+bytemuck = { version = "1", default-features = false, features = ["derive"] }
+pollster = { version = "0.4", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["std", "fmt", "ansi", "env-filter"] }
+# Accounts, sessions and TLS (phase 2). SQLite is compiled from
+# C by `cc` (bundled); rustls only with the ring provider.
+rusqlite = { version = "0.42", features = ["bundled"] }
+argon2 = { version = "0.5", default-features = false, features = ["alloc", "password-hash", "rand", "std"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "logging", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "logging", "tls12"] }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
+webpki-roots = "1"
+sha2 = { version = "0.10", default-features = false, features = ["std"] }
+getrandom = { version = "0.3", default-features = false, features = ["std"] }
+# Secrets wiped from memory when dropped.
+zeroize = { version = "1", default-features = false, features = ["alloc"] }
+# PNG sprites and icons in the client (phase 6b, pure Rust).
+png = { version = "0.18", default-features = false }
+# Client sound: OGG Vorbis decoding and the PulseAudio
+# protocol, both pure Rust; futures only for the blocking open.
+lewton = { version = "0.10", default-features = false, features = ["ogg"] }
+pulseaudio = { version = "0.3", default-features = false }
+wasapi = "0.27"
+futures = { version = "0.3", default-features = false, features = ["executor"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,68 @@
+# cargo deny check — runs in CI.
+
+[graph]
+all-features = true
+# Platforms the project ships on; dependencies only for other targets are
+# not checked.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+    "wasm32-unknown-unknown",
+]
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = [
+    # ttf-parser (inside fontdue) is unmaintained, with no known vulnerability;
+    # it only reads the fonts shipped in assets/. Revisit: skrifa.
+    { id = "RUSTSEC-2026-0192", reason = "unmaintained only; used by fontdue on our own font files" },
+]
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+unused-allowed-license = "allow"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "MPL-2.0",
+    # webpki-roots: Mozilla's root certificates as data.
+    "CDLA-Permissive-2.0",
+    # Public domain (CC0) crates in the tree.
+    "CC0-1.0",
+]
+
+[licenses.private]
+# Project crates are publish = false and carry no license field.
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+deny = [
+    # TLS must be rustls with the ring provider.
+    { name = "openssl", reason = "system library; use rustls + ring" },
+    { name = "openssl-sys", reason = "system library; use rustls + ring" },
+    { name = "native-tls", reason = "system library; use rustls + ring" },
+    { name = "aws-lc-rs", reason = "needs cmake/nasm; use the ring provider" },
+    { name = "aws-lc-sys", reason = "needs cmake/nasm; use the ring provider" },
+    # Builds that call system tools.
+    { name = "cmake", reason = "no system build tools" },
+    # x11-dl and wayland-sys only probe with it at build time and go on
+    # without it. Window and GPU libraries load at run time.
+    # libsqlite3-sys does not use it with "bundled".
+    { name = "pkg-config", reason = "no system libraries", wrappers = ["x11-dl", "wayland-sys", "libsqlite3-sys"] },
+    { name = "bindgen", reason = "needs libclang" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

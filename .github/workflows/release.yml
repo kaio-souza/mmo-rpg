@@ -1,0 +1,88 @@
+# Release: a tag vX.Y.Z builds the
+# server and admin in the glibc container and the client for
+# Linux and Windows, then publishes them with SHA-256 sums.
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    container: rust:1.94.1-slim-bookworm
+    steps:
+      - uses: actions/checkout@v4
+      - name: build
+        run: cargo build --release --locked -p server -p admin
+      - name: package
+        run: |
+          name="server-${GITHUB_REF_NAME}-linux-x86_64"
+          mkdir -p "dist/$name"
+          cp target/release/server target/release/admin "dist/$name/"
+          cp -r examples/riftara/content ops "dist/$name/"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server
+          path: dist/*.tar.gz
+
+  client-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: build
+        run: cargo build --release --locked -p client
+      - name: package
+        run: |
+          name="client-${GITHUB_REF_NAME}-linux-x86_64"
+          mkdir -p "dist/$name"
+          cp target/release/client "dist/$name/"
+          cp -r examples/riftara/assets "dist/$name/"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-linux
+          path: dist/*.tar.gz
+
+  client-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: build
+        run: cargo build --release --locked -p client
+      - name: package
+        shell: pwsh
+        run: |
+          $name = "client-$env:GITHUB_REF_NAME-windows-x86_64"
+          New-Item -ItemType Directory -Force "dist/$name" | Out-Null
+          Copy-Item target/release/client.exe "dist/$name/"
+          Copy-Item -Recurse examples/riftara/assets "dist/$name/"
+          Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-windows
+          path: dist/*.zip
+
+  publish:
+    needs: [server, client-linux, client-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: checksums
+        run: cd dist && sha256sum * > SHA256SUMS
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes

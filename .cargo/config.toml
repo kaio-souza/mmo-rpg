@@ -1,0 +1,3 @@
+[alias]
+# cargo validate content/   |   cargo validate arch
+validate = "run --quiet -p validate --"

@@ -1,0 +1,10 @@
+/target
+/dist
+*.replay
+/data
+/examples/*/data
+/examples/*/replays
+examples/riftara/assets/fonts/NotoSansCJK-Regular.ttc
+examples/riftara/assets/fonts/*.part
+__pycache__/
+/testes-arte

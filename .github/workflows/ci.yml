@@ -1,0 +1,58 @@
+# Checks for every change.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: fmt
+        run: cargo fmt --all --check
+      - name: clippy configs in sync
+        run: cmp shared/clippy.toml server/sim/clippy.toml
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: test
+        run: cargo test --workspace --locked
+      - name: validate arch
+        run: cargo run --locked -q -p validate -- arch
+      - name: validate the example game
+        run: cargo run --locked -q -p validate -- examples/riftara/content/ --assets examples/riftara/assets/
+      - name: validate the new-game template
+        run: cargo run --locked -q -p validate -- templates/new-game/content/ --assets templates/new-game/assets/
+
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  # Builds with nothing but rustup and the default C compiler.
+  clean-container:
+    runs-on: ubuntu-latest
+    container: rust:1.94.1-slim-bookworm
+    steps:
+      - uses: actions/checkout@v4
+      - name: build
+        run: cargo build --workspace --locked
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: build
+        run: cargo build --workspace --locked
+      - name: test
+        run: cargo test --workspace --locked

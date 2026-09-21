@@ -1,0 +1,44 @@
+// Allowed dependencies between project crates: the checked copy of the
+// diagram. `validate arch` fails the CI when
+// `cargo metadata` shows an edge not allowed here.
+//
+// An edge A -> B also allows A to depend on everything B may reach
+// (indirect dependencies, omitted in the diagram, are allowed).
+// A new crate goes here (and in the diagram) before it exists.
+(
+    crates: {
+        // shared/
+        "base": [],
+        "i18n": ["base"],
+        "defs": ["base", "i18n"],
+        "protocol": ["base"],
+        "world": ["base"],
+        "combat": ["defs"],
+        "progression": ["defs"],
+
+        // server/
+        "sim": ["world", "combat", "progression"],
+        "persistence": ["base"],
+        "server-net": ["protocol"],
+        "server": ["i18n", "sim", "persistence", "server-net"],
+
+        // client/
+        "client-state": ["protocol"],
+        "client-render": ["base"],
+        "client-audio": ["base"],
+        "client-ui": ["base", "i18n"],
+        "client-net": ["protocol"],
+        "client": ["i18n", "client-state", "client-render", "client-audio", "client-ui", "client-net"],
+
+        // tools/
+        "validate": ["defs", "i18n"],
+        "pack": ["i18n"],
+        "bots": ["client-net"],
+        "replay": ["sim"],
+        "admin": ["persistence", "defs"],
+        // Economy and Moderation screens (admin), the replay viewer (replay)
+        // and the Theme screen, checked by the client's own theme loader
+        // (client-ui).
+        "editor": ["defs", "i18n", "admin", "replay", "client-ui"],
+    },
+)

@@ -1,0 +1,5 @@
+# Default for crates without a closer clippy.toml (binaries, IO crates, tools).
+# shared/ and server/sim have stricter rules in their own clippy.toml.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
