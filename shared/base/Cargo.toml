@@ -1,0 +1,19 @@
+[package]
+name = "base"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+serde = ["dep:serde", "smallvec/serde"]
+# JSON schemas of content types for tools/editor.
+schema = ["serde", "dep:schemars"]
+
+[dependencies]
+serde = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }
+smallvec.workspace = true

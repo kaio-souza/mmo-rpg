@@ -1,0 +1,34 @@
+# Rules for the pure, deterministic crates: everything in shared/ and server/sim.
+# shared/clippy.toml and server/sim/clippy.toml must stay identical (CI checks).
+# Clippy uses the nearest clippy.toml going up from the crate folder.
+
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
+
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "random iteration order; use BTreeMap, IndexMap or FxHashMap" },
+    { path = "std::collections::HashSet", reason = "random iteration order; use BTreeSet, IndexSet or FxHashSet" },
+    { path = "std::fs::File", reason = "no IO here; content enters only through defs::load" },
+    { path = "std::fs::OpenOptions", reason = "no IO here; content enters only through defs::load" },
+    { path = "std::net::TcpStream", reason = "no network here" },
+    { path = "std::net::TcpListener", reason = "no network here" },
+    { path = "std::net::UdpSocket", reason = "no network here" },
+    { path = "std::time::Instant", reason = "no clock here; time arrives as Tick or now_unix" },
+    { path = "std::time::SystemTime", reason = "no clock here; time arrives as Tick or now_unix" },
+]
+
+disallowed-methods = [
+    { path = "std::fs::read", reason = "no IO here; content enters only through defs::load" },
+    { path = "std::fs::read_to_string", reason = "no IO here; content enters only through defs::load" },
+    { path = "std::fs::read_dir", reason = "no IO here; content enters only through defs::load" },
+    { path = "std::fs::write", reason = "no IO here" },
+    { path = "std::fs::create_dir_all", reason = "no IO here" },
+    { path = "std::fs::remove_file", reason = "no IO here" },
+    { path = "std::thread::spawn", reason = "no threads here" },
+    { path = "std::time::Instant::now", reason = "no clock here; time arrives as Tick or now_unix" },
+    { path = "std::time::SystemTime::now", reason = "no clock here; time arrives as Tick or now_unix" },
+    { path = "std::env::var", reason = "configuration is read by the binaries" },
+    { path = "rand::thread_rng", reason = "randomness only from the zone generator (seeded)", allow-invalid = true },
+    { path = "rand::rng", reason = "randomness only from the zone generator (seeded)", allow-invalid = true },
+]
