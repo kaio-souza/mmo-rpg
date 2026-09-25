@@ -1,0 +1,21 @@
+[package]
+name = "defs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+# Schemas and RON <-> JSON for tools/editor.
+editor = ["dep:schemars", "dep:serde_json", "base/schema"]
+
+[dependencies]
+base = { workspace = true, features = ["serde"] }
+i18n.workspace = true
+serde.workspace = true
+ron.workspace = true
+schemars = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
