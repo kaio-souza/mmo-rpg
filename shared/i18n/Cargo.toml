@@ -1,0 +1,17 @@
+[package]
+name = "i18n"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base = { workspace = true, features = ["serde"] }
+serde.workspace = true
+ron.workspace = true
+postcard.workspace = true
+lz4_flex.workspace = true
+smallvec.workspace = true
