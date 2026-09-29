@@ -1,0 +1,17 @@
+[package]
+name = "protocol"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base = { workspace = true, features = ["serde"] }
+serde.workspace = true
+postcard.workspace = true
+bytes.workspace = true
+sha2.workspace = true
+zeroize.workspace = true
