@@ -1,0 +1,24 @@
+[package]
+name = "sim"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base = { workspace = true, features = ["serde"] }
+defs.workspace = true
+world.workspace = true
+combat.workspace = true
+progression.workspace = true
+hecs.workspace = true
+serde.workspace = true
+postcard.workspace = true
+smallvec.workspace = true
+rayon.workspace = true
+
+[dev-dependencies]
+i18n.workspace = true
