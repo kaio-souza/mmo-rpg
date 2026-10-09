@@ -1,0 +1,22 @@
+[package]
+name = "client-audio"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base.workspace = true
+serde.workspace = true
+ron.workspace = true
+lewton.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+pulseaudio.workspace = true
+futures.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+wasapi.workspace = true
