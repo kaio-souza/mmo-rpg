@@ -1,0 +1,21 @@
+[package]
+name = "client-ui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base.workspace = true
+i18n.workspace = true
+serde.workspace = true
+ron.workspace = true
+fontdue.workspace = true
+smallvec.workspace = true
+
+[build-dependencies]
+serde.workspace = true
+ron.workspace = true
