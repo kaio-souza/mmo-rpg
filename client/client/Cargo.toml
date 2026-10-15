@@ -1,0 +1,26 @@
+[package]
+name = "client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base.workspace = true
+i18n.workspace = true
+protocol.workspace = true
+client-state.workspace = true
+client-render.workspace = true
+client-ui.workspace = true
+client-audio.workspace = true
+client-net.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+winit.workspace = true
+pollster.workspace = true
+serde.workspace = true
+ron.workspace = true
+png.workspace = true
