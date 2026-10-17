@@ -1,0 +1,17 @@
+[package]
+name = "validate"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base.workspace = true
+i18n.workspace = true
+defs.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ron.workspace = true
