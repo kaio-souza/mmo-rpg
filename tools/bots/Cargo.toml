@@ -1,0 +1,15 @@
+[package]
+name = "bots"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+base.workspace = true
+protocol.workspace = true
+client-net.workspace = true
+clap.workspace = true
