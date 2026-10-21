@@ -1,0 +1,24 @@
+[package]
+name = "editor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+defs = { workspace = true, features = ["editor"] }
+i18n.workspace = true
+base.workspace = true
+admin.workspace = true
+replay.workspace = true
+client-ui.workspace = true
+persistence.workspace = true
+serde.workspace = true
+serde_json = { workspace = true, features = ["preserve_order"] }
+ron.workspace = true
+tokio.workspace = true
+clap.workspace = true
+axum = { version = "0.8", default-features = false, features = ["tokio", "http1", "json", "query"] }
