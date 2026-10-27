@@ -1,0 +1,63 @@
+# Mechanics
+
+What the engine does today, configured by [content](content/README.md), and the mechanics a game could add later. A game uses as much of it as it wants: the template uses a few, the Riftara example uses almost all.
+
+## In the engine today
+
+**Combat**
+- Hit, damage, defense and critical hits from attributes and formulas; line of sight; threat decides a monster's target.
+- Weapon blows cost vigor (without vigor the blow waits twice as long); ranged monsters keep their distance.
+- Techniques with cooldown, vigor or MP cost, damage, healing, revival and timed buffs on the caster.
+- Counter-attack: an idle player hit by a monster fights back on their own.
+- Falling and death: a character falls first and can be revived (by a technique or an item); death costs a level and locks the character for a while (both content numbers; none below `newbie_level`).
+- PvP only inside `Pvp` regions; no combat in `Safe` regions.
+
+**Progression**
+- Levels, XP and attribute points; six attributes; HP, vigor and MP.
+- Proficiencies (0 to 100) that grow by use, with less gain for repetition.
+- Techniques unlocked by proficiency points, levelled 1 to 10 by use; techniques only taught by an NPC, quest or class.
+- Classes in tiers 1 to 4 with requirements, attribute points per level and faster proficiencies; production classes with a quality cap.
+- Titles earned by level, counters, proficiencies or attributes; passive bonuses from every owned title; titles that teach techniques or replace others.
+- Special attributes earned by titles or grown by a class (used to gate techniques and add to a proficiency).
+
+**Items and economy**
+- Items with identity that can never be duplicated; stacks for materials and consumables; binding.
+- Six rarities; hidden attribute rolls revealed by appraisal; powers (a borrowed technique or attribute bonus) from Unique up.
+- Durability, breaking at zero, repair at shops (lowering maximum durability) or by a production class with the recipe's material.
+- Consumables for HP, vigor, MP and reviving an ally; a hotbar the player arranges.
+- NPC shops: buy, sell, repair, appraise, stock that restocks, a purse per player; monster and node loot, shared loot tables.
+- Gathering from nodes that empty per player; recipes taught by NPCs; crafted pieces signed by their maker, with rolled rarity and maker mastery.
+- Money sinks and coin telemetry per source; escrow that holds items and coins for a recipient (used by mail and market later).
+- Off-hand items and items that light their wearer and burn while equipped (a torch).
+
+**World**
+- NPCs with dialogue graphs built from conditions and effects; affinity per NPC.
+- Quests: talk and deliver objectives, item, coin and technique rewards, repeatable quests with a cooldown, quest log, markers and a pointer to the goal.
+- Zones joined by seams into one open world, in one process or many; a starting zone; safe respawn.
+- Day and night (picture only), light per tile, sprite and item; fog outside sight; tiles players toggle for everyone (braziers).
+- Sound per event and technique, music per zone and screen.
+
+**Social**
+- Local chat and whispers, reports, mute; emotes with an image.
+- Groups of up to 6 sharing XP by contribution; direct trade with confirmations on both sides, saved atomically.
+- Ten languages; each player picks one.
+
+**Accounts and moderation**
+- Accounts with password, TLS, sessions, device tokens; brute-force defence ([security](security.md)).
+- Character creation with appearance; deleting and restoring characters.
+- Roles, mute, suspend, ban, IP ban, audit log; announced restarts; hourly backups ([operations](operations.md)).
+
+## Possible mechanics (not in the engine)
+
+Designed for the example game but not built. Each needs engine work before content can use it.
+
+| Area | Mechanic |
+|---|---|
+| Combat | damage types and status effects; surviving a fatal blow; area and ranged spells, meditation; a murderer mark for player killers |
+| Progression | class change after level 30 within the tree; rare (hidden) classes and legendary classes unique per server, passed on when the heir stops playing; titles that give a penalty instead of a bonus; attributes earned by deeds; "first on the server" records; adventurer rank; bestiary, collections, public rankings |
+| Items | enhancement +1 to +15 with protection stones; dismantling equipment; carry weight limits; dimensional storage; exclusive items created by legendary classes |
+| Economy | regional markets plus a global auction; buy orders; mail |
+| World | kill, travel and craft quests; ranked and hidden quests; karma (hidden morality that opens or closes titles and quests); NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
+| Social | group loot rules and shared quests; clans with ranks, storage and alliances; territory war with scheduled sieges; marriage with a shared vault; fame, bounties, mentoring, housing; a human check for players who repeat one action for hours |
+| Accounts | second factor (TOTP) at login; a barber to change hair |
+| Presentation | layered character art (body, hair, clothes) recoloured by palette keys; ambient sound layers |
