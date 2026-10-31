@@ -1,0 +1,8 @@
+# Weekly check of the newest backup copy (`admin verify-backup`).
+[Unit]
+Description=Check the newest game backup
+
+[Service]
+Type=oneshot
+User=game
+ExecStart=/opt/game/current/ops/verify-latest-backup.sh /var/lib/game/backup

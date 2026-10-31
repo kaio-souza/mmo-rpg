@@ -1,0 +1,11 @@
+# Copies the hourly database backups out of the machine
+# BACKUP_TARGET in
+# /etc/game/backup.env, e.g. BACKUP_TARGET=backup@203.0.113.9:/srv/game/
+[Unit]
+Description=Copy game backups to another machine
+
+[Service]
+Type=oneshot
+User=game
+EnvironmentFile=/etc/game/backup.env
+ExecStart=/usr/bin/rsync -a /var/lib/game/backup/ ${BACKUP_TARGET}

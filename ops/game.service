@@ -1,0 +1,27 @@
+# systemd unit of the public server.
+# Install: cp ops/game.service /etc/systemd/system/ && systemctl enable --now game
+[Unit]
+Description=MMO game server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=game
+Group=game
+WorkingDirectory=/var/lib/game
+ExecStart=/opt/game/current/server --address 0.0.0.0:7000 --data-dir /var/lib/game --content /opt/game/current/content --replay-dir /var/lib/game/replays --tls-cert /etc/game/tls/fullchain.pem --tls-key /etc/game/tls/privkey.pem
+# SIGINT saves every player, like Ctrl+C.
+KillSignal=SIGINT
+TimeoutStopSec=60
+# An announced restart (admin maintenance) ends the process cleanly: it
+# comes back on its own, from whatever `current` points to.
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/game
+
+[Install]
+WantedBy=multi-user.target

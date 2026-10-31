@@ -1,0 +1,9 @@
+[Unit]
+Description=Check the newest game backup every week
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
