@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "recupera una quantità moderata di vita",
+    "item.health_potion.name": "pozione di vita",
+    "item.mana_tonic.desc": "ripristina PM",
+    "item.mana_tonic.name": "tonico di mana",
+    "item.vigor_elixir.desc": "ripristina il vigore",
+    "item.vigor_elixir.name": "elisir di vigore",
+    "item.wolf_pelt.desc": "Pelo folto e grigio. I conciatori la pagano.",
+    "item.wolf_pelt.name": "Pelliccia di lupo",
+    "monster.wolf.name": "Lupo",
+    "proficiency.unarmed.name": "A mani nude",
+}

@@ -1,0 +1,3 @@
+// Restores MP. Dropped by the wolf.
+(kind: Consumable, max_stack: 12, weight: 90, rarity: Common, value: 220, durability: 0,
+ use: Some((mp: 30, cooldown_ticks: 600)), icon: "mana_tonic")

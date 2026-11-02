@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "memulihkan nyawa dalam jumlah sedang",
+    "item.health_potion.name": "ramuan kesehatan",
+    "item.mana_tonic.desc": "memulihkan MP",
+    "item.mana_tonic.name": "tonik mana",
+    "item.vigor_elixir.desc": "memulihkan stamina",
+    "item.vigor_elixir.name": "eliksir vigor",
+    "item.wolf_pelt.desc": "Bulu abu-abu yang tebal. Penyamak membayarnya.",
+    "item.wolf_pelt.name": "Kulit serigala",
+    "monster.wolf.name": "Serigala",
+    "proficiency.unarmed.name": "Tangan kosong",
+}

@@ -1,0 +1,40 @@
+// Character creation choices (phase 5). Append
+// only: saved characters name these ids. `color` is the palette tone (skin,
+// hair) and, until the sprites of phase 6, the placeholder figure's color.
+// Names: appearance.<list>.<id> in content/text/<locale>/appearance.ron.
+(
+    bodies: [
+        (id: "body_a", color: "#5b6b8c"),
+        (id: "body_b", color: "#6b5b8c"),
+    ],
+    skins: [
+        (id: "skin_1", color: "#f6d7c3"),
+        (id: "skin_2", color: "#e8b996"),
+        (id: "skin_3", color: "#c99471"),
+        (id: "skin_4", color: "#a8724f"),
+        (id: "skin_5", color: "#7d5038"),
+        (id: "skin_6", color: "#4f3224"),
+    ],
+    hair_styles: [
+        (id: "short"),
+        (id: "long"),
+        (id: "ponytail"),
+        (id: "braid"),
+        (id: "curly"),
+        (id: "spiky"),
+        (id: "topknot"),
+        (id: "bald"),
+    ],
+    hair_colors: [
+        (id: "black", color: "#1b1b1f"),
+        (id: "dark_brown", color: "#3b2619"),
+        (id: "chestnut", color: "#6e3f22"),
+        (id: "blonde", color: "#d9b46a"),
+        (id: "red", color: "#a8371f"),
+        (id: "auburn", color: "#7c2f24"),
+        (id: "gray", color: "#8d8d8d"),
+        (id: "white", color: "#e9e9e9"),
+        (id: "blue", color: "#2f5fb8"),
+        (id: "green", color: "#3a8a4a"),
+    ],
+)

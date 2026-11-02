@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "восстанавливает умеренное количество здоровья",
+    "item.health_potion.name": "зелье здоровья",
+    "item.mana_tonic.desc": "восстанавливает ману",
+    "item.mana_tonic.name": "тоник маны",
+    "item.vigor_elixir.desc": "восстанавливает выносливость",
+    "item.vigor_elixir.name": "эликсир бодрости",
+    "item.wolf_pelt.desc": "Густой серый мех. Скорняки за него платят.",
+    "item.wolf_pelt.name": "Волчья шкура",
+    "monster.wolf.name": "Волк",
+    "proficiency.unarmed.name": "Безоружный бой",
+}

@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "体力を中程度回復する",
+    "item.health_potion.name": "回復薬",
+    "item.mana_tonic.desc": "MPを回復する",
+    "item.mana_tonic.name": "マナの強壮薬",
+    "item.vigor_elixir.desc": "活力を回復する",
+    "item.vigor_elixir.name": "活力の霊薬",
+    "item.wolf_pelt.desc": "分厚い灰色の毛皮。革職人が買い取る。",
+    "item.wolf_pelt.name": "狼の毛皮",
+    "monster.wolf.name": "狼",
+    "proficiency.unarmed.name": "素手",
+}

@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "recupera uma quantidade moderada de vida",
+    "item.health_potion.name": "poção de vida",
+    "item.mana_tonic.desc": "recupera MP",
+    "item.mana_tonic.name": "tônico de mana",
+    "item.vigor_elixir.desc": "recupera vigor",
+    "item.vigor_elixir.name": "elixir de vigor",
+    "item.wolf_pelt.desc": "Pelo grosso e cinzento. Os curtidores pagam por ele.",
+    "item.wolf_pelt.name": "Pele de lobo",
+    "monster.wolf.name": "Lobo",
+    "proficiency.unarmed.name": "Desarmado",
+}

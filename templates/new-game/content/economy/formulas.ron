@@ -1,0 +1,45 @@
+// Economy numbers (phase 7). Every field is
+// optional: this file writes down the values of the design so a designer
+// can see and change them without touching code.
+(
+    // An NPC sells at the item's value and buys at 30% of it: the gap is
+    // the main coin sink of the early game.
+    sell_permille: 1000,
+    buy_permille: 300,
+    // A full repair costs half of the value that is missing, and takes 2%
+    // of the maximum durability with it, so a piece finally dies.
+    repair_permille: 500,
+    repair_max_loss_permille: 20,
+    // An NPC appraisal: 10% of the value, always reveals.
+    appraise_permille: 100,
+    // One point of durability per blow landed or taken, 10% on death.
+    durability_per_hit: 1,
+    death_durability_permille: 100,
+    warn_durability_permille: (200, 50),
+    // Crafting without a production class gives almost no level XP.
+    craft_xp_permille: 20,
+    // Chance of one rarity step up: 2% + 0.2% per point
+    // + 0.1% per DEX, at most 25%; each further step halves it.
+    craft_quality_permille: 20,
+    craft_quality_per_point_permille: 2,
+    craft_quality_per_dex_permille: 1,
+    craft_quality_max_permille: 250,
+    gather_cooldown_ticks: 600,
+    // By rarity, Common to Mythic: damage or defense and
+    // durability added on top, in thousandths; what a piece is worth next
+    // to a common one (Mythic: no NPC buys it); chance of a power.
+    rarity_power_permille: (0, 100, 200, 300, 450, 600),
+    rarity_durability_permille: (0, 250, 500, 750, 1000, 1500),
+    rarity_value_permille: (1000, 2000, 5000, 15000, 50000, 0),
+    // No NPC buys a piece of equipment above this rarity: players only.
+    npc_buy_max: Rare,
+    power_chance_permille: (0, 0, 0, 250, 500, 1000),
+    // Chance of a piece carrying its item's hidden attributes at all
+    // rare on common and rare pieces, always from Epic up.
+    hidden_chance_permille: (100, 300, 1000, 1000, 1000, 1000),
+    // Mastery of a production class (its tier; 0 without one): extra
+    // durability of its crafts, in hundredths of a percent =
+    // points x DEX x tier / 5, up to 10%.
+    mastery_divisor: 5,
+    mastery_max: 1000,
+)

@@ -1,0 +1,16 @@
+// Progression balance.
+// Every field is optional; missing ones keep the design value.
+(
+    max_level: 100,
+    level_xp_base: 100,
+    // 100 × n^(11/5) = 100 × n^2.2
+    level_xp_exponent: (11, 5),
+    start_attribute: 5,
+    free_points: 3,
+    free_points_without_class: 5,
+    fallen_ticks: 1200,
+    newbie_level: 10,
+    death_lock_secs: 21600,
+    // Phase 10: a day of the world lasts two real hours.
+    day_secs: 7200,
+)

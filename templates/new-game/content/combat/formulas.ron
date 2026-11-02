@@ -1,0 +1,9 @@
+// Combat balance, thousandths.
+// Every field is optional; missing ones keep the design value.
+(
+    hit_min_permille: 50,
+    hit_max_permille: 950,
+    crit_damage_permille: 1500,
+    pvp_damage_permille: 600,
+    global_cooldown_ticks: 10,
+)

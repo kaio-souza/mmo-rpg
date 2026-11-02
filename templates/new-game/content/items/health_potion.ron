@@ -1,0 +1,3 @@
+// Restores HP. Dropped by the wolf.
+(kind: Consumable, max_stack: 15, weight: 120, rarity: Common, value: 300, durability: 0,
+ use: Some((hp: 100, cooldown_ticks: 400)), icon: "health_potion")

@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "stellt eine mittlere Menge Leben wieder her",
+    "item.health_potion.name": "Heiltrank",
+    "item.mana_tonic.desc": "stellt MP wieder her",
+    "item.mana_tonic.name": "Manatonikum",
+    "item.vigor_elixir.desc": "stellt Kraft wieder her",
+    "item.vigor_elixir.name": "Kraftelixier",
+    "item.wolf_pelt.desc": "Dickes graues Fell. Gerber zahlen dafür.",
+    "item.wolf_pelt.name": "Wolfsfell",
+    "monster.wolf.name": "Wolf",
+    "proficiency.unarmed.name": "Waffenlos",
+}

@@ -1,0 +1,13 @@
+// The texts of this game's own content: the wolf and what it drops.
+{
+    "item.health_potion.desc": "恢复适量生命",
+    "item.health_potion.name": "生命药水",
+    "item.mana_tonic.desc": "恢复法力",
+    "item.mana_tonic.name": "法力补剂",
+    "item.vigor_elixir.desc": "恢复体力",
+    "item.vigor_elixir.name": "活力灵药",
+    "item.wolf_pelt.desc": "厚实的灰色毛皮。制革匠愿意出价收购。",
+    "item.wolf_pelt.name": "狼皮",
+    "monster.wolf.name": "狼",
+    "proficiency.unarmed.name": "徒手",
+}

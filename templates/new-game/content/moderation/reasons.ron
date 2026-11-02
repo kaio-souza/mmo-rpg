@@ -1,0 +1,9 @@
+[
+    "moderation.reason.cheating",
+    "moderation.reason.botting",
+    "moderation.reason.exploit",
+    "moderation.reason.harassment",
+    "moderation.reason.offensive_name",
+    "moderation.reason.spam",
+    "moderation.reason.other",
+]
