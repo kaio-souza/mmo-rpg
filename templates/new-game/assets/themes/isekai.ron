@@ -1,0 +1,40 @@
+// First theme: dark blue, cyan accent,
+// translucent panels with cut corners and glowing borders. Edit and save:
+// the running client reloads it.
+Theme(
+    id: "isekai",
+    fonts: (
+        title: "fonts/Rajdhani-Bold.ttf",
+        text: "fonts/Exo2-Regular.ttf",
+        numbers: "fonts/Rajdhani-SemiBold.ttf",
+    ),
+    // Rajdhani has no Cyrillic; CJK faces of the collection: JP 0, KR 1, SC 2.
+    fonts_by_locale: {
+        "ru": (title: "fonts/Exo2-Regular.ttf", text: "fonts/Exo2-Regular.ttf", numbers: "fonts/Exo2-Regular.ttf"),
+        "zh": (title: "fonts/NotoSansCJK-Regular.ttc#2", text: "fonts/NotoSansCJK-Regular.ttc#2", numbers: "fonts/Rajdhani-SemiBold.ttf"),
+        "ja": (title: "fonts/NotoSansCJK-Regular.ttc#0", text: "fonts/NotoSansCJK-Regular.ttc#0", numbers: "fonts/Rajdhani-SemiBold.ttf"),
+        "ko": (title: "fonts/NotoSansCJK-Regular.ttc#1", text: "fonts/NotoSansCJK-Regular.ttc#1", numbers: "fonts/Rajdhani-SemiBold.ttf"),
+    },
+    colors: {
+        "background": "#030b16",
+        "panel": "#041228d0",
+        "border": "#00b4ff40",
+        "strong_border": "#00c8ff",
+        "text": "#cce8ff",
+        "dim_text": "#b4dcff73",
+        "highlight": "#00c8ff",
+        "secondary": "#8b5cf6",
+        "life": "#ff3d6e",
+        "mana": "#3b82f6",
+        "stamina": "#f59e0b",
+        "system": "#00c8ff",
+        "rarity_rare": "#4ade80",
+        "rarity_epic": "#a78bfa",
+        "rarity_unique": "#fde047",
+        "rarity_legendary": "#fb923c",
+        "rarity_mythic": "#f43f5e",
+    },
+    panel: (diagonal_slash: 8, border_thickness: 1, border_glow: 0.6, background_blur: false),
+    system_window: (prefix_key: "ui.system.prefix", enter_anim_ms: 300, show_ms: 4000),
+    windows: (open_ms: 140, close_ms: 110, rise: 8.0),
+)

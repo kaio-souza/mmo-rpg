@@ -1,0 +1,3 @@
+// The theme every player sees (assets/themes/<theme>.ron). Set it in the
+// editor's Theme screen ("Use in the game"); the running client follows it.
+GameTheme(theme: "isekai")
