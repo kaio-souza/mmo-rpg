@@ -1,0 +1,3 @@
+{
+    "loot.coins": (text: "{count, plural, one {# coin} other {# coins}}", note: "Coins picked up from loot. # is the amount.", max_chars: 32),
+}

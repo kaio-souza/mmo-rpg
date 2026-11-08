@@ -1,0 +1,3 @@
+{
+    "loot.coins": "{count, plural, one {# moeda} other {# moedas}}",
+}

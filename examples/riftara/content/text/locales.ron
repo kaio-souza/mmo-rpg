@@ -1,0 +1,16 @@
+// The languages of the game, in the order of the language list.
+// `required: true`: a missing text stops `validate`. Without it a missing
+// text is a warning and the game shows the English one. English is the
+// source and always required. Managed in the editor (Languages).
+[
+    (code: "en", required: true),
+    (code: "pt-BR", required: true),
+    (code: "zh", required: false),
+    (code: "it", required: false),
+    (code: "id", required: false),
+    (code: "de", required: false),
+    (code: "ru", required: false),
+    (code: "es", required: false),
+    (code: "ja", required: false),
+    (code: "ko", required: false),
+]
