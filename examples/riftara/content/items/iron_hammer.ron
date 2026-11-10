@@ -1,0 +1,6 @@
+// Heavy weapon tier 2
+(kind: Weapon, weight: 4000, rarity: Common, value: 1700, durability: 180,
+ equip: Some(Weapon(damage: (9, 18), attack_ticks: 42, attribute: Str, proficiency: "hammer", range: 1, visual: "", vigor: 14)),
+ hidden: [(attribute: Str, min: 0, max: 6)], icon: "",
+ // Unique and up may carry one.
+ powers: [Technique("earthquake"), Attribute(Vit, 3)])

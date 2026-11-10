@@ -1,0 +1,8 @@
+// Three ingots into a sword. Needs some smithing to come out at all.
+(
+    proficiency: "smithing",
+    min_points: 3,
+    materials: [(item: "iron_ingot", qty: 4)],
+    result: "iron_sword",
+    xp: 60,
+)

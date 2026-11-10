@@ -1,0 +1,3 @@
+// Consumable tier 3
+(kind: Consumable, max_stack: 10, weight: 140, rarity: Rare, value: 600, durability: 0,
+ use: Some((hp: 200, cooldown_ticks: 500)), icon: "")

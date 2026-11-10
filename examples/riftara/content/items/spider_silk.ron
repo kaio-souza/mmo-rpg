@@ -1,0 +1,2 @@
+// Dropped by briar spiders (phase 10); the guild buys it (quest `spider_silk`).
+(kind: Material, max_stack: 50, weight: 50, value: 18, icon: "spider_silk")

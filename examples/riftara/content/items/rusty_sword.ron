@@ -1,0 +1,4 @@
+// First sword. Hidden bonus revealed by Appraise.
+(kind: Weapon, weight: 2500, rarity: Common, value: 400, durability: 80,
+ equip: Some(Weapon(damage: (3, 7), attack_ticks: 30, attribute: Str, proficiency: "sword", visual: "rusty_sword", vigor: 3)),
+ hidden: [(attribute: Str, min: 0, max: 3)], icon: "rusty_sword")

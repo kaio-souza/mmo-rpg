@@ -1,0 +1,2 @@
+// Dropped by kobolds of the mines (quest `kobold_candles`). Name and description: `item.kobold_candle.name`, `item.kobold_candle.desc`.
+(kind: Material, max_stack: 50, weight: 80, value: 35, icon: "kobold_candle")

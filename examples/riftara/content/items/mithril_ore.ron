@@ -1,0 +1,2 @@
+// Legendary crafting material
+(kind: Material, max_stack: 5, weight: 300, rarity: Legendary, value: 5000, durability: 0)

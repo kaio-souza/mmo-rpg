@@ -1,0 +1,7 @@
+(
+    proficiency: "alchemy",
+    min_points: 3,
+    materials: [(item: "moonflower", qty: 3)],
+    result: "mana_tonic",
+    xp: 50,
+)

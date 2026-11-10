@@ -1,0 +1,1 @@
+(proficiency: "alchemy", min_points: 10, materials: [(item: "moonflower", qty: 4), (item: "sunroot", qty: 2)], result: "greater_health_potion", xp: 150)

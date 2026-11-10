@@ -1,0 +1,2 @@
+// Copper ore smelted at the forge.
+(proficiency: "smithing", materials: [(item: "copper_ore", qty: 2)], result: "copper_ingot", xp: 10)

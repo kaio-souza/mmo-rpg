@@ -1,0 +1,7 @@
+(
+    proficiency: "smithing",
+    min_points: 1,
+    materials: [(item: "wolf_pelt", qty: 6)],
+    result: "cloth_tunic",
+    xp: 30,
+)

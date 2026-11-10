@@ -1,0 +1,5 @@
+// The first alchemy recipe: no points asked, like smelting for smithing, so
+// alchemy can start from zero (alpha playtest). Herbs come from herb patches
+// (Herbalism) or the store; the quest herb is bound to the character and
+// never a material.
+(proficiency: "alchemy", materials: [(item: "sunroot", qty: 2)], result: "minor_health_potion", xp: 35)

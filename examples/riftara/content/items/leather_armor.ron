@@ -1,0 +1,3 @@
+(kind: Armor, weight: 4000, rarity: Common, value: 500, durability: 100,
+ equip: Some(Armor(defense: 5, visual: "leather_armor")),
+ hidden: [(attribute: Vit, min: 0, max: 2)], icon: "leather_armor")

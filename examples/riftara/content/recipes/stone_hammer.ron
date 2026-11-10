@@ -1,0 +1,7 @@
+(
+    proficiency: "smithing",
+    min_points: 4,
+    materials: [(item: "copper_ingot", qty: 2), (item: "boar_tusk", qty: 1)],
+    result: "stone_hammer",
+    xp: 65,
+)

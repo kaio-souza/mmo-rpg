@@ -1,0 +1,2 @@
+// Reward of the first quest: eating one restores HP (phase 5).
+(kind: Consumable, max_stack: 10, weight: 200, value: 15, use: Some((hp: 30, cooldown_ticks: 300)), icon: "travel_bread")

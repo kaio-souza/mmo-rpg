@@ -1,0 +1,6 @@
+// Held in the other hand (phase 11): lights the way at night and
+// burns down while equipped. Name and description: `item.torch.name`,
+// `item.torch.desc`. Sold by the village store and the mine supply.
+(kind: Offhand, weight: 500, value: 40, durability: 30, burn: 1,
+ equip: Some(Offhand(visual: "torch")),
+ light: Some((radius: 5, color: (255, 165, 80))), icon: "torch")

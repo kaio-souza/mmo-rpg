@@ -1,0 +1,7 @@
+(
+    proficiency: "smithing",
+    min_points: 4,
+    materials: [(item: "leather_armor", qty: 1), (item: "copper_ingot", qty: 2)],
+    result: "studded_leather",
+    xp: 70,
+)

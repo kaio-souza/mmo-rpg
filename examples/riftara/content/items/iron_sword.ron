@@ -1,0 +1,7 @@
+// First crafted weapon (phase 8): better than the rusty sword and worth
+// repairing.
+(kind: Weapon, weight: 3000, rarity: Common, value: 1200, durability: 150,
+ equip: Some(Weapon(damage: (5, 10), attack_ticks: 28, attribute: Str, proficiency: "sword", visual: "rusty_sword", vigor: 3)),
+ hidden: [(attribute: Str, min: 0, max: 4)], icon: "iron_sword",
+ // Unique and up may carry one.
+ powers: [Technique("whirlwind"), Attribute(Str, 3)])

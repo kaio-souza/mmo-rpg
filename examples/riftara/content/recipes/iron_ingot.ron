@@ -1,0 +1,7 @@
+// Smelting: two ores into one ingot. The first recipe everybody may learn.
+(
+    proficiency: "smithing",
+    materials: [(item: "iron_ore", qty: 2)],
+    result: "iron_ingot",
+    xp: 10,
+)

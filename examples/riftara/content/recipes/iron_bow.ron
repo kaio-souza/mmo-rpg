@@ -1,0 +1,7 @@
+(
+    proficiency: "smithing",
+    min_points: 5,
+    materials: [(item: "iron_ingot", qty: 4), (item: "wolf_pelt", qty: 1)],
+    result: "iron_bow",
+    xp: 80,
+)

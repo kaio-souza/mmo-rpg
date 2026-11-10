@@ -1,0 +1,2 @@
+// Alchemy material
+(kind: Material, max_stack: 30, weight: 50, rarity: Common, value: 200, durability: 0)

@@ -1,0 +1,2 @@
+// Dropped by bog frogs (quest `marsh_remedy`). Name and description: `item.frog_leg.name`, `item.frog_leg.desc`.
+(kind: Material, max_stack: 50, weight: 80, value: 20, icon: "frog_leg")

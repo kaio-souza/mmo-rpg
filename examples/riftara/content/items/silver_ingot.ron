@@ -1,0 +1,2 @@
+// Crafting material tier 3
+(kind: Material, max_stack: 25, weight: 220, rarity: Rare, value: 1000, durability: 0)

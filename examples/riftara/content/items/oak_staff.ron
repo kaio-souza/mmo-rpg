@@ -1,0 +1,4 @@
+// Magic weapon tier 1
+(kind: Weapon, weight: 2500, rarity: Common, value: 900, durability: 120,
+ equip: Some(Weapon(damage: (4, 9), attack_ticks: 40, attribute: Int, proficiency: "staff", range: 2, visual: "", vigor: 2)),
+ hidden: [(attribute: Int, min: 0, max: 4)], icon: "")

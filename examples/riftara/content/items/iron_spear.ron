@@ -1,0 +1,6 @@
+// Polearm tier 2
+(kind: Weapon, weight: 2200, rarity: Common, value: 1400, durability: 140,
+ equip: Some(Weapon(damage: (7, 15), attack_ticks: 30, attribute: Str, proficiency: "spear", range: 3, visual: "", vigor: 5)),
+ hidden: [(attribute: Str, min: 0, max: 5)], icon: "",
+ // Unique and up may carry one.
+ powers: [Technique("impale"), Attribute(Agi, 3)])

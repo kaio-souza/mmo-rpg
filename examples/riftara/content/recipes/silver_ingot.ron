@@ -1,0 +1,2 @@
+// Silver ore smelted at the forge.
+(proficiency: "smithing", min_points: 10, materials: [(item: "silver_ore", qty: 2)], result: "silver_ingot", xp: 40)

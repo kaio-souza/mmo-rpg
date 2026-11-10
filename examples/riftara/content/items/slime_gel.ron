@@ -1,0 +1,2 @@
+// Dropped by marsh slimes (quest `marsh_remedy`). Name and description: `item.slime_gel.name`, `item.slime_gel.desc`.
+(kind: Material, max_stack: 50, weight: 100, value: 30, icon: "slime_gel")

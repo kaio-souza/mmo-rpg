@@ -1,0 +1,7 @@
+(
+    proficiency: "smithing",
+    min_points: 7,
+    materials: [(item: "iron_ingot", qty: 4)],
+    result: "iron_chainmail",
+    xp: 100,
+)

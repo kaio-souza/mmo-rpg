@@ -1,0 +1,2 @@
+// Dropped by the swamp hag, the elite of Fenmoor (quest `hags_curse`). Name and description: `item.hag_charm.name`, `item.hag_charm.desc`.
+(kind: Material, max_stack: 10, weight: 50, value: 250, rarity: Rare, icon: "hag_charm")

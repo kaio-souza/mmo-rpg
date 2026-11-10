@@ -1,0 +1,6 @@
+// Axe tier 2
+(kind: Weapon, weight: 2800, rarity: Common, value: 1550, durability: 155,
+ equip: Some(Weapon(damage: (8, 16), attack_ticks: 36, attribute: Str, proficiency: "axe", range: 1, visual: "", vigor: 10)),
+ hidden: [(attribute: Str, min: 0, max: 5)], icon: "",
+ // Unique and up may carry one.
+ powers: [Technique("execute"), Attribute(Str, 3)])

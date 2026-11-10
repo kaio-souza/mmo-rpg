@@ -1,0 +1,3 @@
+// Light armor tier 1
+(kind: Armor, weight: 1500, rarity: Common, value: 600, durability: 100,
+ equip: Some(Armor(defense: 3, visual: "")), icon: "")

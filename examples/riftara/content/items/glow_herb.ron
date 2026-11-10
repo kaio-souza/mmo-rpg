@@ -1,0 +1,3 @@
+// Herb of the first quest (`first_steps`). Name and description:
+// `item.glow_herb.name` and `item.glow_herb.desc`.
+(kind: Quest, max_stack: 20, weight: 50, binding: Character, rarity: Common, icon: "glow_herb")

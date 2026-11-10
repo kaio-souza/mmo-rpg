@@ -1,0 +1,5 @@
+// Revival: used on a fallen player beside you, who stands up
+// with 30% of their HP and no loss. Sold at the village store, brewed
+// with alchemy (taught by the herbalist).
+(kind: Consumable, max_stack: 5, weight: 120, rarity: Common, value: 400, durability: 0,
+ use: Some((revive_permille: 300, cooldown_ticks: 600)), icon: "")

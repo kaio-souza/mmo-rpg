@@ -1,0 +1,5 @@
+// Medium armor tier 2
+(kind: Armor, weight: 2000, rarity: Common, value: 1100, durability: 140,
+ equip: Some(Armor(defense: 6, visual: "")), icon: "",
+ // Unique and up may carry one.
+ powers: [Attribute(Agi, 3), Attribute(Dex, 2)])

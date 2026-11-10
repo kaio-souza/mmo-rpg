@@ -1,0 +1,5 @@
+// Heavy armor tier 3
+(kind: Armor, weight: 3500, rarity: Common, value: 2500, durability: 200,
+ equip: Some(Armor(defense: 12, visual: "")), icon: "",
+ // Unique and up may carry one.
+ powers: [Attribute(Vit, 4), Attribute(Str, 2)])

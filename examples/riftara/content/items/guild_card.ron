@@ -1,0 +1,3 @@
+// Reward of the tutorial `arrival` (phase 10): the card of the Adventurers'
+// Guild. A keepsake; ranks come in phase 12.
+(kind: Quest, max_stack: 1, weight: 10, value: 0, icon: "guild_card")

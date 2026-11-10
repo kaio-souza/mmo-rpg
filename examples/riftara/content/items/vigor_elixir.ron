@@ -1,0 +1,3 @@
+// Vigor consumable tier 1
+(kind: Consumable, max_stack: 12, weight: 90, rarity: Common, value: 200, durability: 0,
+ use: Some((vigor: 80, cooldown_ticks: 350)), icon: "")

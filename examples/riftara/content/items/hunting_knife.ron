@@ -1,0 +1,3 @@
+(kind: Weapon, weight: 600, rarity: Common, value: 300, durability: 70,
+ equip: Some(Weapon(damage: (2, 4), attack_ticks: 20, attribute: Dex, proficiency: "dagger", visual: "hunting_knife", vigor: 1)),
+ hidden: [(attribute: Dex, min: 0, max: 2)], icon: "hunting_knife")

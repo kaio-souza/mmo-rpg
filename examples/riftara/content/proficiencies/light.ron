@@ -1,0 +1,4 @@
+// Light magic: heals and stands the fallen up. Grows when a
+// Light technique does something (a heal that restored life, a revival).
+// The first technique, minor heal, is taught by the herbalist.
+(kind: Magic)

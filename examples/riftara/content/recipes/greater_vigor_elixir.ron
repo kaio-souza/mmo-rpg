@@ -1,0 +1,7 @@
+(
+    proficiency: "alchemy",
+    min_points: 8,
+    materials: [(item: "sunroot", qty: 4), (item: "moonflower", qty: 2)],
+    result: "greater_vigor_elixir",
+    xp: 120,
+)

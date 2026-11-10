@@ -1,0 +1,3 @@
+// MP consumable tier 1 (P02): brewed from moonflower, sold in Fenwick.
+(kind: Consumable, max_stack: 12, weight: 90, rarity: Common, value: 220, durability: 0,
+ use: Some((mp: 30, cooldown_ticks: 600)), icon: "")

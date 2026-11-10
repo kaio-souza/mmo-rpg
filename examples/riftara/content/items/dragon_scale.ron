@@ -1,0 +1,2 @@
+// Rare crafting material
+(kind: Material, max_stack: 10, weight: 150, rarity: Epic, value: 3000, durability: 0)

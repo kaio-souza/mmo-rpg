@@ -1,0 +1,4 @@
+// Polearm tier 1
+(kind: Weapon, weight: 1800, rarity: Common, value: 850, durability: 110,
+ equip: Some(Weapon(damage: (4, 10), attack_ticks: 32, attribute: Str, proficiency: "spear", range: 3, visual: "", vigor: 5)),
+ hidden: [(attribute: Str, min: 0, max: 3)], icon: "")

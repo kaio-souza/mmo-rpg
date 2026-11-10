@@ -1,0 +1,3 @@
+// Dropped by hill goblins and their shaman (phase 10): proof for the guild
+// (quest `goblin_trouble`).
+(kind: Material, max_stack: 50, weight: 50, value: 10, icon: "goblin_ear")

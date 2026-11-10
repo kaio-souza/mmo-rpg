@@ -1,0 +1,4 @@
+// Ranged weapon tier 1
+(kind: Weapon, weight: 1500, rarity: Common, value: 800, durability: 100,
+ equip: Some(Weapon(damage: (3, 8), attack_ticks: 35, attribute: Agi, proficiency: "bow", range: 10, visual: "", vigor: 2)),
+ hidden: [(attribute: Agi, min: 0, max: 3)], icon: "")

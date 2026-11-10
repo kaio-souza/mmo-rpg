@@ -1,0 +1,6 @@
+// Magic weapon tier 2
+(kind: Weapon, weight: 3000, rarity: Common, value: 1600, durability: 160,
+ equip: Some(Weapon(damage: (7, 14), attack_ticks: 38, attribute: Int, proficiency: "staff", range: 2, visual: "", vigor: 2)),
+ hidden: [(attribute: Int, min: 0, max: 6)], icon: "",
+ // Unique and up may carry one.
+ powers: [Technique("frost_nova"), Attribute(Int, 3)])

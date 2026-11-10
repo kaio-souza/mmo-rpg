@@ -1,0 +1,4 @@
+// Heavy weapon tier 1
+(kind: Weapon, weight: 3500, rarity: Common, value: 950, durability: 130,
+ equip: Some(Weapon(damage: (6, 12), attack_ticks: 45, attribute: Str, proficiency: "hammer", range: 1, visual: "", vigor: 12)),
+ hidden: [(attribute: Str, min: 0, max: 4)], icon: "")

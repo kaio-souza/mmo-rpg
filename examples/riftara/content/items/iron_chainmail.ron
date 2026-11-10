@@ -1,0 +1,5 @@
+// Medium armor tier 2 variant
+(kind: Armor, weight: 2500, rarity: Common, value: 1300, durability: 160,
+ equip: Some(Armor(defense: 7, visual: "")), icon: "",
+ // Unique and up may carry one.
+ powers: [Attribute(Vit, 3), Attribute(Str, 2)])

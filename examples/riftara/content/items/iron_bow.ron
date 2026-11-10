@@ -1,0 +1,6 @@
+// Ranged weapon tier 2
+(kind: Weapon, weight: 2000, rarity: Common, value: 1500, durability: 150,
+ equip: Some(Weapon(damage: (6, 12), attack_ticks: 33, attribute: Agi, proficiency: "bow", range: 12, visual: "", vigor: 2)),
+ hidden: [(attribute: Agi, min: 0, max: 5)], icon: "",
+ // Unique and up may carry one.
+ powers: [Technique("rapid_fire"), Attribute(Agi, 3)])

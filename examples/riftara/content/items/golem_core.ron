@@ -1,0 +1,2 @@
+// Dropped by the rock golem, the elite of the mines (quest `heart_of_stone`). Name and description: `item.golem_core.name`, `item.golem_core.desc`.
+(kind: Material, max_stack: 10, weight: 400, value: 600, rarity: Rare, icon: "golem_core")
