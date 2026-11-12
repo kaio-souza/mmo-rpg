@@ -1,0 +1,8 @@
+(
+    trigger: Level(50),
+    icon: "",
+    bonuses: [
+        Attribute(Int, 40),
+    ],
+    techniques: [],
+)

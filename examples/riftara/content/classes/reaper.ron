@@ -1,0 +1,9 @@
+// Tier 2 - barbarian going for vitality/durability
+(
+    tier: 2,
+    parent: Some("barbarian"),
+    level: 10,
+    requires: [Any([Attribute(Vit, 30)])],
+    auto_points: (vit: 2, str: 1),
+    growth: [("unarmed", 1700)],
+)

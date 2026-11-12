@@ -1,0 +1,9 @@
+// Tier 2 Ranger advancement
+(
+    tier: 2,
+    parent: Some("ranger"),
+    level: 10,
+    requires: [Any([Proficiency("bow", 15), Attribute(Agi, 30)])],
+    auto_points: (agi: 3, dex: 2),
+    growth: [("bow", 1500)],
+)

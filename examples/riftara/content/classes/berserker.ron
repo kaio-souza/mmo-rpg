@@ -1,0 +1,1 @@
+(tier: 2, parent: Some("warrior"), level: 10, requires: [Attribute(Str, 20)], auto_points: (str: 3), growth: [("sword", 1300)])

@@ -1,0 +1,9 @@
+// Tier 2 - barbarian going for pure damage
+(
+    tier: 2,
+    parent: Some("barbarian"),
+    level: 10,
+    requires: [Any([Attribute(Str, 35)])],
+    auto_points: (str: 2, agi: 1),
+    growth: [("unarmed", 1800)],
+)

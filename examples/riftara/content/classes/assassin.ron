@@ -1,0 +1,1 @@
+(tier: 2, parent: Some("scout"), level: 10, requires: [Proficiency("dagger", 15)], auto_points: (dex: 2, agi: 1), growth: [("dagger", 1300)])

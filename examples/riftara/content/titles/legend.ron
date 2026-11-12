@@ -1,0 +1,8 @@
+(
+    trigger: Attribute(Str, 100),
+    icon: "",
+    bonuses: [
+        MaxHp(150),
+    ],
+    techniques: [],
+)

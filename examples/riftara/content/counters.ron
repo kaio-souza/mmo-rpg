@@ -1,0 +1,3 @@
+// Counter families on: only these are counted per character.
+// Known to the engine: "kills" (key: monster id), "deaths", "quests".
+["kills", "deaths"]

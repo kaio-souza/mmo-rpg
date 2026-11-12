@@ -1,0 +1,8 @@
+(
+    trigger: Attribute(Vit, 120),
+    icon: "",
+    bonuses: [
+        MaxHp(200),
+    ],
+    techniques: [],
+)

@@ -1,0 +1,3 @@
+// Light 75 (tecnicas.md): stands a fallen player up with half
+// their life. Costly in MP, one minute of rest.
+(proficiency: "light", unlock_at: 75, cooldown_ticks: 1200, vigor: 0, mp: 60, revive_permille: 500, range: 3, icon: "")

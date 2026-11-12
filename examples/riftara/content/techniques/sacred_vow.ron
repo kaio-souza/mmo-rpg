@@ -1,0 +1,14 @@
+// Paladin: a vow that hardens the body. Defense +25% (at least 3)
+// for 30 s, +1% per technique level and more with faith (through light).
+// Taught only by the class, with faith 5; Light magic, no weapon needed.
+(
+    proficiency: "light",
+    unlock_at: 1,
+    cooldown_ticks: 1200,
+    vigor: 15,
+    growth_permille: 10,
+    buff: Some((stat: Defense, permille: 250, flat: 3, duration_ticks: 600)),
+    requires_special: [("faith", 5)],
+    taught_only: true,
+    icon: "",
+)

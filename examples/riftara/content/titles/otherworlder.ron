@@ -1,0 +1,7 @@
+// "The One Who Came from Another World":
+// every summoned character has it from the start (level 1), +5% XP up to level 10.
+(
+    trigger: Level(1),
+    icon: "",
+    bonuses: [PercentUntilLevel(Xp, 5, 10)],
+)

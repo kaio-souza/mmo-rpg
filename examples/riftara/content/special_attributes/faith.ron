@@ -1,0 +1,7 @@
+// Faith: grown by the paladin and the cleric (the cleric faster);
+// every point adds a quarter of a point to Light magic in use (heals, the
+// vow), never to raising it.
+(
+    icon: "",
+    scales: [("light", 250)],
+)

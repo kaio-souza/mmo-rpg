@@ -1,0 +1,8 @@
+// Tier 1 pure damage dealer
+(
+    tier: 1,
+    level: 5,
+    requires: [Any([Attribute(Str, 18)])],
+    auto_points: (str: 3),
+    growth: [("unarmed", 1500)],
+)

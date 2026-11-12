@@ -1,0 +1,9 @@
+// Tier 3 Assassin advancement
+(
+    tier: 3,
+    parent: Some("assassin"),
+    level: 30,
+    requires: [Any([Proficiency("dagger", 25), Attribute(Agi, 50)])],
+    auto_points: (agi: 2, dex: 2),
+    growth: [("dagger", 1700)],
+)

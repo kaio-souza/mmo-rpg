@@ -1,0 +1,9 @@
+// Tier 2 - mystic going for pure intelligence/damage
+(
+    tier: 2,
+    parent: Some("mystic"),
+    level: 10,
+    requires: [Any([Attribute(Int, 35)])],
+    auto_points: (int: 3),
+    growth: [("staff", 1900)],
+)

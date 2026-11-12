@@ -1,0 +1,8 @@
+(
+    trigger: Attribute(Vit, 50),
+    icon: "",
+    bonuses: [
+        Attribute(Vit, 30),
+    ],
+    techniques: [],
+)

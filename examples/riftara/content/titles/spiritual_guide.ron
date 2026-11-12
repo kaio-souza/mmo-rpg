@@ -1,0 +1,8 @@
+(
+    trigger: Attribute(Spi, 85),
+    icon: "",
+    bonuses: [
+        Attribute(Spi, 60),
+    ],
+    techniques: [],
+)

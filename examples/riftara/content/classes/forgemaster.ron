@@ -1,0 +1,12 @@
+// Tier 2 Artisan advancement
+(
+    tier: 2,
+    parent: Some("artisan"),
+    level: 10,
+    requires: [Any([Proficiency("smithing", 20), Attribute(Str, 25)])],
+    auto_points: (str: 1, vit: 1),
+    growth: [("smithing", 2000)],
+    // Tier 2 of the Artificer (producao.md): may come out Epic.
+    craft_xp_permille: 600,
+    quality_cap: Epic,
+)

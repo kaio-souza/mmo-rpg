@@ -1,0 +1,8 @@
+(
+    trigger: Attribute(Agi, 110),
+    icon: "",
+    bonuses: [
+        Attribute(Agi, 70),
+    ],
+    techniques: [],
+)

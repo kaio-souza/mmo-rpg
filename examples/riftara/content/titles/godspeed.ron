@@ -1,0 +1,13 @@
+(
+    trigger: Attribute(Agi, 100),
+    icon: "",
+    bonuses: [
+        Attribute(Agi, 80),
+    ],
+    replaces: [
+        "swift_shadow",
+    ],
+    techniques: [
+        "quick_stab",
+    ],
+)

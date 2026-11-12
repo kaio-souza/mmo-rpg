@@ -1,0 +1,9 @@
+// Tier 2 Tank specialist
+(
+    tier: 2,
+    parent: Some("paladin"),
+    level: 10,
+    requires: [Any([Proficiency("sword", 15), Attribute(Vit, 40)])],
+    auto_points: (vit: 3, str: 1),
+    growth: [("sword", 1500)],
+)

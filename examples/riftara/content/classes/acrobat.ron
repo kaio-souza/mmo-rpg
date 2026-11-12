@@ -1,0 +1,8 @@
+// Tier 1 pure dexterity/evasion
+(
+    tier: 1,
+    level: 5,
+    requires: [Any([Attribute(Dex, 18)])],
+    auto_points: (dex: 3),
+    growth: [("dagger", 1400)],
+)

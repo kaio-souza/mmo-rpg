@@ -1,0 +1,8 @@
+// Tier 1 of Mage tree
+(
+    tier: 1,
+    level: 5,
+    requires: [Any([Proficiency("staff", 5), Attribute(Int, 15)])],
+    auto_points: (int: 2, spi: 1),
+    growth: [("staff", 1200)],
+)

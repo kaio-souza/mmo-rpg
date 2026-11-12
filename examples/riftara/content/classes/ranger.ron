@@ -1,0 +1,8 @@
+// Tier 1 of Ranger tree
+(
+    tier: 1,
+    level: 5,
+    requires: [Any([Proficiency("bow", 5), Attribute(Agi, 15)])],
+    auto_points: (agi: 2, dex: 1),
+    growth: [("bow", 1200)],
+)

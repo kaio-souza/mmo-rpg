@@ -1,0 +1,12 @@
+// Artisan: the first production class (tier 1 of the Artificer tree,
+//). Crafting gives real level XP and
+// may come out Rare.
+(
+    tier: 1,
+    level: 5,
+    requires: [Proficiency("smithing", 5)],
+    auto_points: (dex: 2, int: 1),
+    growth: [("smithing", 1200), ("mining", 1200)],
+    craft_xp_permille: 600,
+    quality_cap: Rare,
+)

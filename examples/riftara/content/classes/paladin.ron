@@ -1,0 +1,11 @@
+// Tier 1 hybrid tank/support.: grows faith (5 when earned, +1 every
+// two levels) and takes the sacred vow, a defense buff powered by faith.
+(
+    tier: 1,
+    level: 5,
+    requires: [Any([Proficiency("sword", 5), Attribute(Vit, 15)])],
+    auto_points: (str: 1, vit: 2),
+    growth: [("sword", 1200), ("light", 1000)],
+    specials: [(special: "faith", base: 5, per_level_permille: 500)],
+    techniques: ["sacred_vow"],
+)

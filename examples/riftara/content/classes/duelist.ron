@@ -1,0 +1,9 @@
+// Tier 2 - acrobat with sword mastery
+(
+    tier: 2,
+    parent: Some("acrobat"),
+    level: 10,
+    requires: [Any([Proficiency("sword", 15), Attribute(Dex, 30)])],
+    auto_points: (dex: 2, agi: 1),
+    growth: [("sword", 1800)],
+)

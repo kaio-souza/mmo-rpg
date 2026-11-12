@@ -1,0 +1,8 @@
+// Tier 1 Polearm user
+(
+    tier: 1,
+    level: 5,
+    requires: [Any([Proficiency("spear", 5), Attribute(Str, 15)])],
+    auto_points: (str: 2, dex: 1),
+    growth: [("spear", 1200)],
+)
