@@ -1,0 +1,5 @@
+// NPCs of Fenwick: the elder (work) and the trader (herbs and remedies).
+[
+    (npc: "fen_elder", pos: (x: 77, y: 132)),
+    (npc: "fen_trader", pos: (x: 92, y: 138)),
+]

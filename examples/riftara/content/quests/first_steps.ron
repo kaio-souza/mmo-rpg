@@ -1,0 +1,8 @@
+// First quest at the development field: the guide sends the player to the
+// herbalist and asks for three glowing herbs.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Talk(npc: "herbalist"), Item(item: "glow_herb", qty: 3)],
+    rewards: [Coins(150), Item(item: "travel_bread", qty: 2)],
+)

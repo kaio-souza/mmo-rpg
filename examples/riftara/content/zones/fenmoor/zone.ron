@@ -1,0 +1,13 @@
+// Fenmoor (levels 8 to 12) and the village of Fenwick (third city, safe), south
+// of the fields and the briar hills.
+(
+    origin: (x: 0, y: 64),
+    view_radius: 20,
+    spawn: (x: 78, y: 143),
+    spawn_radius: 2,
+    regions: [
+        (kind: Safe, min: (x: 58, y: 126), max: (x: 98, y: 154)),
+        // The village workbench, by the trader.
+        (kind: Workshop, min: (x: 88, y: 134), max: (x: 96, y: 142)),
+    ],
+)

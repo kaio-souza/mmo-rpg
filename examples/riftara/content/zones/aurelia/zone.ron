@@ -1,0 +1,18 @@
+// Aurelia, the starting city. New
+// characters appear on the summoning circle in the plaza. Safe inside the
+// walls; outside, the farms with the tutorial rats and the roads south (the
+// fields) and south west (Whisperwood) cross the seam band.
+(
+    origin: (x: -32, y: -96),
+    view_radius: 20,
+    spawn: (x: 32, y: -44),
+    spawn_radius: 2,
+    regions: [
+        (kind: Safe, min: (x: -23, y: -89), max: (x: 86, y: -29)),
+        // Workshops: the forge by the smith and the herbalist's
+        // bench. Outside a production class, crafting happens only here.
+        (kind: Workshop, min: (x: 1, y: -60), max: (x: 9, y: -52)),
+        (kind: Workshop, min: (x: -17, y: -60), max: (x: -9, y: -52)),
+    ],
+    starting: true,
+)

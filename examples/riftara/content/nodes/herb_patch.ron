@@ -1,0 +1,9 @@
+// Herb patch (alpha): gathered with Herbalism. Sunroot and moonflower, the
+// alchemy herbs, so alchemy no longer needs the store.
+(
+    sprite: "herb_patch",
+    proficiency: "herbalism",
+    cooldown_ticks: 450,
+    loot: "herb_patch",
+    xp: 10,
+)

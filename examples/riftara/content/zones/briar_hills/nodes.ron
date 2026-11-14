@@ -1,0 +1,5 @@
+// Resource nodes of the briar hills.
+[
+    (node: "copper_vein", pos: (x: 88, y: 34)),
+    (node: "herb_patch", pos: (x: 74, y: 48)),
+]

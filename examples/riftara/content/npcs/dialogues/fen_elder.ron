@@ -1,0 +1,73 @@
+// Dialogue of the elder of Fenwick (alpha): the herbalist's letter, the marsh
+// remedy, the hag, and wisp essence again once an hour.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.fen_elder.greeting",
+            options: [
+                (
+                    text: "npc.fen_elder.option.letter",
+                    next: "paid",
+                    when: QuestReady("letter_to_fenwick"),
+                    effects: [CompleteQuest("letter_to_fenwick")],
+                ),
+                (text: "npc.fen_elder.option.work", next: "work"),
+                (
+                    text: "npc.fen_elder.option.remedy",
+                    next: "paid",
+                    when: QuestReady("marsh_remedy"),
+                    effects: [CompleteQuest("marsh_remedy")],
+                ),
+                (
+                    text: "npc.fen_elder.option.charm",
+                    next: "paid",
+                    when: QuestReady("hags_curse"),
+                    effects: [CompleteQuest("hags_curse")],
+                ),
+                (
+                    text: "npc.fen_elder.option.essence",
+                    next: "paid",
+                    when: QuestReady("wisp_lights"),
+                    effects: [CompleteQuest("wisp_lights")],
+                ),
+                (text: "npc.fen_elder.option.bye"),
+            ],
+        ),
+        "work": (
+            text: "npc.fen_elder.work",
+            options: [
+                (
+                    text: "npc.fen_elder.option.take_remedy",
+                    next: "taken",
+                    when: Quest(quest: "marsh_remedy", state: NotStarted),
+                    effects: [StartQuest("marsh_remedy")],
+                ),
+                (
+                    text: "npc.fen_elder.option.take_hag",
+                    next: "taken",
+                    when: All([Quest(quest: "marsh_remedy", state: Completed), Quest(quest: "hags_curse", state: NotStarted)]),
+                    effects: [StartQuest("hags_curse")],
+                ),
+                (
+                    text: "npc.fen_elder.option.take_wisps",
+                    next: "taken",
+                    when: Quest(quest: "wisp_lights", state: NotStarted),
+                    effects: [StartQuest("wisp_lights")],
+                ),
+                (text: "npc.fen_elder.option.back", next: "greeting"),
+            ],
+        ),
+        "taken": (
+            text: "npc.fen_elder.taken",
+            options: [(text: "npc.fen_elder.option.bye")],
+        ),
+        "paid": (
+            text: "npc.fen_elder.paid",
+            options: [
+                (text: "npc.fen_elder.option.back", next: "greeting"),
+                (text: "npc.fen_elder.option.bye"),
+            ],
+        ),
+    },
+)

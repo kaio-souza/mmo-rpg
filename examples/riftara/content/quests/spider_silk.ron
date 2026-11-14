@@ -1,0 +1,9 @@
+// Repeatable guild work (phase 10): silk from the briar spiders, again once
+// an hour (alpha playtest: it repeated without a pause).
+(
+    rank: F,
+    repeatable: true,
+    cooldown_secs: 3600,
+    objectives: [Item(item: "spider_silk", qty: 4)],
+    rewards: [Coins(120)],
+)

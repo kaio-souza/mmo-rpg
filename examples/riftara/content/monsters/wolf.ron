@@ -1,0 +1,9 @@
+// Field wolf: the first enemy.
+(
+    level: 2, hp: 28, attributes: (str: 6, vit: 5, agi: 6, dex: 5),
+    damage: (2, 4), defense: 1, attack_ticks: 30,
+    aggro_radius: 4, leash: 14, respawn_ticks: 400, xp: 40, sprite: "wolf", icon: "wolf",
+    coins: (2, 8),
+    loot: [(item: "wolf_pelt", chance: 600), (item: "hunting_knife", chance: 30)],
+    loot_table: "beast_parts",
+)

@@ -1,0 +1,10 @@
+// Monsters of the briar hills: the spider hollow (north west), the goblin
+// camp (east of the road) and the shaman stones (south east).
+// Hill goblins forage on the slope north of their camp (one at a time,
+// for the rank F work); brutes keep the palisade.
+[
+    (monster: "briar_spider", pos: (x: 82, y: 11), count: 4, radius: 6),
+    (monster: "hill_goblin", pos: (x: 113, y: 12), count: 5, radius: 7),
+    (monster: "goblin_brute", pos: (x: 114, y: 28), count: 2, radius: 4),
+    (monster: "goblin_shaman", pos: (x: 118, y: 53), count: 2, radius: 4),
+]

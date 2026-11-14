@@ -1,0 +1,7 @@
+// Captain (alpha): wolves of the fields.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Item(item: "wolf_pelt", qty: 5)],
+    rewards: [Coins(250), Item(item: "minor_health_potion", qty: 2)],
+)

@@ -1,0 +1,8 @@
+// Veins of the mines: iron and copper near the mouth, silver deep inside.
+[
+    (node: "iron_vein", pos: (x: 158, y: -59)),
+    (node: "copper_vein", pos: (x: 144, y: -64)),
+    (node: "iron_vein", pos: (x: 179, y: -67)),
+    (node: "silver_vein", pos: (x: 144, y: -90)),
+    (node: "silver_vein", pos: (x: 164, y: -91)),
+]

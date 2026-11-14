@@ -1,0 +1,34 @@
+// Dialogue of the combat instructor (phase 10): step two of `arrival`
+// (talking counts) and the first technique, Kick, free.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.instructor.greeting",
+            options: [
+                (
+                    text: "npc.instructor.option.teach",
+                    next: "taught",
+                    when: Not(TechniqueKnown("kick")),
+                    effects: [LearnTechnique("kick")],
+                ),
+                (text: "npc.instructor.option.fight", next: "fight"),
+                (text: "npc.instructor.option.bye"),
+            ],
+        ),
+        "taught": (
+            text: "npc.instructor.taught",
+            options: [
+                (text: "npc.instructor.option.fight", next: "fight"),
+                (text: "npc.instructor.option.bye"),
+            ],
+        ),
+        "fight": (
+            text: "npc.instructor.fight",
+            options: [
+                (text: "npc.instructor.option.back", next: "greeting"),
+                (text: "npc.instructor.option.bye"),
+            ],
+        ),
+    },
+)

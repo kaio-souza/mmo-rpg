@@ -1,0 +1,9 @@
+// Ironridge mines (levels 10 to 14), north of Stonebrook. The spawn is only
+// used by the restart of a zone.
+(
+    origin: (x: 128, y: -96),
+    view_radius: 20,
+    spawn: (x: 158, y: -61),
+    spawn_radius: 2,
+    regions: [(kind: Safe, min: (x: 155, y: -64), max: (x: 162, y: -57))],
+)

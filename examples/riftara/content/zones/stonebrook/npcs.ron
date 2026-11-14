@@ -1,0 +1,5 @@
+// NPCs of Stonebrook: the mine foreman (work) and the quartermaster (shop).
+[
+    (npc: "foreman", pos: (x: 161, y: 17)),
+    (npc: "quartermaster", pos: (x: 180, y: 17)),
+]

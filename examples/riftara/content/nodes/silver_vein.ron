@@ -1,0 +1,8 @@
+// Silver vein (alpha): deep in the Ironridge mines; slower to come back.
+(
+    sprite: "silver_vein",
+    proficiency: "mining",
+    cooldown_ticks: 900,
+    loot: "silver_vein",
+    xp: 20,
+)

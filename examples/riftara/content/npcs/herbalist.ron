@@ -1,0 +1,3 @@
+// Herbalist in Aurelia's market quarter (alpha): gives the herbs of `first_steps`
+// with a TopUpItem effect. Name: `npc.herbalist.name`.
+(sprite: "herbalist", dialogue: "herbalist")

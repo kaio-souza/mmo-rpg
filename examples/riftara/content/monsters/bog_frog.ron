@@ -1,0 +1,8 @@
+// Bog frog: the pools along the boardwalks of Fenmoor (alpha, level 8).
+(
+    level: 8, hp: 110, attributes: (str: 12, vit: 14, agi: 10, dex: 8),
+    damage: (5, 10), defense: 6, attack_ticks: 39,
+    aggro_radius: 4, leash: 10, respawn_ticks: 700, xp: 520, sprite: "bog_frog", icon: "bog_frog",
+    coins: (8, 20),
+    loot: [(item: "frog_leg", chance: 800)],
+)

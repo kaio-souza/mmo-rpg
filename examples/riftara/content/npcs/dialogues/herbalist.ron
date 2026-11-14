@@ -1,0 +1,101 @@
+// Dialogue of the herbalist. The gift option shows only during the quest
+// and while the player lacks herbs; it tops them up to three. She also
+// teaches the alchemy recipes for coins (about 100 copper per point the
+// recipe asks for), and the first Light magic, minor heal.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.herbalist.greeting",
+            options: [
+                (
+                    text: "npc.herbalist.option.sent",
+                    next: "gift",
+                    when: All([
+                        Quest(quest: "first_steps", state: Active),
+                        Not(Item(item: "glow_herb", qty: 3)),
+                    ]),
+                    effects: [TopUpItem(item: "glow_herb", qty: 3), Affinity(5)],
+                ),
+                (text: "npc.herbalist.option.lessons", next: "lessons"),
+                (
+                    text: "npc.herbalist.option.letter",
+                    next: "letter",
+                    when: Quest(quest: "letter_to_fenwick", state: NotStarted),
+                    effects: [StartQuest("letter_to_fenwick")],
+                ),
+                (text: "npc.herbalist.option.bye"),
+            ],
+        ),
+        "letter": (
+            text: "npc.herbalist.letter",
+            options: [(text: "npc.herbalist.option.bye")],
+        ),
+        "lessons": (
+            text: "npc.herbalist.lessons",
+            options: [
+                (
+                    text: "npc.herbalist.option.learn_minor_health_potion",
+                    next: "taught",
+                    when: Not(RecipeKnown("minor_health_potion")),
+                    effects: [TakeCoins(200), LearnRecipe("minor_health_potion")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_vigor_elixir",
+                    next: "taught",
+                    when: Not(RecipeKnown("vigor_elixir")),
+                    effects: [TakeCoins(300), LearnRecipe("vigor_elixir")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_mana_tonic",
+                    next: "taught",
+                    when: Not(RecipeKnown("mana_tonic")),
+                    effects: [TakeCoins(300), LearnRecipe("mana_tonic")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_minor_heal",
+                    next: "taught",
+                    when: Not(TechniqueKnown("minor_heal")),
+                    effects: [TakeCoins(300), LearnTechnique("minor_heal")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_revival_draught",
+                    next: "taught",
+                    when: Not(RecipeKnown("revival_draught")),
+                    effects: [TakeCoins(500), LearnRecipe("revival_draught")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_health_potion",
+                    next: "taught",
+                    when: Not(RecipeKnown("health_potion")),
+                    effects: [TakeCoins(500), LearnRecipe("health_potion")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_greater_vigor_elixir",
+                    next: "taught",
+                    when: Not(RecipeKnown("greater_vigor_elixir")),
+                    effects: [TakeCoins(800), LearnRecipe("greater_vigor_elixir")],
+                ),
+                (
+                    text: "npc.herbalist.option.learn_greater_health_potion",
+                    next: "taught",
+                    when: Not(RecipeKnown("greater_health_potion")),
+                    effects: [TakeCoins(1000), LearnRecipe("greater_health_potion")],
+                ),
+                // No "bye" here: nine options at most; "back" leads to it.
+                (text: "npc.herbalist.option.back", next: "greeting"),
+            ],
+        ),
+        "taught": (
+            text: "npc.herbalist.taught",
+            options: [
+                (text: "npc.herbalist.option.back", next: "greeting"),
+                (text: "npc.herbalist.option.bye"),
+            ],
+        ),
+        "gift": (
+            text: "npc.herbalist.gift",
+            options: [(text: "npc.herbalist.option.bye")],
+        ),
+    },
+)

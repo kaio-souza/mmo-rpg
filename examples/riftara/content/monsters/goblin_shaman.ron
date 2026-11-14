@@ -1,0 +1,8 @@
+// Goblin shaman: the stones behind the goblin camp (phase 10, level 6).
+(
+    level: 6, hp: 110, attributes: (str: 9, vit: 11, agi: 8, dex: 12),
+    damage: (6, 11), defense: 5, attack_ticks: 36,
+    aggro_radius: 5, leash: 10, range: 5, respawn_ticks: 900, xp: 320, sprite: "goblin_shaman", icon: "goblin_shaman",
+    coins: (15, 40),
+    loot: [(item: "goblin_ear", chance: 900, qty: (1, 2)), (item: "oak_staff", chance: 60), (item: "wool_robe", chance: 60)],
+)

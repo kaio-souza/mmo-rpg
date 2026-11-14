@@ -1,0 +1,8 @@
+// Marsh slime: slow and tough, east Fenmoor (alpha, level 9).
+(
+    level: 9, hp: 170, attributes: (str: 12, vit: 18, agi: 4, dex: 6),
+    damage: (6, 12), defense: 9, attack_ticks: 52,
+    aggro_radius: 3, leash: 8, respawn_ticks: 900, xp: 600, sprite: "marsh_slime", icon: "marsh_slime",
+    coins: (10, 30),
+    loot: [(item: "slime_gel", chance: 800), (item: "minor_health_potion", chance: 50)],
+)

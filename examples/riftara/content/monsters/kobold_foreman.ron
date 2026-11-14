@@ -1,0 +1,8 @@
+// Kobold foreman: drives the diggers, north east in the mines (alpha, level 13).
+(
+    level: 13, hp: 245, attributes: (str: 19, vit: 18, agi: 12, dex: 14),
+    damage: (12, 21), defense: 14, attack_ticks: 42,
+    aggro_radius: 4, leash: 10, respawn_ticks: 1500, xp: 980, sprite: "kobold_foreman", icon: "kobold_foreman",
+    coins: (40, 100),
+    loot: [(item: "kobold_candle", chance: 900, qty: (1, 2)), (item: "silver_ore", chance: 300), (item: "iron_hammer", chance: 60), (item: "iron_chainmail", chance: 40)],
+)

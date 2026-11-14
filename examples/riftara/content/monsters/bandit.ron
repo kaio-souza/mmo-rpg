@@ -1,0 +1,9 @@
+// Alpha: the bandit camp of Whisperwood; badges for the captain.
+// dragon_scale: contraband a bandit may carry, the only source until bosses.
+(
+    level: 9, hp: 115, attributes: (str: 16, vit: 14, agi: 12, dex: 12),
+    damage: (7, 13), defense: 10, attack_ticks: 42,
+    aggro_radius: 4, leash: 14, respawn_ticks: 1200, xp: 600, sprite: "bandit", icon: "bandit",
+    coins: (30, 80),
+    loot: [(item: "bandit_badge", chance: 700), (item: "rusty_sword", chance: 120), (item: "leather_armor", chance: 120), (item: "hunting_knife", chance: 120), (item: "dragon_scale", chance: 2)],
+)

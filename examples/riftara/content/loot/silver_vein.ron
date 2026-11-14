@@ -1,0 +1,6 @@
+// What one gathering of a silver vein yields (alpha). Mithril stays rare.
+(entries: [
+    (item: "silver_ore", chance: 1000, qty: (1, 2)),
+    (item: "iron_ore", chance: 400, qty: (1, 2)),
+    (item: "mithril_ore", chance: 15),
+])

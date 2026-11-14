@@ -1,0 +1,50 @@
+// Dialogue of the ranger of Whisperwood (alpha): ends the captain's patrol and
+// pays for dire wolf fangs.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.ranger.greeting",
+            options: [
+                (
+                    text: "npc.ranger.option.patrol",
+                    next: "paid",
+                    when: QuestReady("forest_patrol"),
+                    effects: [CompleteQuest("forest_patrol")],
+                ),
+                (text: "npc.ranger.option.forest", next: "forest"),
+                (
+                    text: "npc.ranger.option.take_fangs",
+                    next: "taken",
+                    when: Quest(quest: "dire_fangs", state: NotStarted),
+                    effects: [StartQuest("dire_fangs")],
+                ),
+                (
+                    text: "npc.ranger.option.fangs",
+                    next: "paid",
+                    when: QuestReady("dire_fangs"),
+                    effects: [CompleteQuest("dire_fangs")],
+                ),
+                (text: "npc.ranger.option.bye"),
+            ],
+        ),
+        "forest": (
+            text: "npc.ranger.forest",
+            options: [
+                (text: "npc.ranger.option.back", next: "greeting"),
+                (text: "npc.ranger.option.bye"),
+            ],
+        ),
+        "taken": (
+            text: "npc.ranger.taken",
+            options: [(text: "npc.ranger.option.bye")],
+        ),
+        "paid": (
+            text: "npc.ranger.paid",
+            options: [
+                (text: "npc.ranger.option.back", next: "greeting"),
+                (text: "npc.ranger.option.bye"),
+            ],
+        ),
+    },
+)

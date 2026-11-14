@@ -1,0 +1,74 @@
+// Dialogue of the mine foreman of Stonebrook (alpha): welcomes those the guild
+// sends, and hands out the work of the Ironridge mines (bat wings again once
+// an hour).
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.foreman.greeting",
+            options: [
+                (
+                    text: "npc.foreman.option.sent",
+                    next: "paid",
+                    when: QuestReady("road_to_stonebrook"),
+                    effects: [CompleteQuest("road_to_stonebrook")],
+                ),
+                (text: "npc.foreman.option.work", next: "work"),
+                (
+                    text: "npc.foreman.option.wings",
+                    next: "paid",
+                    when: QuestReady("bat_wings"),
+                    effects: [CompleteQuest("bat_wings")],
+                ),
+                (
+                    text: "npc.foreman.option.candles",
+                    next: "paid",
+                    when: QuestReady("kobold_candles"),
+                    effects: [CompleteQuest("kobold_candles")],
+                ),
+                (
+                    text: "npc.foreman.option.core",
+                    next: "paid",
+                    when: QuestReady("heart_of_stone"),
+                    effects: [CompleteQuest("heart_of_stone")],
+                ),
+                (text: "npc.foreman.option.bye"),
+            ],
+        ),
+        "work": (
+            text: "npc.foreman.work",
+            options: [
+                (
+                    text: "npc.foreman.option.take_wings",
+                    next: "taken",
+                    when: Quest(quest: "bat_wings", state: NotStarted),
+                    effects: [StartQuest("bat_wings")],
+                ),
+                (
+                    text: "npc.foreman.option.take_candles",
+                    next: "taken",
+                    when: Quest(quest: "kobold_candles", state: NotStarted),
+                    effects: [StartQuest("kobold_candles")],
+                ),
+                (
+                    text: "npc.foreman.option.take_core",
+                    next: "taken",
+                    when: All([Quest(quest: "kobold_candles", state: Completed), Quest(quest: "heart_of_stone", state: NotStarted)]),
+                    effects: [StartQuest("heart_of_stone")],
+                ),
+                (text: "npc.foreman.option.back", next: "greeting"),
+            ],
+        ),
+        "taken": (
+            text: "npc.foreman.taken",
+            options: [(text: "npc.foreman.option.bye")],
+        ),
+        "paid": (
+            text: "npc.foreman.paid",
+            options: [
+                (text: "npc.foreman.option.back", next: "greeting"),
+                (text: "npc.foreman.option.bye"),
+            ],
+        ),
+    },
+)

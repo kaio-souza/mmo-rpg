@@ -1,0 +1,61 @@
+// Dialogue of the captain of the guard at Aurelia's south gate (alpha):
+// wolves of the fields, the patrol to Whisperwood, then the bandit camp.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.captain.greeting",
+            options: [
+                (text: "npc.captain.option.work", next: "work"),
+                (
+                    text: "npc.captain.option.pelts",
+                    next: "paid",
+                    when: QuestReady("wolf_cull"),
+                    effects: [CompleteQuest("wolf_cull")],
+                ),
+                (
+                    text: "npc.captain.option.badges",
+                    next: "paid",
+                    when: QuestReady("bandit_badges"),
+                    effects: [CompleteQuest("bandit_badges")],
+                ),
+                (text: "npc.captain.option.bye"),
+            ],
+        ),
+        "work": (
+            text: "npc.captain.work",
+            options: [
+                (
+                    text: "npc.captain.option.take_wolves",
+                    next: "taken",
+                    when: Quest(quest: "wolf_cull", state: NotStarted),
+                    effects: [StartQuest("wolf_cull")],
+                ),
+                (
+                    text: "npc.captain.option.take_patrol",
+                    next: "taken",
+                    when: Quest(quest: "forest_patrol", state: NotStarted),
+                    effects: [StartQuest("forest_patrol")],
+                ),
+                (
+                    text: "npc.captain.option.take_bandits",
+                    next: "taken",
+                    when: All([Quest(quest: "forest_patrol", state: Completed), Quest(quest: "bandit_badges", state: NotStarted)]),
+                    effects: [StartQuest("bandit_badges")],
+                ),
+                (text: "npc.captain.option.back", next: "greeting"),
+            ],
+        ),
+        "taken": (
+            text: "npc.captain.taken",
+            options: [(text: "npc.captain.option.bye")],
+        ),
+        "paid": (
+            text: "npc.captain.paid",
+            options: [
+                (text: "npc.captain.option.back", next: "greeting"),
+                (text: "npc.captain.option.bye"),
+            ],
+        ),
+    },
+)

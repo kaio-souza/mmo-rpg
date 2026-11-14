@@ -1,0 +1,11 @@
+// Whisperwood (levels 5 to 9), west of the fields: the ranger's lodge is the
+// only safe clearing.
+(
+    origin: (x: -64, y: 0),
+    view_radius: 20,
+    spawn: (x: -49, y: 36),
+    spawn_radius: 2,
+    regions: [
+        (kind: Safe, min: (x: -56, y: 28), max: (x: -40, y: 42)),
+    ],
+)

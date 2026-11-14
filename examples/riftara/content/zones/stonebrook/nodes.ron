@@ -1,0 +1,7 @@
+// Veins and herbs around Stonebrook.
+[
+    (node: "copper_vein", pos: (x: 164, y: -14)),
+    (node: "copper_vein", pos: (x: 175, y: -18)),
+    (node: "iron_vein", pos: (x: 148, y: -8)),
+    (node: "herb_patch", pos: (x: 144, y: 28)),
+]

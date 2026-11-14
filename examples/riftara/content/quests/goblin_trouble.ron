@@ -1,0 +1,7 @@
+// First guild work (phase 10): goblins of the briar hills, five ears.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Item(item: "goblin_ear", qty: 5)],
+    rewards: [Coins(400), Item(item: "health_potion", qty: 2)],
+)

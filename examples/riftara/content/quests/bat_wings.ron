@@ -1,0 +1,8 @@
+// Foreman (alpha, repeatable once an hour): bat wings.
+(
+    rank: E,
+    repeatable: true,
+    cooldown_secs: 3600,
+    objectives: [Item(item: "bat_wing", qty: 6)],
+    rewards: [Coins(600)],
+)

@@ -1,0 +1,4 @@
+// NPCs of Whisperwood: the ranger at the lodge.
+[
+    (npc: "ranger", pos: (x: -46, y: 38)),
+]

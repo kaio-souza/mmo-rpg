@@ -1,0 +1,9 @@
+// Monsters of Fenmoor: frogs by the north boardwalk, slimes to the east,
+// wisps in the west, and the swamp hag alone on her island.
+[
+    (monster: "bog_frog", pos: (x: 34, y: 94), count: 5, radius: 7),
+    (monster: "bog_frog", pos: (x: 50, y: 112), count: 4, radius: 6),
+    (monster: "marsh_slime", pos: (x: 104, y: 100), count: 5, radius: 7),
+    (monster: "fen_wisp", pos: (x: 21, y: 129), count: 3, radius: 5),
+    (monster: "swamp_hag", pos: (x: 17, y: 153), count: 1, radius: 1),
+]

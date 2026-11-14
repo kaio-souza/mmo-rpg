@@ -1,0 +1,15 @@
+// The forge: buys parts, sells metal and repairs equipment.
+(
+    repairs: true,
+    // Appraises for those who cannot.
+    appraises: true,
+    // What it pays each player per hour: selling everything in
+    // one town runs dry, other towns pay too.
+    purse: Some((coins: 5000, refill_secs: 3600)),
+    stock: [
+        (item: "iron_ore", qty: 20, restock_ticks: 1200),
+        (item: "iron_ingot", qty: 10, restock_ticks: 1800),
+        // No wood yet, so the wooden spear is bought.
+        (item: "wooden_spear", qty: 2, restock_ticks: 3600),
+    ],
+)

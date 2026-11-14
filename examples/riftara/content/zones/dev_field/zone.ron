@@ -1,0 +1,14 @@
+// The fields south of Aurelia (levels 1 to 5).
+// Four neighbors leave only the center out of the seam bands: the duel ring
+// (PvP) sits there, beside the crossroads.
+(
+    origin: (x: 0, y: 0),
+    view_radius: 20,
+    spawn: (x: 28, y: 30),
+    spawn_radius: 3,
+    regions: [
+        (kind: Pvp, min: (x: 34, y: 26), max: (x: 39, y: 37)),
+        // Crossroads camp: the revive point is out of reach of monsters.
+        (kind: Safe, min: (x: 25, y: 27), max: (x: 32, y: 34)),
+    ],
+)

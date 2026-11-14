@@ -1,0 +1,20 @@
+// The store of the development field (phase 7): food and starting gear.
+(
+    repairs: false,
+    // What it pays each player per hour: selling everything in
+    // one town runs dry, other towns pay too.
+    purse: Some((coins: 3000, refill_secs: 3600)),
+    stock: [
+        (item: "travel_bread", qty: 0),
+        (item: "rusty_sword", qty: 2, restock_ticks: 2400),
+        (item: "leather_armor", qty: 1, restock_ticks: 6000),
+        // Light for the night.
+        (item: "torch", qty: 5, restock_ticks: 1200),
+        // Herbs and cloth until there is an herb node and tailoring.
+        (item: "sunroot", qty: 10, restock_ticks: 1200),
+        (item: "moonflower", qty: 6, restock_ticks: 1800),
+        (item: "wool_robe", qty: 1, restock_ticks: 6000),
+        // Revival for groups.
+        (item: "revival_draught", qty: 3, restock_ticks: 3000),
+    ],
+)

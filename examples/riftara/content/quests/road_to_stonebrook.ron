@@ -1,0 +1,7 @@
+// Guild clerk (alpha): walk to the foreman of Stonebrook.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Talk(npc: "foreman")],
+    rewards: [Coins(200)],
+)

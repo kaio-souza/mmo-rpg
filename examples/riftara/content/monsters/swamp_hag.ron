@@ -1,0 +1,8 @@
+// Swamp hag: alone on her island in Fenmoor, the marsh's elite (alpha, level 12).
+(
+    level: 12, hp: 390, attributes: (str: 14, vit: 20, agi: 12, dex: 18),
+    damage: (12, 20), defense: 12, attack_ticks: 44,
+    aggro_radius: 6, leash: 12, respawn_ticks: 6000, xp: 2600, sprite: "swamp_hag", icon: "swamp_hag",
+    coins: (120, 300),
+    loot: [(item: "hag_charm", chance: 1000), (item: "oak_staff", chance: 200), (item: "iron_staff", chance: 100), (item: "greater_health_potion", chance: 300, qty: (1, 2)), (item: "dragon_scale", chance: 20)],
+)

@@ -1,0 +1,10 @@
+// Tutorial of the summoned,
+// five steps: the summoner gives it; learn a technique with the instructor;
+// cross the road to the guide on the field; hunt three rats and keep their
+// tails; register at the Adventurers' Guild, which completes it.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Talk(npc: "instructor"), Talk(npc: "guide"), Item(item: "rat_tail", qty: 3)],
+    rewards: [Coins(100), Item(item: "guild_card", qty: 1), Item(item: "minor_health_potion", qty: 2)],
+)

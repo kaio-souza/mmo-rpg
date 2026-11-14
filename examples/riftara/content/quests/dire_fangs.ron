@@ -1,0 +1,7 @@
+// Ranger (alpha): the dire wolf den.
+(
+    rank: E,
+    repeatable: false,
+    objectives: [Item(item: "dire_fang", qty: 4)],
+    rewards: [Coins(800)],
+)

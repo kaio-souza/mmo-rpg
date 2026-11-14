@@ -1,0 +1,7 @@
+// Captain (alpha): the bandit camp of Whisperwood.
+(
+    rank: E,
+    repeatable: false,
+    objectives: [Item(item: "bandit_badge", qty: 6)],
+    rewards: [Coins(1200), Item(item: "health_potion", qty: 2)],
+)

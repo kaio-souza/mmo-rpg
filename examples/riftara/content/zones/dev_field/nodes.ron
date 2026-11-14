@@ -1,0 +1,8 @@
+// Resource nodes of the fields: content id and tile.
+[
+    (node: "iron_vein", pos: (x: 46, y: 16)),
+    (node: "iron_vein", pos: (x: 50, y: 16)),
+    (node: "herb_patch", pos: (x: 10, y: 12)),
+    (node: "herb_patch", pos: (x: 20, y: 46)),
+    (node: "herb_patch", pos: (x: 44, y: 30)),
+]

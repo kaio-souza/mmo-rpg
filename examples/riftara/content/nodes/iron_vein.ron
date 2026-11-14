@@ -1,0 +1,9 @@
+// Iron vein: mined with the Mining proficiency, back after 30 s for
+// whoever emptied it.
+(
+    sprite: "iron_vein",
+    proficiency: "mining",
+    cooldown_ticks: 600,
+    loot: "iron_vein",
+    xp: 12,
+)

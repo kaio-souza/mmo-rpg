@@ -1,0 +1,5 @@
+// What one gathering of an herb patch yields (alpha).
+(entries: [
+    (item: "sunroot", chance: 1000, qty: (1, 2)),
+    (item: "moonflower", chance: 350),
+])

@@ -1,0 +1,7 @@
+(
+    origin: (x: 192, y: -104),
+    view_radius: 20,
+    spawn: (x: 255, y: -68),
+    spawn_radius: 3,
+    regions: [(kind: Safe, min: (x: 218, y: -78), max: (x: 230, y: -66))],
+)

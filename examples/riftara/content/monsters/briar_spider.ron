@@ -1,0 +1,8 @@
+// Briar spider: the hollow of the briar hills (phase 10, levels 3 to 4).
+(
+    level: 3, hp: 40, attributes: (str: 7, vit: 6, agi: 8, dex: 7),
+    damage: (2, 5), defense: 2, attack_ticks: 26,
+    aggro_radius: 4, leash: 12, respawn_ticks: 500, xp: 80, sprite: "briar_spider", icon: "briar_spider",
+    coins: (3, 9),
+    loot: [(item: "spider_silk", chance: 700), (item: "minor_health_potion", chance: 40)],
+)

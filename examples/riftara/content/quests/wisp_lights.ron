@@ -1,0 +1,8 @@
+// Elder of Fenwick (alpha, repeatable once an hour): wisp essence.
+(
+    rank: E,
+    repeatable: true,
+    cooldown_secs: 3600,
+    objectives: [Item(item: "wisp_essence", qty: 3)],
+    rewards: [Coins(500)],
+)

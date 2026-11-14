@@ -1,0 +1,8 @@
+// Copper vein (alpha): mined with Mining, around Stonebrook and in the mines.
+(
+    sprite: "copper_vein",
+    proficiency: "mining",
+    cooldown_ticks: 600,
+    loot: "copper_vein",
+    xp: 12,
+)

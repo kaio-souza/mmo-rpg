@@ -1,0 +1,9 @@
+// Dire wolf: the den of Whisperwood (alpha, level 8).
+(
+    level: 8, hp: 100, attributes: (str: 15, vit: 13, agi: 12, dex: 10),
+    damage: (6, 12), defense: 7, attack_ticks: 34,
+    aggro_radius: 4, leash: 16, respawn_ticks: 900, xp: 520, sprite: "dire_wolf", icon: "dire_wolf",
+    coins: (10, 25),
+    loot: [(item: "dire_fang", chance: 700), (item: "wolf_pelt", chance: 800, qty: (1, 2))],
+    loot_table: "beast_parts",
+)

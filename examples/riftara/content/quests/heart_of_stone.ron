@@ -1,0 +1,7 @@
+// Foreman (alpha): the rock golem at the deep end.
+(
+    rank: D,
+    repeatable: false,
+    objectives: [Item(item: "golem_core", qty: 1)],
+    rewards: [Coins(3000), Item(item: "greater_health_potion", qty: 3)],
+)

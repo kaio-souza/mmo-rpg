@@ -1,0 +1,9 @@
+// Monsters of the mines, one cave each: bats, kobold diggers, spiders, the
+// overseers and the golem at the deep end.
+[
+    (monster: "cave_bat", pos: (x: 141, y: -68), count: 5, radius: 7),
+    (monster: "kobold_miner", pos: (x: 176, y: -69), count: 4, radius: 8),
+    (monster: "cave_spider", pos: (x: 141, y: -87), count: 3, radius: 6),
+    (monster: "kobold_foreman", pos: (x: 177, y: -87), count: 2, radius: 4),
+    (monster: "rock_golem", pos: (x: 159, y: -90), count: 1, radius: 2),
+]

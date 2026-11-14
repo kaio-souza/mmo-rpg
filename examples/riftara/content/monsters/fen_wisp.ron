@@ -1,0 +1,8 @@
+// Fen wisp: a light over the west marsh that bites (alpha, level 10). Glows at night.
+(
+    level: 10, hp: 100, attributes: (str: 8, vit: 10, agi: 18, dex: 16),
+    damage: (8, 14), defense: 6, attack_ticks: 36,
+    aggro_radius: 4, leash: 12, respawn_ticks: 1200, xp: 680, sprite: "fen_wisp", icon: "fen_wisp",
+    coins: (15, 40),
+    loot: [(item: "wisp_essence", chance: 600), (item: "moonflower", chance: 300)],
+)

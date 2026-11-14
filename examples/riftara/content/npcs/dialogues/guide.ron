@@ -1,0 +1,68 @@
+// Dialogue of the guide. Node names are ids; every text is a key with
+// the ten locales in content/text/<locale>/npcs.ron. Options with `when`
+// show only while it holds; `effects` run all or nothing.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.guide.greeting",
+            options: [
+                (text: "npc.guide.option.where", next: "where"),
+                (
+                    text: "npc.guide.option.sent",
+                    next: "rats",
+                    when: Quest(quest: "arrival", state: Active),
+                ),
+                (text: "npc.guide.option.system", next: "system"),
+                (
+                    text: "npc.guide.option.work",
+                    next: "offer",
+                    when: Quest(quest: "first_steps", state: NotStarted),
+                ),
+                (
+                    text: "npc.guide.option.done",
+                    next: "thanks",
+                    when: QuestReady("first_steps"),
+                    effects: [CompleteQuest("first_steps")],
+                ),
+                (text: "npc.guide.option.bye"),
+            ],
+        ),
+        "rats": (
+            text: "npc.guide.rats",
+            options: [
+                (text: "npc.guide.option.back", next: "greeting"),
+                (text: "npc.guide.option.bye"),
+            ],
+        ),
+        "where": (
+            text: "npc.guide.where",
+            options: [
+                (text: "npc.guide.option.back", next: "greeting"),
+                (text: "npc.guide.option.bye"),
+            ],
+        ),
+        "system": (
+            text: "npc.guide.system",
+            options: [
+                (text: "npc.guide.option.back", next: "greeting"),
+                (text: "npc.guide.option.bye"),
+            ],
+        ),
+        "offer": (
+            text: "npc.guide.offer",
+            options: [
+                (text: "npc.guide.option.accept", next: "accepted", effects: [StartQuest("first_steps")]),
+                (text: "npc.guide.option.back", next: "greeting"),
+            ],
+        ),
+        "accepted": (
+            text: "npc.guide.accepted",
+            options: [(text: "npc.guide.option.bye")],
+        ),
+        "thanks": (
+            text: "npc.guide.thanks",
+            options: [(text: "npc.guide.option.bye")],
+        ),
+    },
+)

@@ -1,0 +1,14 @@
+// NPCs of Aurelia: content id and tile (global coordinates). The plaza
+// (summoner), the guild hall (clerk), the training yard (instructor), the
+// market quarter (smith, herbalist, merchant) and the south gate (captain,
+// guide).
+[
+    (npc: "summoner", pos: (x: 35, y: -44)),
+    (npc: "guild_clerk", pos: (x: 32, y: -76)),
+    (npc: "instructor", pos: (x: 69, y: -45)),
+    (npc: "smith", pos: (x: 5, y: -56)),
+    (npc: "herbalist", pos: (x: -13, y: -56)),
+    (npc: "merchant", pos: (x: -1, y: -36)),
+    (npc: "captain", pos: (x: 27, y: -31)),
+    (npc: "guide", pos: (x: 36, y: -31)),
+]

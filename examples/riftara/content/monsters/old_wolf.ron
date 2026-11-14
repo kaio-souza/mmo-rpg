@@ -1,0 +1,8 @@
+(
+    level: 7, hp: 80, attributes: (str: 14, vit: 12, agi: 10, dex: 9),
+    damage: (5, 10), defense: 6, attack_ticks: 36,
+    aggro_radius: 4, leash: 16, respawn_ticks: 900, xp: 400, sprite: "old_wolf", icon: "old_wolf",
+    coins: (10, 30),
+    loot: [(item: "wolf_pelt", chance: 900, qty: (1, 2)), (item: "rusty_sword", chance: 60)],
+    loot_table: "beast_parts",
+)

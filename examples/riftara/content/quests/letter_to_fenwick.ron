@@ -1,0 +1,7 @@
+// Herbalist (alpha): carry word to the elder of Fenwick.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Talk(npc: "fen_elder")],
+    rewards: [Coins(200), Item(item: "moonflower", qty: 3)],
+)

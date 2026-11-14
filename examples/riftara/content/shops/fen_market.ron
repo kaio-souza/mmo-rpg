@@ -1,0 +1,15 @@
+// The trader of Fenwick (alpha): the alchemy herbs and remedies.
+(
+    repairs: false,
+    // What it pays each player per hour: selling everything in
+    // one town runs dry, other towns pay too.
+    purse: Some((coins: 4000, refill_secs: 3600)),
+    stock: [
+        (item: "travel_bread", qty: 0),
+        (item: "sunroot", qty: 15, restock_ticks: 1200),
+        (item: "moonflower", qty: 10, restock_ticks: 1800),
+        (item: "minor_health_potion", qty: 5, restock_ticks: 2400),
+        (item: "mana_tonic", qty: 4, restock_ticks: 2400),
+        (item: "revival_draught", qty: 2, restock_ticks: 3600),
+    ],
+)

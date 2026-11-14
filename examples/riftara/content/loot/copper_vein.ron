@@ -1,0 +1,6 @@
+// What one gathering of a copper vein yields (alpha).
+(entries: [
+    (item: "copper_ore", chance: 1000, qty: (1, 3)),
+    (item: "iron_ore", chance: 300, qty: (1, 2)),
+    (item: "silver_ore", chance: 40),
+])

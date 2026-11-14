@@ -1,0 +1,8 @@
+(
+    level: 4, hp: 60, attributes: (str: 10, vit: 9, agi: 4, dex: 5),
+    damage: (3, 7), defense: 4, attack_ticks: 36,
+    aggro_radius: 3, leash: 12, respawn_ticks: 600, xp: 120, sprite: "boar", icon: "boar",
+    coins: (5, 15),
+    loot: [(item: "boar_tusk", chance: 500), (item: "leather_armor", chance: 40)],
+    loot_table: "beast_parts",
+)

@@ -1,0 +1,4 @@
+// Guide at Aurelia's south gate (alpha; the field until then): first NPC
+// with a dialogue (phase 3).
+// Name: `npc.guide.name`. Appearance is the provisional number until.
+(sprite: "guide", dialogue: "guide")

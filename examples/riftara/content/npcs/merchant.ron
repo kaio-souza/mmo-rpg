@@ -1,0 +1,3 @@
+// Merchant of Aurelia's market (phase 7; alpha: moved from the field): keeps the store and has
+// nothing to say, so a click opens the shop. Name: `npc.merchant.name`.
+(sprite: "guide", shop: "village_store")

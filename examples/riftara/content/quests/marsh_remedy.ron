@@ -1,0 +1,7 @@
+// Elder of Fenwick (alpha): frog legs and slime gel.
+(
+    rank: E,
+    repeatable: false,
+    objectives: [Item(item: "frog_leg", qty: 5), Item(item: "slime_gel", qty: 3)],
+    rewards: [Coins(900), Item(item: "health_potion", qty: 3)],
+)

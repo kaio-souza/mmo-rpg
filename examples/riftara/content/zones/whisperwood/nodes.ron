@@ -1,0 +1,6 @@
+// Herbs in the clearings of Whisperwood.
+[
+    (node: "herb_patch", pos: (x: -49, y: 49)),
+    (node: "herb_patch", pos: (x: -40, y: 90)),
+    (node: "herb_patch", pos: (x: -31, y: 43)),
+]

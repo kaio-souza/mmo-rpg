@@ -1,0 +1,8 @@
+// Kobold miner: digs the east cavern of the mines (alpha, level 11).
+(
+    level: 11, hp: 195, attributes: (str: 16, vit: 15, agi: 11, dex: 12),
+    damage: (9, 16), defense: 11, attack_ticks: 42,
+    aggro_radius: 4, leash: 12, respawn_ticks: 900, xp: 770, sprite: "kobold_miner", icon: "kobold_miner",
+    coins: (20, 50),
+    loot: [(item: "kobold_candle", chance: 700), (item: "iron_ore", chance: 400, qty: (1, 3)), (item: "copper_ore", chance: 300, qty: (1, 2)), (item: "stone_hammer", chance: 40)],
+)

@@ -1,0 +1,7 @@
+// Captain (alpha): walk to the ranger in Whisperwood.
+(
+    rank: F,
+    repeatable: false,
+    objectives: [Talk(npc: "ranger")],
+    rewards: [Coins(150)],
+)

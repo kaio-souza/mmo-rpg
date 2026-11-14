@@ -1,0 +1,7 @@
+// Foreman (alpha): the kobold diggers.
+(
+    rank: D,
+    repeatable: false,
+    objectives: [Item(item: "kobold_candle", qty: 8)],
+    rewards: [Coins(1500), Item(item: "iron_ingot", qty: 5)],
+)

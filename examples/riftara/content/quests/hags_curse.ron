@@ -1,0 +1,7 @@
+// Elder of Fenwick (alpha): the swamp hag.
+(
+    rank: D,
+    repeatable: false,
+    objectives: [Item(item: "hag_charm", qty: 1)],
+    rewards: [Coins(2500), Item(item: "greater_vigor_elixir", qty: 2)],
+)

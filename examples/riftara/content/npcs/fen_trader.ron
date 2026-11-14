@@ -1,0 +1,2 @@
+// Trader of Fenwick (alpha): herbs and remedies; a click opens the shop. Name: `npc.fen_trader.name`.
+(sprite: "fen_trader", shop: "fen_market")

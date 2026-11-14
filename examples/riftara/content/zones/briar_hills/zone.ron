@@ -1,0 +1,12 @@
+// Briar hills (levels 3 to 7), east of the fields. No town: the spawn is only
+// used by the restart of a zone. Roads east to Stonebrook, south to Fenmoor.
+(
+    origin: (x: 64, y: 0),
+    view_radius: 20,
+    spawn: (x: 91, y: 35),
+    spawn_radius: 2,
+    regions: [
+        // Road camp: the revive point is out of reach of monsters.
+        (kind: Safe, min: (x: 88, y: 32), max: (x: 95, y: 39)),
+    ],
+)

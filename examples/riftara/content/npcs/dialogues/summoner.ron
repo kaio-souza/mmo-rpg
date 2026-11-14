@@ -1,0 +1,54 @@
+// Dialogue of the summoner (phase 10): the arrival of a summoned player and
+// the tutorial `arrival`. Texts: content/text/<locale>/npcs.ron.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.summoner.greeting",
+            options: [
+                (text: "npc.summoner.option.what", next: "what"),
+                (text: "npc.summoner.option.system", next: "system"),
+                (
+                    text: "npc.summoner.option.begin",
+                    next: "offer",
+                    when: Quest(quest: "arrival", state: NotStarted),
+                ),
+                (
+                    text: "npc.summoner.option.next",
+                    next: "next",
+                    when: Quest(quest: "arrival", state: Active),
+                ),
+                (text: "npc.summoner.option.bye"),
+            ],
+        ),
+        "what": (
+            text: "npc.summoner.what",
+            options: [
+                (text: "npc.summoner.option.back", next: "greeting"),
+                (text: "npc.summoner.option.bye"),
+            ],
+        ),
+        "system": (
+            text: "npc.summoner.system",
+            options: [
+                (text: "npc.summoner.option.back", next: "greeting"),
+                (text: "npc.summoner.option.bye"),
+            ],
+        ),
+        "offer": (
+            text: "npc.summoner.offer",
+            options: [
+                (text: "npc.summoner.option.accept", next: "accepted", effects: [StartQuest("arrival")]),
+                (text: "npc.summoner.option.back", next: "greeting"),
+            ],
+        ),
+        "accepted": (
+            text: "npc.summoner.accepted",
+            options: [(text: "npc.summoner.option.bye")],
+        ),
+        "next": (
+            text: "npc.summoner.next",
+            options: [(text: "npc.summoner.option.bye")],
+        ),
+    },
+)

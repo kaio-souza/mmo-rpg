@@ -1,0 +1,8 @@
+// Herbs of Fenmoor: the marsh is where the alchemists gather.
+[
+    (node: "herb_patch", pos: (x: 63, y: 112)),
+    (node: "herb_patch", pos: (x: 56, y: 94)),
+    (node: "herb_patch", pos: (x: 110, y: 124)),
+    (node: "herb_patch", pos: (x: 26, y: 124)),
+    (node: "herb_patch", pos: (x: 100, y: 152)),
+]

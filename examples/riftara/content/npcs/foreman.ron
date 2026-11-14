@@ -1,0 +1,2 @@
+// Mine foreman of Stonebrook (alpha): work in the Ironridge mines. Name: `npc.foreman.name`.
+(sprite: "foreman", dialogue: "foreman")

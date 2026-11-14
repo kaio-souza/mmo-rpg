@@ -1,0 +1,2 @@
+// Quartermaster of Stonebrook (alpha): ore, metal and repairs; a click opens the shop. Name: `npc.quartermaster.name`.
+(sprite: "quartermaster", shop: "mine_supply")

@@ -1,0 +1,8 @@
+// Hill goblin: the camp of the briar hills (phase 10, levels 4 to 5).
+(
+    level: 5, hp: 80, attributes: (str: 11, vit: 10, agi: 7, dex: 8),
+    damage: (4, 8), defense: 4, attack_ticks: 32,
+    aggro_radius: 4, leash: 12, respawn_ticks: 600, xp: 180, sprite: "hill_goblin", icon: "hill_goblin",
+    coins: (6, 18),
+    loot: [(item: "goblin_ear", chance: 800), (item: "rusty_sword", chance: 50), (item: "wooden_spear", chance: 40)],
+)

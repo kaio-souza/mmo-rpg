@@ -1,0 +1,3 @@
+// Smith in Aurelia's smithy (phases 7 and 8; alpha: moved from the field): repairs, sells metal and teaches the
+// smithing recipes for coins (dialogue). Name: `npc.smith.name`.
+(sprite: "herbalist", dialogue: "smith", shop: "forge")

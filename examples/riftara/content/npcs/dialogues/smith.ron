@@ -1,0 +1,151 @@
+// Dialogue of the smith: teaches the smithing recipes for coins, by
+// category. The fee is a coin sink (about 100 copper per smithing point the
+// recipe asks for); a recipe already known is not offered again
+// (`Not(RecipeKnown(..))`). Knowing a recipe is not enough: crafting it
+// still asks for its smithing points.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.smith.greeting",
+            options: [
+                (text: "npc.smith.option.metals", next: "metals"),
+                (text: "npc.smith.option.melee", next: "melee"),
+                (text: "npc.smith.option.ranged", next: "ranged"),
+                (text: "npc.smith.option.armor", next: "armor"),
+                (text: "npc.smith.option.bye"),
+            ],
+        ),
+        "metals": (
+            text: "npc.smith.lessons",
+            options: [
+                (
+                    text: "npc.smith.option.smelting",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_ingot")),
+                    effects: [TakeCoins(100), LearnRecipe("iron_ingot")],
+                ),
+                (
+                    text: "npc.smith.option.learn_copper_ingot",
+                    next: "taught",
+                    when: Not(RecipeKnown("copper_ingot")),
+                    effects: [TakeCoins(50), LearnRecipe("copper_ingot")],
+                ),
+                (
+                    text: "npc.smith.option.learn_silver_ingot",
+                    next: "taught",
+                    when: Not(RecipeKnown("silver_ingot")),
+                    effects: [TakeCoins(1000), LearnRecipe("silver_ingot")],
+                ),
+                (text: "npc.smith.option.back", next: "greeting"),
+                (text: "npc.smith.option.bye"),
+            ],
+        ),
+        "melee": (
+            text: "npc.smith.lessons",
+            options: [
+                (
+                    text: "npc.smith.option.sword",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_sword")),
+                    effects: [TakeCoins(1100), LearnRecipe("iron_sword")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_axe",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_axe")),
+                    effects: [TakeCoins(1400), LearnRecipe("iron_axe")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_spear",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_spear")),
+                    effects: [TakeCoins(1300), LearnRecipe("iron_spear")],
+                ),
+                (
+                    text: "npc.smith.option.learn_stone_hammer",
+                    next: "taught",
+                    when: Not(RecipeKnown("stone_hammer")),
+                    effects: [TakeCoins(850), LearnRecipe("stone_hammer")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_hammer",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_hammer")),
+                    effects: [TakeCoins(1550), LearnRecipe("iron_hammer")],
+                ),
+                (text: "npc.smith.option.back", next: "greeting"),
+                (text: "npc.smith.option.bye"),
+            ],
+        ),
+        "ranged": (
+            text: "npc.smith.lessons",
+            options: [
+                (
+                    text: "npc.smith.option.learn_wooden_bow",
+                    next: "taught",
+                    when: Not(RecipeKnown("wooden_bow")),
+                    effects: [TakeCoins(700), LearnRecipe("wooden_bow")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_bow",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_bow")),
+                    effects: [TakeCoins(1350), LearnRecipe("iron_bow")],
+                ),
+                (
+                    text: "npc.smith.option.learn_oak_staff",
+                    next: "taught",
+                    when: Not(RecipeKnown("oak_staff")),
+                    effects: [TakeCoins(800), LearnRecipe("oak_staff")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_staff",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_staff")),
+                    effects: [TakeCoins(1450), LearnRecipe("iron_staff")],
+                ),
+                (text: "npc.smith.option.back", next: "greeting"),
+                (text: "npc.smith.option.bye"),
+            ],
+        ),
+        "armor": (
+            text: "npc.smith.lessons",
+            options: [
+                (
+                    text: "npc.smith.option.learn_cloth_tunic",
+                    next: "taught",
+                    when: Not(RecipeKnown("cloth_tunic")),
+                    effects: [TakeCoins(550), LearnRecipe("cloth_tunic")],
+                ),
+                (
+                    text: "npc.smith.option.learn_studded_leather",
+                    next: "taught",
+                    when: Not(RecipeKnown("studded_leather")),
+                    effects: [TakeCoins(1000), LearnRecipe("studded_leather")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_chainmail",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_chainmail")),
+                    effects: [TakeCoins(1200), LearnRecipe("iron_chainmail")],
+                ),
+                (
+                    text: "npc.smith.option.learn_iron_plate_armor",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_plate_armor")),
+                    effects: [TakeCoins(2300), LearnRecipe("iron_plate_armor")],
+                ),
+                (text: "npc.smith.option.back", next: "greeting"),
+                (text: "npc.smith.option.bye"),
+            ],
+        ),
+        "taught": (
+            text: "npc.smith.taught",
+            options: [
+                (text: "npc.smith.option.back", next: "greeting"),
+                (text: "npc.smith.option.bye"),
+            ],
+        ),
+    },
+)

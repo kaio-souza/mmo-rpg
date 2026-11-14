@@ -1,0 +1,3 @@
+// The summoner of Aurelia, beside the circle: the first voice a summoned
+// player hears; gives the tutorial `arrival` (phase 10). Name: `npc.summoner.name`.
+(sprite: "summoner", dialogue: "summoner")

@@ -1,0 +1,5 @@
+// Monsters of Aurelia: only the tutorial's rats, in the farms outside the
+// south gate (few, so they may sit in the seam band).
+[
+    (monster: "field_rat", pos: (x: 14, y: -14), count: 5, radius: 7),
+]

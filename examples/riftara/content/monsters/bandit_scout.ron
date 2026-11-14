@@ -1,0 +1,8 @@
+// Bandit scout: watches the trail to the bandit camp in Whisperwood (alpha, level 8).
+(
+    level: 8, hp: 90, attributes: (str: 12, vit: 11, agi: 14, dex: 14),
+    damage: (6, 11), defense: 6, attack_ticks: 31,
+    aggro_radius: 4, leash: 14, respawn_ticks: 900, xp: 520, sprite: "bandit_scout", icon: "bandit_scout",
+    coins: (20, 50),
+    loot: [(item: "bandit_badge", chance: 600), (item: "hunting_knife", chance: 80), (item: "wooden_bow", chance: 40)],
+)

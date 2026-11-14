@@ -1,0 +1,8 @@
+// Goblin brute: the biggest of the briar camp, by its gate (alpha, level 7).
+(
+    level: 7, hp: 90, attributes: (str: 15, vit: 13, agi: 6, dex: 7),
+    damage: (6, 11), defense: 7, attack_ticks: 49,
+    aggro_radius: 4, leash: 10, respawn_ticks: 900, xp: 450, sprite: "goblin_brute", icon: "goblin_brute",
+    coins: (12, 30),
+    loot: [(item: "goblin_ear", chance: 900, qty: (1, 2)), (item: "stone_hammer", chance: 40), (item: "leather_armor", chance: 40)],
+)

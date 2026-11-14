@@ -1,0 +1,90 @@
+// Dialogue of the guild clerk (phase 10): registers the summoned (completes
+// `arrival`) and hands out the work of the briar hills and the road to
+// Stonebrook.
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.guild_clerk.greeting",
+            options: [
+                (
+                    text: "npc.guild_clerk.option.register",
+                    next: "registered",
+                    when: QuestReady("arrival"),
+                    effects: [CompleteQuest("arrival")],
+                ),
+                (
+                    text: "npc.guild_clerk.option.not_yet",
+                    next: "not_yet",
+                    // Ready is also Active: only one of the two shows.
+                    when: All([Quest(quest: "arrival", state: Active), Not(QuestReady("arrival"))]),
+                ),
+                (
+                    text: "npc.guild_clerk.option.work",
+                    next: "work",
+                    when: Quest(quest: "arrival", state: Completed),
+                ),
+                (
+                    text: "npc.guild_clerk.option.ears",
+                    next: "paid",
+                    when: QuestReady("goblin_trouble"),
+                    effects: [CompleteQuest("goblin_trouble")],
+                ),
+                (
+                    text: "npc.guild_clerk.option.silk",
+                    next: "paid",
+                    when: QuestReady("spider_silk"),
+                    effects: [CompleteQuest("spider_silk")],
+                ),
+                (text: "npc.guild_clerk.option.bye"),
+            ],
+        ),
+        "registered": (
+            text: "npc.guild_clerk.registered",
+            options: [
+                (text: "npc.guild_clerk.option.work", next: "work"),
+                (text: "npc.guild_clerk.option.bye"),
+            ],
+        ),
+        "not_yet": (
+            text: "npc.guild_clerk.not_yet",
+            options: [(text: "npc.guild_clerk.option.bye")],
+        ),
+        "work": (
+            text: "npc.guild_clerk.work",
+            options: [
+                (
+                    text: "npc.guild_clerk.option.take_goblins",
+                    next: "taken",
+                    when: Quest(quest: "goblin_trouble", state: NotStarted),
+                    effects: [StartQuest("goblin_trouble")],
+                ),
+                (
+                    text: "npc.guild_clerk.option.take_silk",
+                    next: "taken",
+                    // Repeatable: back once its hour has passed.
+                    when: Quest(quest: "spider_silk", state: NotStarted),
+                    effects: [StartQuest("spider_silk")],
+                ),
+                (
+                    text: "npc.guild_clerk.option.take_stonebrook",
+                    next: "taken",
+                    when: Quest(quest: "road_to_stonebrook", state: NotStarted),
+                    effects: [StartQuest("road_to_stonebrook")],
+                ),
+                (text: "npc.guild_clerk.option.back", next: "greeting"),
+            ],
+        ),
+        "taken": (
+            text: "npc.guild_clerk.taken",
+            options: [(text: "npc.guild_clerk.option.bye")],
+        ),
+        "paid": (
+            text: "npc.guild_clerk.paid",
+            options: [
+                (text: "npc.guild_clerk.option.back", next: "greeting"),
+                (text: "npc.guild_clerk.option.bye"),
+            ],
+        ),
+    },
+)

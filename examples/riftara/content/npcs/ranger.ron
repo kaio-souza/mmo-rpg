@@ -1,0 +1,2 @@
+// Ranger of the Whisperwood lodge (alpha): the dire wolves. Name: `npc.ranger.name`.
+(sprite: "ranger", dialogue: "ranger")

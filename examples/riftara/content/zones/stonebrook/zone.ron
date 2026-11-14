@@ -1,0 +1,13 @@
+// Stonebrook, the mining town (second city):
+// safe behind its palisade; veins outside, the Ironridge mines to the north.
+(
+    origin: (x: 128, y: -32),
+    view_radius: 20,
+    spawn: (x: 170, y: 42),
+    spawn_radius: 2,
+    regions: [
+        (kind: Safe, min: (x: 155, y: 9), max: (x: 187, y: 55)),
+        // The mining camp's forge, by the foreman.
+        (kind: Workshop, min: (x: 157, y: 13), max: (x: 165, y: 21)),
+    ],
+)

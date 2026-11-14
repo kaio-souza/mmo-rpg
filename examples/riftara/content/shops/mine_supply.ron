@@ -1,0 +1,17 @@
+// The quartermaster of Stonebrook (alpha): ore and metal for the smiths,
+// food and potions for the mines; repairs like the forge.
+(
+    repairs: true,
+    appraises: true,
+    // What it pays each player per hour: selling everything in
+    // one town runs dry, other towns pay too.
+    purse: Some((coins: 4000, refill_secs: 3600)),
+    stock: [
+        (item: "travel_bread", qty: 0),
+        (item: "iron_ore", qty: 20, restock_ticks: 1200),
+        (item: "copper_ore", qty: 20, restock_ticks: 1200),
+        (item: "iron_ingot", qty: 10, restock_ticks: 1800),
+        (item: "health_potion", qty: 5, restock_ticks: 2400),
+        (item: "torch", qty: 8, restock_ticks: 1200),
+    ],
+)

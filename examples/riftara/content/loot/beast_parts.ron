@@ -1,0 +1,8 @@
+// What every beast of the field may drop (phase 7), shared by wolves, old
+// wolves and boars. Species parts (pelt, tusk) stay in the monster's own
+// `loot`: a table shared by several species must hold only what all of
+// them may drop, or a boar drops wolf pelts.
+(
+    coins: (1, 4),
+    entries: [],
+)

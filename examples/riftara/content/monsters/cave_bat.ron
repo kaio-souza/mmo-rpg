@@ -1,0 +1,8 @@
+// Cave bat: the first cavern of the Ironridge mines (alpha, level 10).
+(
+    level: 10, hp: 105, attributes: (str: 9, vit: 10, agi: 20, dex: 14),
+    damage: (7, 12), defense: 5, attack_ticks: 29,
+    aggro_radius: 4, leash: 14, respawn_ticks: 700, xp: 680, sprite: "cave_bat", icon: "cave_bat",
+    coins: (5, 15),
+    loot: [(item: "bat_wing", chance: 800)],
+)

@@ -1,0 +1,3 @@
+// Combat instructor in the training yard of Aurelia (phase 10): teaches the
+// first technique of the tutorial. Name: `npc.instructor.name`.
+(sprite: "instructor", dialogue: "instructor")
