@@ -1,0 +1,39 @@
+// Anchors: the pixel of each image that sits on the center of its tile
+// A sprite's name is its file name.
+// An image may be a strip: `frames` side by side, and 1 or 4 `directions`
+// as rows (S, W, N, E); `fps`, and `play` Always (scenery) or Moving (only
+// while walking). A sprite's own fields win over its folder's. `lights`:
+// sprites that shine at night. Written by the editor.
+(
+    folders: {
+        "creatures": (anchor: (32, 58), frames: 4, fps: 8, directions: 4, play: Moving),
+        "equipment": (anchor: (32, 58), directions: 4),
+        "tiles": (anchor: (32, 16)),
+        "walls": (anchor: (32, 56)),
+    },
+    sprites: {
+        "bog_frog": (fps: 6, directions: 1),
+        "brazier": (frames: 4, fps: 6),
+        "briar_spider": (fps: 10, directions: 1),
+        "bush": (frames: 4, fps: 2),
+        "cave_bat": (fps: 8, directions: 1, play: Always),
+        "cave_spider": (fps: 10, directions: 1),
+        "copper_vein": (fps: 4, directions: 1, play: Always),
+        "fen_wisp": (fps: 4, directions: 1, play: Always),
+        "herb_patch": (fps: 2, directions: 1, play: Always),
+        "iron_vein": (fps: 4, directions: 1, play: Always),
+        "marsh_slime": (fps: 5, directions: 1),
+        "pine": (frames: 4, fps: 2),
+        "reeds": (frames: 4, fps: 3),
+        "rock_golem": (fps: 5, directions: 1),
+        "silver_vein": (fps: 4, directions: 1, play: Always),
+        "torch": (frames: 4, fps: 8, play: Always),
+        "tree": (frames: 4, fps: 2),
+        "water": (frames: 4, fps: 3),
+    },
+    lights: {
+        "fen_wisp": (radius: 4.0, color: (0.45, 0.95, 1.0), strength: 0.8),
+        "iron_vein": (radius: 2.0, color: (0.55, 0.75, 1.0), strength: 0.5),
+        "silver_vein": (radius: 2.0, color: (0.75, 0.85, 1.0), strength: 0.5),
+    },
+)
