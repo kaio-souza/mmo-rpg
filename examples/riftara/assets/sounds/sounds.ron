@@ -1,0 +1,37 @@
+// Which sound plays for each event; edit on the editor's Sounds screen.
+(
+    sounds: {
+        "cast_1": (file: "sounds/technique/cast_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "click_1": (file: "sounds/ui/click_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "crit_1": (file: "sounds/combat/crit_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "dark_deep": (file: "music/dark_deep.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "error_1": (file: "sounds/ui/error_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "forest_soft": (file: "music/forest_soft.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "hills_light": (file: "music/hills_light.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "hit_1": (file: "sounds/combat/hit_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "hit_2": (file: "sounds/combat/hit_2.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "hurt_1": (file: "sounds/combat/hurt_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "miss_1": (file: "sounds/combat/miss_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "notice_1": (file: "sounds/system/notice_1.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "tense_low": (file: "music/tense_low.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "town_calm": (file: "music/town_calm.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+        "village_calm": (file: "music/village_calm.ogg", license: "CC0", credit: "Riftara (art-src/generate_sound.py)"),
+    },
+    events: {
+        "combat_crit": (sounds: ["crit_1"], volume: 900, priority: 150, positional: true),
+        "combat_hit": (sounds: ["hit_1", "hit_2"], volume: 800, priority: 100, positional: true),
+        "combat_hurt": (sounds: ["hurt_1"], volume: 900, priority: 200, positional: false),
+        "combat_miss": (sounds: ["miss_1"], volume: 600, priority: 60, positional: true),
+        "system_notice": (sounds: ["notice_1"], volume: 800, priority: 220, positional: false),
+        "technique_use": (sounds: ["cast_1"], volume: 800, priority: 120, positional: true),
+        "ui_click": (sounds: ["click_1"], volume: 500, priority: 80, positional: false),
+        "ui_error": (sounds: ["error_1"], volume: 700, priority: 180, positional: false),
+    },
+    techniques: {
+    },
+    zones: {
+    },
+    screens: {
+        "login": (music: "hills_light", volume: 700),
+    },
+)

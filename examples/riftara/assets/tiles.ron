@@ -1,0 +1,27 @@
+// How each floor number of the zone maps is drawn
+// What blocks walking or sight is a
+// game rule and stays in the zone map; this file is only the look. A floor
+// with `light` shines at night and is drawn glowing; `day_sprite` replaces
+// it by day, unlit. A brazier a player lights or puts out is two floors
+// (map legend `switch`). Written by the editor.
+{
+    1: (sprite: "grass"),
+    2: (sprite: "dirt_path"),
+    3: (sprite: "stone_wall", wall: true),
+    4: (sprite: "water"),
+    5: (sprite: "stone_floor"),
+    6: (sprite: "brazier", wall: true, light: Some((radius: 6.0, color: (1.0, 0.62, 0.28), strength: 0.75)), day_sprite: Some("brazier_unlit")),
+    7: (sprite: "tree", wall: true),
+    8: (sprite: "wood_floor"),
+    9: (sprite: "flowers"),
+    10: (sprite: "mud"),
+    11: (sprite: "cave_floor"),
+    12: (sprite: "boulder", wall: true),
+    13: (sprite: "bush", wall: true),
+    14: (sprite: "timber_wall", wall: true),
+    15: (sprite: "reeds", wall: true),
+    16: (sprite: "farmland"),
+    17: (sprite: "pine", wall: true),
+    18: (sprite: "rock_wall", wall: true),
+    19: (sprite: "brazier_unlit", wall: true),
+}

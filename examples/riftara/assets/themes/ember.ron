@@ -1,0 +1,31 @@
+// Second theme, to show that a theme is only data: warm, square panels, no glow.
+Theme(
+    id: "ember",
+    fonts: (
+        title: "fonts/Exo2-Regular.ttf",
+        text: "fonts/Exo2-Regular.ttf",
+        numbers: "fonts/Rajdhani-SemiBold.ttf",
+    ),
+    fonts_by_locale: {
+        "zh": (title: "fonts/NotoSansCJK-Regular.ttc#2", text: "fonts/NotoSansCJK-Regular.ttc#2", numbers: "fonts/Rajdhani-SemiBold.ttf"),
+        "ja": (title: "fonts/NotoSansCJK-Regular.ttc#0", text: "fonts/NotoSansCJK-Regular.ttc#0", numbers: "fonts/Rajdhani-SemiBold.ttf"),
+        "ko": (title: "fonts/NotoSansCJK-Regular.ttc#1", text: "fonts/NotoSansCJK-Regular.ttc#1", numbers: "fonts/Rajdhani-SemiBold.ttf"),
+    },
+    colors: {
+        "background": "#140a06",
+        "panel": "#2a140cd8",
+        "border": "#ff8a3d55",
+        "strong_border": "#ffb35c",
+        "text": "#ffe9d6",
+        "dim_text": "#ffd9b880",
+        "highlight": "#ffb35c",
+        "secondary": "#e0569b",
+        "life": "#e5383b",
+        "mana": "#4d7cfe",
+        "stamina": "#f2c14e",
+        "system": "#ffd166",
+    },
+    panel: (diagonal_slash: 0, border_thickness: 2, border_glow: 0),
+    sizes: (text: 17, title: 24),
+    windows: (open_ms: 140, close_ms: 110, rise: 8.0),
+)
