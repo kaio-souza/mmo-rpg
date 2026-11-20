@@ -67,6 +67,21 @@ A title that `replaces` others removes them when earned, and they are never earn
 
 `appearance/appearance.ron` lists bodies, skins, hair styles and hair colours offered at character creation, each with an id and a colour; names are text keys `appearance.<list>.<id>`. Append only: saved characters name these ids.
 
+A character is drawn in layers, bottom first, from sprites in `assets/sprites/creatures/`:
+
+| Layer | Field | Tinted by |
+|---|---|---|
+| body | `sprite` on a body | the skin's colour |
+| clothes | `clothes` on a body | nothing: drawn as it is |
+| hair | `sprite` on a hair style | the hair colour's colour |
+
+```ron
+bodies: [(id: "body_a", color: "#5b6b8c", sprite: "body_a", clothes: "clothes_a")],
+hair_styles: [(id: "short", sprite: "hair_short"), (id: "bald")],
+```
+
+A tinted layer is drawn in light greys, so the colour shows true ([assets](../assets.md)). A body without `sprite` is drawn as the `player` sprite in the skin colour; a hair style without one draws no hair (bald). Skins and hair colours have no sprite. The creation screen previews exactly these layers and offers only the lists that change them: bodies when one has a sprite, hair styles and colours when a hair style has one.
+
 ## Formulas
 
 `progression/formulas.ron` (all optional): `max_level`, `level_xp_base`, `level_xp_exponent`, `start_attribute`, `free_points`, `free_points_without_class`, `fallen_ticks` (time down before death), `newbie_level` (no death penalty up to it), `death_lock_secs` (character locked after dying), `day_secs`.

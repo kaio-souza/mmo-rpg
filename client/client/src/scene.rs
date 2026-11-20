@@ -31,8 +31,12 @@ const NPC: Rgba = Rgba::new(0.90, 0.45, 0.35, 1.0);
 const MONSTER: Rgba = Rgba::new(0.75, 0.20, 0.65, 1.0);
 const DESTINATION: Rgba = Rgba::new(1.0, 0.9, 0.3, 0.8);
 const TARGET: Rgba = Rgba::new(0.95, 0.25, 0.2, 0.9);
-/// Body of every player until the layered character art (tinted by skin).
-const PLAYER_SPRITE: &str = "player";
+/// `0xRRGGBB` as a tint.
+fn rgba(c: u32) -> Rgba {
+    let ch = |s: u32| ((c >> s) & 0xff) as f32 / 255.0;
+    Rgba::new(ch(16), ch(8), ch(0), 1.0)
+}
+
 /// What unseen ground is multiplied by: darker and a little cold.
 const FOG: Rgba = Rgba::new(0.42, 0.44, 0.55, 1.0);
 
@@ -269,10 +273,7 @@ pub fn build(
     for e in state.entities() {
         let (x, y) = e.visual_pos(now_ms);
         let tile = (x as f32, y as f32);
-        let skin = crate::interface::skin_of(state, e.look).map(|c| {
-            let ch = |s: u32| ((c >> s) & 0xff) as f32 / 255.0;
-            Rgba::new(ch(16), ch(8), ch(0), 1.0)
-        });
+        let skin = crate::interface::skin_of(state, e.look).map(rgba);
         let color = match e.kind {
             EntityKind::Player if skin.is_some() => skin.unwrap_or(PLAYER),
             _ if Some(e.id) == me => ME,
@@ -285,8 +286,14 @@ pub fn build(
             EntityKind::Monster => 0.35 + 0.65 * f32::from(e.health.min(100)) / 100.0,
             _ => 1.0,
         };
+        // A player is layers (body, clothes, hair); the first is the shape
+        // below, the others go over it.
+        let layers = match e.kind {
+            EntityKind::Player => crate::interface::look_layers(state, e.look),
+            _ => Vec::new(),
+        };
         let (name, tint) = match e.kind {
-            EntityKind::Player => (Some(PLAYER_SPRITE), skin.unwrap_or(Rgba::WHITE)),
+            EntityKind::Player => (layers.first().map(|l| l.0), skin.unwrap_or(Rgba::WHITE)),
             _ => (state.sprite_name(e.appearance), Rgba::WHITE),
         };
         let tint = Rgba::new(tint.r * shade, tint.g * shade, tint.b * shade, tint.a);
@@ -336,6 +343,17 @@ pub fn build(
             tile,
             layer: Layer::Object,
         });
+        for (layer, tone) in layers.iter().skip(1) {
+            let t = tone.map_or(Rgba::WHITE, rgba);
+            let t = Rgba::new(t.r * shade, t.g * shade, t.b * shade, t.a);
+            if let Some(s) = gfx.sprite_at(layer, t, pose) {
+                items.push(ItemDesign {
+                    shape: Shape::Sprite(s),
+                    tile,
+                    layer: Layer::Object,
+                });
+            }
+        }
         // Armor, then off hand and weapon, over the body (same depth:
         // drawn in order).
         let (weapon, armor, offhand) = e.equipment;

@@ -38,6 +38,7 @@
     "ui.login.enter": "Anmelden",
     "ui.login.register": "Konto erstellen",
     "ui.login.connecting": "Verbinde…",
+    "ui.login.version": "Version {version}",
     "ui.select.title": "Charaktere",
     "ui.select.enter": "Spielen",
     "ui.select.create": "Neuer Charakter",

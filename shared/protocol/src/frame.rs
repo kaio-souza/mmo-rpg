@@ -294,6 +294,8 @@ mod tests {
                     vec![crate::LookOptionInfo {
                         name: TextId::new(1),
                         color: 0xc08060,
+                        sprite: "body_a".into(),
+                        clothes: String::new(),
                     }],
                     vec![],
                     vec![],

@@ -767,7 +767,15 @@ impl Catalog {
                     .map(|m| (format!("monsters/{}.ron", m.id), &m.sprite)),
             )
             .chain(visuals.map(|v| ("items/".to_owned(), v)))
-            .chain(nodes.iter().map(|n| (format!("nodes/{}.ron", n.id), &n.sprite)));
+            .chain(nodes.iter().map(|n| (format!("nodes/{}.ron", n.id), &n.sprite)))
+            .chain(
+                appearance
+                    .lists
+                    .iter()
+                    .flatten()
+                    .flat_map(|o| [&o.sprite, &o.clothes])
+                    .map(|s| ("appearance/appearance.ron".to_owned(), s)),
+            );
         for (path, name) in used_sprites {
             if name.is_empty() {
                 continue;

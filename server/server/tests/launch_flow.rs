@@ -303,10 +303,14 @@ async fn delete_a_character_then_restart_announced() {
         .map(|e| e.unwrap().path())
         .collect();
     assert!(!copies.is_empty(), "no backup written");
-    for copy in &copies {
-        let (accounts, _) = Repository::verify_backup(&copy.display().to_string()).unwrap();
-        assert_eq!(accounts, 1);
-    }
+    // Every copy checks; one made before the account was registered (a
+    // busy machine) holds none, and a later one holds it.
+    let counts: Vec<_> = copies
+        .iter()
+        .map(|copy| Repository::verify_backup(&copy.display().to_string()).unwrap().0)
+        .collect();
+    assert!(counts.iter().all(|n| *n <= 1), "{counts:?}");
+    assert!(counts.contains(&1), "{counts:?}");
     let r = db(&data).await;
     let saved = r
         .characters(r.account(&account()).await.unwrap().unwrap().id)

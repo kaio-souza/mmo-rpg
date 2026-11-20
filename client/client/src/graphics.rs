@@ -458,6 +458,26 @@ impl Graphics {
         })
     }
 
+    /// The first frame of a sprite for each facing (S, W, N, E), for the
+    /// interface: the creation preview and the character list.
+    pub fn sheet_sprite(&self, name: &str) -> Option<client_ui::SheetSprite> {
+        let e = self.sprites.get(name)?;
+        let (fw, fh) = (e.placed.w / e.frames.max(1), e.placed.h / e.directions.max(1));
+        let uv = std::array::from_fn(|row| {
+            let row = if e.directions == 4 { row as u32 } else { 0 };
+            self.sheet.uv(Placed {
+                x: e.placed.x,
+                y: e.placed.y + row * fh,
+                w: fw,
+                h: fh,
+            })
+        });
+        Some(client_ui::SheetSprite {
+            uv,
+            aspect: fw as f32 / fh.max(1) as f32,
+        })
+    }
+
     /// The login background: sheet coordinates and width / height.
     pub fn backdrop(&self) -> Option<([f32; 4], f32)> {
         let p = self.backdrop?;

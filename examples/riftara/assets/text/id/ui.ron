@@ -38,6 +38,7 @@
     "ui.login.enter": "Masuk",
     "ui.login.register": "Buat akun",
     "ui.login.connecting": "Menghubungkan…",
+    "ui.login.version": "Versi {version}",
     "ui.select.title": "Karakter",
     "ui.select.enter": "Main",
     "ui.select.create": "Karakter baru",

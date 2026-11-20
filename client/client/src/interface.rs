@@ -320,8 +320,62 @@ pub fn look_lists(state: &WorldState, texts: &Texts) -> [LookList; 4] {
     })
 }
 
-/// The placeholder figure of a look; `None` before the lists arrive.
-pub fn figure_of(state: &WorldState, look: Look) -> Option<Figure> {
+/// Drawn for a player whose body has no sprite of its own, in the skin tone.
+pub const PLAYER_SPRITE: &str = "player";
+
+/// The sprites of a look, bottom first, each with the tone that tints it
+/// (`None`: as drawn): the body in the skin tone (the game's `player`
+/// sprite when the body has none), the body's clothes, then the hairstyle
+/// in the hair color. The world view, the creation preview and the
+/// character list all draw these, so the preview is the character.
+pub fn look_layers(state: &WorldState, look: Look) -> Vec<(&str, Option<u32>)> {
+    let lists = &state.appearances().lists;
+    let pick = |i: usize, at: u8| {
+        lists
+            .get(i)
+            .and_then(|l| l.get(usize::from(at)).or_else(|| l.first()))
+    };
+    let skin = pick(1, look.skin).map(|o| o.color);
+    let hair = pick(3, look.hair_color).map(|o| o.color);
+    let body = pick(0, look.body);
+    fn named(s: &str) -> Option<&str> {
+        (!s.is_empty()).then_some(s)
+    }
+    let mut out = vec![(body.and_then(|b| named(&b.sprite)).unwrap_or(PLAYER_SPRITE), skin)];
+    if let Some(clothes) = body.and_then(|b| named(&b.clothes)) {
+        out.push((clothes, None));
+    }
+    if let Some(style) = pick(2, look.hair_style).and_then(|o| named(&o.sprite)) {
+        out.push((style, hair));
+    }
+    out
+}
+
+/// Creation lists that change nothing drawn, so the creation screen does
+/// not offer them: bodies when none has a sprite, hairstyles (and so hair
+/// colors) when none has one. Skins always tint the body.
+pub fn hidden_lists(state: &WorldState) -> [bool; 4] {
+    let lists = &state.appearances().lists;
+    let drawn = |i: usize| {
+        lists
+            .get(i)
+            .is_some_and(|l| l.iter().any(|o| !o.sprite.is_empty() || !o.clothes.is_empty()))
+    };
+    let hair = drawn(2);
+    [!drawn(0), false, !hair, !hair]
+}
+
+/// A look as the game draws it; `None` before the lists arrive.
+pub fn figure_of(state: &WorldState, gfx: &crate::graphics::Graphics, look: Look) -> Option<Figure> {
+    let layers = look_layers(state, look)
+        .into_iter()
+        .filter_map(|(name, tone)| {
+            Some(client_ui::FigureLayer {
+                sprite: gfx.sheet_sprite(name)?,
+                tint: tone.map_or([1.0; 4], rgb),
+            })
+        })
+        .collect();
     let lists = &state.appearances().lists;
     let color = |i: usize, at: u8| {
         lists
@@ -330,6 +384,7 @@ pub fn figure_of(state: &WorldState, look: Look) -> Option<Figure> {
             .map(|o| rgb(o.color))
     };
     Some(Figure {
+        layers,
         body: color(0, look.body)?,
         skin: color(1, look.skin)?,
         hair: color(3, look.hair_color),
@@ -1367,4 +1422,69 @@ fn minimap(state: &WorldState) -> Minimap {
         .chain(goal_dots(state, me.pos, half))
         .collect();
     Minimap { side, tiles, dots }
+}
+
+#[cfg(test)]
+mod layer_tests {
+    use super::*;
+    use base::TextId;
+    use protocol::{AppearanceInfo, LookOptionInfo, ServerMsg};
+
+    fn option(color: u32, sprite: &str, clothes: &str) -> LookOptionInfo {
+        LookOptionInfo {
+            name: TextId::new(1),
+            color,
+            sprite: sprite.into(),
+            clothes: clothes.into(),
+        }
+    }
+
+    /// The state on the creation screen: the look lists have come with the
+    /// session, `Definitions` (sprite numbers) not yet.
+    fn world(lists: [Vec<LookOptionInfo>; 4]) -> WorldState {
+        let mut w = WorldState::new();
+        w.apply(ServerMsg::Appearances(AppearanceInfo { lists }), 0.0);
+        w
+    }
+
+    #[test]
+    fn a_look_is_body_clothes_and_hair_in_their_tones() {
+        let w = world([
+            vec![option(0, "body_a", "clothes_a")],
+            vec![option(0x112233, "", "")],
+            vec![option(0, "hair_short", ""), option(0, "", "")],
+            vec![option(0x445566, "", "")],
+        ]);
+        let look = Look::default();
+        assert_eq!(
+            look_layers(&w, look),
+            vec![
+                ("body_a", Some(0x112233)),
+                ("clothes_a", None),
+                ("hair_short", Some(0x445566)),
+            ]
+        );
+        // The second hairstyle has no sprite: bald.
+        let bald = Look {
+            hair_style: 1,
+            ..look
+        };
+        assert_eq!(look_layers(&w, bald).len(), 2);
+        assert_eq!(hidden_lists(&w), [false, false, false, false]);
+    }
+
+    #[test]
+    fn without_layer_art_the_player_sprite_and_only_skins() {
+        let w = world([
+            vec![option(0, "", ""), option(0, "", "")],
+            vec![option(0x112233, "", "")],
+            vec![option(0, "", "")],
+            vec![option(0x445566, "", "")],
+        ]);
+        assert_eq!(
+            look_layers(&w, Look::default()),
+            vec![(PLAYER_SPRITE, Some(0x112233))]
+        );
+        assert_eq!(hidden_lists(&w), [true, false, true, true]);
+    }
 }

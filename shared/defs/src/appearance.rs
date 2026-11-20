@@ -1,7 +1,12 @@
-//! Character creation choices (`content/appearance/appearance.ron`, phase 5,
-//!): body types, skin tones, hairstyles and hair
-//! colors. New options are content: append, never remove, so the
-//! text ids saved in sheets keep meaning the same thing.
+//! Character creation choices (`content/appearance/appearance.ron`): body
+//! types, skin tones, hairstyles and hair colors. New options are content:
+//! append, never remove, so the text ids saved in sheets keep meaning the
+//! same thing.
+//!
+//! A character is drawn in layers, bottom first: the body's `sprite` in the
+//! skin tone, the body's `clothes` as drawn, then the hairstyle's `sprite`
+//! in the hair color. Skins and hair colors are tones only. A body without
+//! a sprite is drawn as the game's `player` sprite in the skin tone.
 
 use crate::npc::valid_id;
 use base::{Look, TextId};
@@ -19,10 +24,13 @@ pub struct LookOption {
     pub id: String,
     /// `appearance.<list>.<id>`.
     pub name: TextId,
-    /// `0xRRGGBB`: the tone for the palette swap (skin, hair color); the
-    /// placeholder figure until the sprites of phase 6 also uses it for bodies
-    /// and hairstyles.
+    /// `0xRRGGBB`: the tone that tints a layer (skin, hair color); a
+    /// placeholder figure also uses it for bodies and hairstyles.
     pub color: u32,
+    /// Bodies and hairstyles: the layer's sprite; empty: none.
+    pub sprite: String,
+    /// Bodies: clothes drawn over the body, not tinted; empty: none.
+    pub clothes: String,
 }
 
 /// Lists in file order; a `Look` holds positions in them. Empty when the
@@ -92,6 +100,15 @@ pub(crate) struct OptionFile {
     /// `#rrggbb`; empty: gray.
     #[serde(default)]
     color: String,
+    /// Bodies and hairstyles: the sprite of this layer, tinted by the skin
+    /// (body) or the hair color (hairstyle); empty: none.
+    #[serde(default)]
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::SpriteRef"))]
+    sprite: String,
+    /// Bodies: clothes drawn over the body as they are; empty: none.
+    #[serde(default)]
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::SpriteRef"))]
+    clothes: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -139,6 +156,17 @@ pub(crate) fn parse_appearance(text: &str, keys: &KeyTable) -> Result<Appearance
                     0
                 }),
             };
+            // Only bodies and hairstyles are drawn; skins and hair colors tint them.
+            let drawn = matches!(*name, "body" | "hair_style");
+            if !o.sprite.is_empty() && !drawn {
+                problems.push(format!(
+                    "{name}.{}: only bodies and hairstyles have a sprite",
+                    o.id
+                ));
+            }
+            if !o.clothes.is_empty() && *name != "body" {
+                problems.push(format!("{name}.{}: only bodies have clothes", o.id));
+            }
             let key = look_name_key(name, &o.id);
             let Some(text) = keys.id(&key) else {
                 problems.push(format!("{name}.{}: no text key `{key}`", o.id));
@@ -148,6 +176,8 @@ pub(crate) fn parse_appearance(text: &str, keys: &KeyTable) -> Result<Appearance
                 id: o.id,
                 name: text,
                 color,
+                sprite: o.sprite,
+                clothes: o.clothes,
             });
         }
     }
@@ -198,5 +228,32 @@ mod tests {
         )"##;
         let p = parse_appearance(text, &keys()).unwrap_err();
         assert_eq!(p.len(), 4, "{p:?}");
+    }
+
+    #[test]
+    fn bodies_and_hairstyles_have_layers() {
+        let text = r##"(
+            bodies: [(id: "a", sprite: "body_a", clothes: "clothes_a")],
+            skins: [(id: "s", color: "#c08060")],
+            hair_styles: [(id: "h", sprite: "hair_short"), (id: "bald")],
+            hair_colors: [(id: "c", color: "#101010")],
+        )"##;
+        let def = parse_appearance(text, &keys()).unwrap();
+        assert_eq!(def.bodies()[0].sprite, "body_a");
+        assert_eq!(def.bodies()[0].clothes, "clothes_a");
+        assert_eq!(def.hair_styles()[0].sprite, "hair_short");
+        assert_eq!(def.hair_styles()[1].sprite, "");
+    }
+
+    #[test]
+    fn tones_have_no_layers() {
+        let text = r##"(
+            bodies: [(id: "a")],
+            skins: [(id: "s", color: "#c08060", sprite: "skin")],
+            hair_styles: [(id: "h", clothes: "cape"), (id: "bald")],
+            hair_colors: [(id: "c", color: "#101010")],
+        )"##;
+        let p = parse_appearance(text, &keys()).unwrap_err();
+        assert_eq!(p.len(), 2, "{p:?}");
     }
 }

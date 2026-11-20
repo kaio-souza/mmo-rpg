@@ -4,9 +4,9 @@ What players get with every game made with the kit.
 
 ## Screens
 
-1. **Login:** language list (each language in its own name), server list, account and password, register. A background image comes from `assets/ui/login_background.png`; music from `sounds.ron` (`screens: { "login": ... }`).
+1. **Login:** the game's title large over the account and password, register; the language list in the top right corner (each language in its own name), the client's version in the bottom left. The server field shows only when the player has one to choose (no `--server`, and not exactly one server in `login.ron`). A background image comes from `assets/ui/login_background.png`; music from `sounds.ron` (`screens: { "login": ... }`).
 2. **Queue:** when the world is full, position and estimated wait.
-3. **Characters:** choose, create (name and appearance from `appearance.ron`), delete (typing the name again; the name becomes free).
+3. **Characters:** choose, create (name and appearance from `appearance.ron`, with a preview drawn as the game draws the character), delete (typing the name again; the name becomes free).
 4. **Game:** the world with the HUD over it.
 
 `client --dev --name <name>` skips the first three in development.

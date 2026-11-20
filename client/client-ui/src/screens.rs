@@ -21,6 +21,15 @@ const PASSWORD_REPEAT: u32 = 21;
 /// Id of the language list (the server list uses `LOGIN_SERVER`).
 const LIST_LOCALE: u32 = 30;
 
+/// The login panel's width, logical pixels.
+const LOGIN_WIDTH: f32 = 420.0;
+/// The language list in the login screen's corner, logical pixels.
+const LOGIN_LANGUAGE_WIDTH: f32 = 180.0;
+/// The game's name over the login panel: this many times the theme's title.
+const LOGIN_TITLE_SCALE: f32 = 2.4;
+/// The client's version, shown on the login screen.
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Where the login lists open from, filled while the form is drawn.
 #[derive(Default)]
 struct Anchors {
@@ -28,10 +37,28 @@ struct Anchors {
     server: Rect,
 }
 
-/// Colors of the placeholder figure until the sprites of phase 6: clothes
-/// (body type), skin and hair; `hair: None` is bald.
+/// The first frame of a sprite strip for each facing (S, W, N, E): sheet
+/// coordinates from the binary, and a frame's width / height.
 #[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SheetSprite {
+    pub uv: [[f32; 4]; 4],
+    pub aspect: f32,
+}
+
+/// One layer of a character, drawn in order, bottom first.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FigureLayer {
+    pub sprite: SheetSprite,
+    /// Multiplies the sprite's colors (white: as drawn).
+    pub tint: Color,
+}
+
+/// A character as the game draws it: its sprite layers. Without layers
+/// (no art loaded yet), a placeholder from the colors: clothes (body
+/// type), skin and hair; `hair: None` is bald.
+#[derive(Clone, Debug, PartialEq)]
 pub struct Figure {
+    pub layers: Vec<FigureLayer>,
     pub body: Color,
     pub skin: Color,
     pub hair: Option<Color>,
@@ -77,6 +104,12 @@ pub struct LookList {
 pub struct CreateModel {
     /// Body, skin, hairstyle, hair color.
     pub lists: [LookList; 4],
+    /// The look being chosen as the game draws it (from the binary, which
+    /// reads [`ScreenState::look`]); `None`: the placeholder.
+    pub preview: Option<Box<Figure>>,
+    /// Lists that change nothing the game draws (no art for them yet):
+    /// not offered.
+    pub hidden: [bool; 4],
     pub error: Option<String>,
     pub busy: bool,
 }
@@ -107,6 +140,9 @@ pub struct ScreenState {
     pub delete_name: String,
     /// The login list open now (language or server), if any.
     pub open_list: Option<u32>,
+    /// The server is decided (`--server`, or a single configured one): the
+    /// login screen does not ask for it.
+    pub server_fixed: bool,
     /// The picture behind the screens (sheet coordinates, width / height);
     /// without it, the summoning circle.
     pub backdrop: Option<([f32; 4], f32)>,
@@ -226,50 +262,83 @@ impl ScreenState {
         }
     }
 
-    /// The login form under any open list.
+    /// The login form under any open list: the game's name large above a
+    /// panel with the account and the password (and the server, when the
+    /// player has one to choose), the language list in the screen's top
+    /// right corner and the client's version in the bottom left.
     fn login_form(&mut self, f: &mut Frame<'_>, m: &LoginModel, anchors: &mut Anchors) {
         let (pad, lh) = metrics(f);
         let field_h = lh + 2.0 * pad;
         let small = f.line_height(Role::Text, f.theme.sizes.small);
-        // Language row, three labeled fields, remember, buttons, status.
-        let h = 2.0 * pad + field_h + 3.0 * (small + field_h + pad) + 2.0 * (field_h + pad) + lh + pad;
-        let r = window_h(f, 460.0, h);
-        let title = f.tr("ui.game.title");
-        header(f, r, &title);
-        let inner = r.w - 2.0 * pad;
-        // Language: a list at the top right, the current one in its own name.
+        let (sw, sh) = f.input.screen;
+
+        // Language: the current one in its own name.
         let names = crate::texts::language_names();
         let current = names
             .iter()
             .find(|(l, _)| *l == m.locale)
             .map_or_else(|| f.tr("ui.locale.name"), |(_, n)| n.clone());
-        let lang_w = (inner * 0.45).max(f.px(150.0));
-        anchors.locale = Rect::new(r.x + r.w - pad - lang_w, r.y + pad, lang_w, field_h);
+        let lang_w = f.px(LOGIN_LANGUAGE_WIDTH).min(sw - 2.0 * pad);
+        anchors.locale = Rect::new(sw - pad - lang_w, pad, lang_w, field_h);
         if self.select_box(f, anchors.locale, &current, self.open_list == Some(LIST_LOCALE)) && !m.busy {
             self.open_list = Some(LIST_LOCALE);
         }
-        let mut y = r.y + 2.0 * pad + field_h;
-        // Server: typed, or picked from the configured list.
-        y = labeled(f, r, y, "ui.login.server");
-        let list_w = if m.servers.is_empty() { 0.0 } else { field_h };
-        f.field(
-            LOGIN_SERVER,
-            Rect::new(r.x + pad, y, inner - list_w, field_h),
-            &mut self.server,
-            false,
-            128,
+        let version = f.tr_args("ui.login.version", &[base::Arg::Str(VERSION.to_owned())]);
+        let c = f.theme.colors.dim_text;
+        f.label(
+            Role::Text,
+            f.theme.sizes.small,
+            (pad, sh - pad - small),
+            c,
+            &version,
         );
-        if list_w > 0.0 {
-            anchors.server = Rect::new(r.x + pad, y, inner, field_h);
-            let b = Rect::new(r.x + r.w - pad - list_w, y, list_w, field_h);
-            let open = self.open_list == Some(LOGIN_SERVER);
-            if f.button(b, "") {
-                self.open_list = Some(LOGIN_SERVER);
+
+        // The panel's rows: server (only to choose one), account, password,
+        // remember, buttons, and a status line only when there is one.
+        let show_server = !self.server_fixed;
+        let status = m.busy || m.error.is_some();
+        let fields = if show_server { 3.0 } else { 2.0 };
+        let h = 2.0 * pad
+            + fields * (small + field_h + pad)
+            + 2.0 * (field_h + pad)
+            + if status { lh + pad } else { 0.0 };
+        let title_size = f.theme.sizes.title * LOGIN_TITLE_SCALE;
+        let title_h = f.line_height(Role::Title, title_size);
+        let r = window_below(f, LOGIN_WIDTH, h, title_h + 2.0 * pad);
+        let title = f.tr("ui.game.title");
+        let c = f.theme.colors.highlight;
+        f.label_center(
+            Role::Title,
+            title_size,
+            Rect::new(r.x - r.w, r.y - title_h - 2.0 * pad, r.w * 3.0, title_h),
+            c,
+            &title,
+        );
+        let inner = r.w - 2.0 * pad;
+        let mut y = r.y + 1.5 * pad;
+        if show_server {
+            // Typed, or picked from the configured list.
+            y = labeled(f, r, y, "ui.login.server");
+            let list_w = if m.servers.is_empty() { 0.0 } else { field_h };
+            f.field(
+                LOGIN_SERVER,
+                Rect::new(r.x + pad, y, inner - list_w, field_h),
+                &mut self.server,
+                false,
+                128,
+            );
+            if list_w > 0.0 {
+                anchors.server = Rect::new(r.x + pad, y, inner, field_h);
+                let b = Rect::new(r.x + r.w - pad - list_w, y, list_w, field_h);
+                let open = self.open_list == Some(LOGIN_SERVER);
+                if f.button(b, "") {
+                    self.open_list = Some(LOGIN_SERVER);
+                }
+                let c = f.theme.colors.text;
+                f.chevron(b, open, c);
             }
-            let c = f.theme.colors.text;
-            f.chevron(b, open, c);
+            y += field_h + pad;
         }
-        y += field_h + pad;
         y = labeled(f, r, y, "ui.login.account");
         let enter_a = f.field(
             LOGIN_ACCOUNT,
@@ -600,7 +669,8 @@ impl ScreenState {
         if f.focus.is_none() {
             *f.focus = Some(CREATE_NAME);
         }
-        let r = window(f, 560.0, 10);
+        let shown = m.hidden.iter().filter(|h| !**h).count() as u32;
+        let r = window(f, 560.0, 6 + shown);
         let (pad, lh) = metrics(f);
         let title = f.tr("ui.create.title");
         header(f, r, &title);
@@ -637,6 +707,9 @@ impl ScreenState {
             "ui.create.hair_color",
         ];
         for (i, key) in keys.iter().enumerate() {
+            if m.hidden[i] {
+                continue;
+            }
             let list = &m.lists[i];
             let n = list.names.len();
             let label = f.tr(key);
@@ -679,7 +752,7 @@ impl ScreenState {
             y - r.y - 3.0 * pad - lh,
         );
         f.panel(preview, false);
-        let fig = self.figure(m);
+        let fig = m.preview.as_deref().cloned().unwrap_or_else(|| self.figure(m));
         let dir = ((f.input.now_ms / 600) % 8) as u8;
         let w = preview.h.min(preview.w) * 0.45;
         figure(
@@ -725,6 +798,7 @@ impl ScreenState {
                 .unwrap_or([0.5, 0.5, 0.5, 1.0])
         };
         Figure {
+            layers: Vec::new(),
             body: color(&m.lists[0], self.look[0]),
             skin: color(&m.lists[1], self.look[1]),
             hair: Some(color(&m.lists[3], self.look[3])),
@@ -848,6 +922,17 @@ fn window_h(f: &mut Frame<'_>, width: f32, h: f32) -> Rect {
         w,
         h,
     );
+    f.panel(r, true);
+    r
+}
+
+/// A window `width` logical pixels wide and `h` physical high, centered
+/// together with `above` physical pixels over it (a title); the window.
+fn window_below(f: &mut Frame<'_>, width: f32, h: f32, above: f32) -> Rect {
+    let (pad, _) = metrics(f);
+    let w = f.px(width).min(f.input.screen.0 - 2.0 * pad);
+    let top = ((f.input.screen.1 - h - above) / 2.0).max(pad);
+    let r = Rect::new((f.input.screen.0 - w) / 2.0, top + above, w, h);
     f.panel(r, true);
     r
 }
@@ -986,6 +1071,20 @@ fn background(f: &mut Frame<'_>) {
 /// it faces (`dir` 0 = south, then clockwise in eighths), until the
 /// sprites of phase 6.
 pub fn figure(f: &mut Frame<'_>, r: Rect, fig: &Figure, dir: u8) {
+    if !fig.layers.is_empty() {
+        // Sprite rows face S, W, N, E; the eighths between take the next row
+        // clockwise, as in the world view.
+        let row = usize::from((dir % 8).div_ceil(2) % 4);
+        for layer in &fig.layers {
+            let h = r.h;
+            let w = h * layer.sprite.aspect;
+            let at = Rect::new(r.x + (r.w - w) / 2.0, r.y, w, h);
+            if let Some(uv) = layer.sprite.uv.get(row) {
+                f.painter.image(at, *uv, layer.tint);
+            }
+        }
+        return;
+    }
     let body_w = if fig.broad { r.w * 0.8 } else { r.w * 0.62 };
     let head = r.w * 0.42;
     let cx = r.x + r.w / 2.0;

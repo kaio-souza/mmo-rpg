@@ -38,6 +38,7 @@
     "ui.login.enter": "Войти",
     "ui.login.register": "Создать аккаунт",
     "ui.login.connecting": "Подключение…",
+    "ui.login.version": "Версия {version}",
     "ui.select.title": "Персонажи",
     "ui.select.enter": "Играть",
     "ui.select.create": "Новый персонаж",

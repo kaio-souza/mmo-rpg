@@ -566,11 +566,18 @@ pub enum QuestMarker {
     Ready,
 }
 
-/// One option of a creation list: name and tone (`0xRRGGBB`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// One option of a creation list: name, tone (`0xRRGGBB`) and, for
+/// bodies and hairstyles, the sprites of its layers by name (`a-z0-9_`;
+/// empty: none). Names, not sprite numbers: the creation screen draws them
+/// before `Definitions` (which numbers the sprites) arrives.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LookOptionInfo {
     pub name: TextId,
     pub color: u32,
+    /// The layer, tinted by `color` of the skin (body) or hair color (hairstyle).
+    pub sprite: String,
+    /// Bodies: clothes over the body, not tinted.
+    pub clothes: String,
 }
 
 /// The four lists in `Look` field order: body, skin, hairstyle, hair color.

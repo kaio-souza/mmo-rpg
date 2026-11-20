@@ -396,6 +396,7 @@ fn ime_composition_and_commit_in_a_field() {
 fn select_queue_and_random_look() {
     let mut u = ui(Locale::from_static("ko"));
     let fig = Figure {
+        layers: Vec::new(),
         body: [0.2, 0.2, 0.4, 1.0],
         skin: [0.9, 0.7, 0.6, 1.0],
         hair: None,
@@ -1286,4 +1287,46 @@ fn the_shop_mode_decides_what_a_click_does() {
 fn grouped_numbers() {
     assert_eq!(crate::hud::grouped_for_tests(1_234_567), "1,234,567");
     assert_eq!(crate::hud::grouped_for_tests(999), "999");
+}
+
+#[test]
+fn the_creator_shows_the_game_figure_and_only_lists_that_change_it() {
+    let lists: [LookList; 4] = std::array::from_fn(|_| LookList {
+        names: vec!["a".into(), "b".into()],
+        colors: vec![[1.0; 4], [0.5, 0.5, 0.5, 1.0]],
+    });
+    // Sheet coordinates of images are shifted by 2 in `u`.
+    let layer = FigureLayer {
+        sprite: SheetSprite {
+            uv: [[2.0, 0.0, 2.1, 0.1]; 4],
+            aspect: 1.0,
+        },
+        tint: [1.0; 4],
+    };
+    let preview = Figure {
+        layers: vec![layer],
+        body: [1.0; 4],
+        skin: [1.0; 4],
+        hair: None,
+        broad: false,
+    };
+    let draw = |hidden: [bool; 4], preview: Option<Box<Figure>>| {
+        let mut u = ui(Locale::EN);
+        u.screen(
+            &quiet(),
+            &Screen::Create(CreateModel {
+                lists: lists.clone(),
+                preview,
+                hidden,
+                ..CreateModel::default()
+            }),
+        );
+        u.vertices().to_vec()
+    };
+    let image = |v: &[Vertex]| v.iter().any(|v| v.uv[0] >= 2.0);
+    assert!(image(&draw([false; 4], Some(Box::new(preview)))));
+    assert!(!image(&draw([false; 4], None)), "the placeholder is flat shapes");
+    let all = draw([false; 4], None).len();
+    let skins_only = draw([true, false, true, true], None).len();
+    assert!(skins_only < all, "{skins_only} < {all}");
 }

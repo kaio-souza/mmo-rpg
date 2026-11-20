@@ -38,6 +38,7 @@
     "ui.login.enter": "ログイン",
     "ui.login.register": "アカウント作成",
     "ui.login.connecting": "接続中…",
+    "ui.login.version": "バージョン {version}",
     "ui.select.title": "キャラクター",
     "ui.select.enter": "プレイ",
     "ui.select.create": "新しいキャラクター",

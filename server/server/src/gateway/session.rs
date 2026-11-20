@@ -160,6 +160,11 @@ impl Gateway {
                 if let Some(conn) = self.conns.get_mut(&c) {
                     conn.muted_until = muted_until;
                 }
+                // The development login has no `Session`, which carries the
+                // look lists: without them every player is drawn plain.
+                if dev {
+                    self.net.send(c, self.cfg.content.appearances.clone());
+                }
                 self.on_loaded(c, character, dev);
             }
             Done::Released { account, character } => {

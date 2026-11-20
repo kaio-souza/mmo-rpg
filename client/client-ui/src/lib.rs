@@ -26,8 +26,8 @@ pub use keys::{Action, Chord, KeyMap};
 pub use overlay::{FloatKind, FloatText, MarkerKind, Overhead};
 pub use paint::{Painter, Rect, Vertex};
 pub use screens::{
-    CharacterCard, CreateModel, Figure, LoginModel, LookList, PasswordModel, Screen, ScreenState,
-    SelectModel, figure,
+    CharacterCard, CreateModel, Figure, FigureLayer, LoginModel, LookList, PasswordModel, Screen,
+    ScreenState, SelectModel, SheetSprite, figure,
 };
 pub use texts::{TextFile, UiText, game_id, language_names, set_game, text_files};
 pub use theme::{

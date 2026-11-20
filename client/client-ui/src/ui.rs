@@ -278,6 +278,10 @@ impl Frame<'_> {
         self.text.t(key)
     }
 
+    pub fn tr_args(&self, key: &str, args: &[base::Arg]) -> String {
+        self.text.t_args(key, args)
+    }
+
     /// Records where a window or HUD part sits this frame.
     pub(crate) fn place(&mut self, name: &'static str, r: Rect) {
         self.placed.push((name, r));

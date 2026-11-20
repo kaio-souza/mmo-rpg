@@ -38,6 +38,7 @@
     "ui.login.enter": "进入",
     "ui.login.register": "创建账号",
     "ui.login.connecting": "连接中…",
+    "ui.login.version": "版本 {version}",
     "ui.select.title": "角色",
     "ui.select.enter": "开始游戏",
     "ui.select.create": "新建角色",

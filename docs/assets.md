@@ -57,6 +57,7 @@ The zone map stores the number ([world](content/world.md#mapron)); this file is 
 - **Anchor:** the pixel of one frame that sits on the centre of its tile.
 - **Strips:** an animated image is one PNG with frames side by side and, with 4 directions, one row per direction in the order south, west, north, east. `frames` 1 to 64, `fps` (default 8), `directions` 1 or 4, `play`: `Always` (scenery) or `Moving` (only while walking; standing shows frame 1).
 - Equipment layers follow the body's frame and direction when they are strips too.
+- Character layers (body, clothes, hair; [appearance](content/characters.md#appearance)) are strips of the same size and anchor as `player`. A layer tinted by a colour (body, hair) is painted in light greys: the game multiplies it by the skin or hair colour, so white becomes that colour and the shading stays.
 - A strip that does not divide into its frames and rows is drawn whole, with a warning in the client log and the editor.
 
 ## Light

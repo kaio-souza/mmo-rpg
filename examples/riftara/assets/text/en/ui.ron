@@ -38,6 +38,7 @@
     "ui.login.enter": (text: "Enter", note: "Button: log in.", max_chars: 14),
     "ui.login.register": (text: "Create account", note: "Button: create a new account.", max_chars: 20),
     "ui.login.connecting": (text: "Connecting…", note: "Waiting for the server.", max_chars: 24),
+    "ui.login.version": (text: "Version {version}", note: "Small, in a corner of the login screen; {version}: the client's version number, such as 0.1.0.", max_chars: 24),
     "ui.select.title": (text: "Characters", note: "Character selection title.", max_chars: 24),
     "ui.select.enter": (text: "Play", note: "Button: play the selected character.", max_chars: 14),
     "ui.select.create": (text: "New character", note: "Button: go to character creation.", max_chars: 20),

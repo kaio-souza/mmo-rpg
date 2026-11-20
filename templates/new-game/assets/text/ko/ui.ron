@@ -38,6 +38,7 @@
     "ui.login.enter": "접속",
     "ui.login.register": "계정 만들기",
     "ui.login.connecting": "연결 중…",
+    "ui.login.version": "버전 {version}",
     "ui.select.title": "캐릭터",
     "ui.select.enter": "플레이",
     "ui.select.create": "새 캐릭터",

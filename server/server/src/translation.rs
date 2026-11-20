@@ -44,6 +44,8 @@ pub fn appearances(catalog: &defs::ValidatedCatalog) -> Result<Bytes, protocol::
             .map(|o| protocol::LookOptionInfo {
                 name: o.name,
                 color: o.color,
+                sprite: o.sprite.clone(),
+                clothes: o.clothes.clone(),
             })
             .collect()
     };

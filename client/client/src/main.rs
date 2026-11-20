@@ -204,6 +204,9 @@ fn run() -> Result<(), String> {
     let mut assets = interface::Assets::new(args.assets.clone().into(), args.theme.clone(), locale);
     let mut ui = assets.ui()?;
     ui.screens.server = server;
+    // A server given on the command line, or the only configured one, is
+    // not asked on the login screen.
+    ui.screens.server_fixed = args.server.is_some() || config.servers.len() == 1;
     ui.screens.account = args
         .account
         .clone()
@@ -541,7 +544,7 @@ impl App {
                     .map(|c| CharacterCard {
                         name: c.name.to_string(),
                         level: c.level,
-                        figure: interface::figure_of(&self.state, c.look),
+                        figure: interface::figure_of(&self.state, &self.graphics, c.look),
                     })
                     .collect(),
                 max: flow::MAX_CHARACTERS,
@@ -550,6 +553,17 @@ impl App {
             }),
             Stage::Create | Stage::Creating => Screen::Create(CreateModel {
                 lists: interface::look_lists(&self.state, &self.texts),
+                preview: {
+                    let [body, skin, hair_style, hair_color] = self.ui.screens.look;
+                    let look = base::Look {
+                        body,
+                        skin,
+                        hair_style,
+                        hair_color,
+                    };
+                    interface::figure_of(&self.state, &self.graphics, look).map(Box::new)
+                },
+                hidden: interface::hidden_lists(&self.state),
                 error,
                 busy: self.flow.stage == Stage::Creating,
             }),
