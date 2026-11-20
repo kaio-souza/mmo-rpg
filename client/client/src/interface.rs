@@ -104,16 +104,21 @@ impl Assets {
         Some((theme, fonts))
     }
 
-    pub fn ui(&mut self) -> Ui {
-        let (theme, fonts) = self.load().unwrap_or_else(|| {
-            let theme = load_theme(include_str!(
-                "../../../templates/new-game/assets/themes/isekai.ron"
-            ))
-            .expect("built-in theme");
-            let (fonts, _) = Fonts::load(&theme, "en", &mut |_| None);
-            (theme, fonts)
-        });
-        Ui::new(theme, fonts, UiText::new(self.locale))
+    /// The interface with the game's theme, or the built-in one when the
+    /// game has none that loads.
+    pub fn ui(&mut self) -> Result<Ui, String> {
+        let (theme, fonts) = match self.load() {
+            Some(loaded) => loaded,
+            None => {
+                let theme = load_theme(include_str!(
+                    "../../../templates/new-game/assets/themes/isekai.ron"
+                ))
+                .map_err(|e| format!("built-in theme: {e}"))?;
+                let (fonts, _) = Fonts::load(&theme, "en", &mut |_| None);
+                (theme, fonts)
+            }
+        };
+        Ok(Ui::new(theme, fonts, UiText::new(self.locale)))
     }
 
     /// Another language: its fonts (CJK faces differ) and interface texts.

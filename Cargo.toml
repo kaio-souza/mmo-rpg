@@ -103,6 +103,9 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 dbg_macro = "warn"
 todo = "warn"
+# A failure is a domain error, never a panic (tests are allowed by clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
 
 [profile.release]
 lto = "thin"

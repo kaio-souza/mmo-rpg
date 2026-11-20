@@ -1,5 +1,6 @@
 //! Phase 2 done criterion: a character comes back where it stopped after the
 //! server restarts. Runs the real binary over TLS with a fresh data folder.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{AccountName, CharacterName, Locale, TilePos};
 use protocol::{ClientMsg, ErrorCode, MAX_SERVER_FRAME, PROTOCOL_VERSION, Password, ServerMsg, SessionToken};

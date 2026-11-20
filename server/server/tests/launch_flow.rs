@@ -2,6 +2,7 @@
 //! selection screen and its name freed; an announced restart counts down,
 //! saves everyone and stops the server; the hourly backup writes checked
 //! copies. Runs the real binary over TLS.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{AccountName, CharacterName, Locale};
 use persistence::{Repository, Role};

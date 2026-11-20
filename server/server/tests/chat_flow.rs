@@ -1,5 +1,6 @@
 //! Phase 5: chat (local, whisper), mute, report and in-game admin commands,
 //! through the real binary over TLS.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{AccountName, CharacterName, ChatText, Locale, Look, TextId};
 use persistence::{Repository, Role};

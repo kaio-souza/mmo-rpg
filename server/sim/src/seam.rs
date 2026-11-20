@@ -115,20 +115,20 @@ impl GhostDiff {
                     if a != b {
                         d.upsert.push(b.clone());
                     }
-                    i += 1;
-                    j += 1;
+                    i = i.saturating_add(1);
+                    j = j.saturating_add(1);
                 }
                 (Some(a), Some(b)) if a.id < b.id => {
                     d.gone.push(a.id);
-                    i += 1;
+                    i = i.saturating_add(1);
                 }
                 (Some(a), None) => {
                     d.gone.push(a.id);
-                    i += 1;
+                    i = i.saturating_add(1);
                 }
                 (_, Some(b)) => {
                     d.upsert.push(b.clone());
-                    j += 1;
+                    j = j.saturating_add(1);
                 }
                 (None, None) => break,
             }
@@ -164,8 +164,10 @@ pub fn world_map(cat: &ValidatedCatalog, zone: ZoneId) -> Result<TileMap, ZoneEr
         return crate::zone_map(def).map_err(ZoneError::Map);
     }
     let area = def.rect().grow(SEAM_BAND);
-    let (w, h) = (area.max.x - area.min.x + 1, area.max.y - area.min.y + 1);
-    let mut tiles = Vec::with_capacity(usize::try_from(w * h).unwrap_or(0));
+    let span = |lo: i32, hi: i32| hi.saturating_sub(lo).saturating_add(1);
+    let (w, h) = (span(area.min.x, area.max.x), span(area.min.y, area.max.y));
+    let mut tiles =
+        Vec::with_capacity(usize::try_from(i64::from(w).saturating_mul(i64::from(h))).unwrap_or(0));
     for y in area.min.y..=area.max.y {
         for x in area.min.x..=area.max.x {
             let p = TilePos::new(x, y);

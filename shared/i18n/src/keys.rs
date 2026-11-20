@@ -37,6 +37,12 @@ impl KeyTable {
         }
     }
 
+    /// A table with no keys: what a caller falls back to when the `en`
+    /// files do not build, without a panic.
+    pub fn empty() -> KeyTable {
+        check::build_source(&[]).0
+    }
+
     pub fn id(&self, key: &str) -> Option<TextId> {
         let i = self.keys.binary_search_by(|k| k.as_str().cmp(key)).ok()?;
         u32::try_from(i).ok().map(TextId::new)

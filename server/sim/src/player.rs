@@ -249,8 +249,8 @@ impl PlayerData {
                 && *i == item
             {
                 let add = left.min(max.saturating_sub(*qty));
-                *qty += add;
-                left -= add;
+                *qty = (*qty).saturating_add(add);
+                left = left.saturating_sub(add);
             }
         }
         for s in self.slots.iter_mut() {
@@ -260,7 +260,7 @@ impl PlayerData {
             if *s == Slot::Empty {
                 let add = left.min(max);
                 *s = Slot::Stack { item, qty: add };
-                left -= add;
+                left = left.saturating_sub(add);
             }
         }
         Ok(())
@@ -280,8 +280,8 @@ impl PlayerData {
                 && *i == item
             {
                 let sub = left.min(*qty);
-                *qty -= sub;
-                left -= sub;
+                *qty = (*qty).saturating_sub(sub);
+                left = left.saturating_sub(sub);
                 if *qty == 0 {
                     *s = Slot::Empty;
                 }
@@ -305,11 +305,11 @@ impl PlayerData {
             Slot::Stack { item: t, qty: tq } if t == item => {
                 let max = cat.item(item).map_or(1, |d| u32::from(d.max_stack));
                 let moved = qty.min(max.saturating_sub(tq));
-                let rest = qty - moved;
+                let rest = qty.saturating_sub(moved);
                 if let Some(s) = self.slots.get_mut(to) {
                     *s = Slot::Stack {
                         item,
-                        qty: tq + moved,
+                        qty: tq.saturating_add(moved),
                     };
                 }
                 if let Some(s) = self.slots.get_mut(from) {

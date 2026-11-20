@@ -199,7 +199,7 @@ impl Zone {
         if self.social.party_of(to).is_some() {
             return Err(Refusal::InvalidTarget);
         }
-        let until = self.tick.0 + INVITE_TICKS;
+        let until = self.tick.0.saturating_add(INVITE_TICKS);
         self.social.invites.retain(|i| !(i.from == player && i.to == to));
         self.social.invites.push(Invite {
             from: player,
@@ -240,7 +240,7 @@ impl Zone {
             Some(g) if g.members.len() >= MAX_PARTY => return Err(Refusal::PartyFull),
             Some(g) => g.id,
             None => {
-                self.social.next_party += 1;
+                self.social.next_party = self.social.next_party.saturating_add(1);
                 let id = self.social.next_party;
                 self.social.parties.push(Party {
                     id,
@@ -357,7 +357,7 @@ impl Zone {
         if now < p.emote_ready {
             return Err(Refusal::NotReady);
         }
-        p.emote_ready = now + u64::from(cooldown);
+        p.emote_ready = now.saturating_add(u64::from(cooldown));
         for (&viewer, &h) in &self.by_player {
             let sees = viewer == player
                 || self
@@ -393,7 +393,7 @@ impl Zone {
         if mp.distance(op) > TRADE_RADIUS {
             return Err(Refusal::TooFar);
         }
-        let until = self.tick.0 + TRADE_TICKS;
+        let until = self.tick.0.saturating_add(TRADE_TICKS);
         // The other side already asked: this is the answer.
         if let Some(t) = self
             .social
@@ -476,7 +476,7 @@ impl Zone {
             }
         }
         offers.sort_by_key(|o| o.slot);
-        let until = self.tick.0 + TRADE_TICKS;
+        let until = self.tick.0.saturating_add(TRADE_TICKS);
         if let Some(t) = self.social.trades.get_mut(i) {
             if let Some(s) = t.side_mut(player) {
                 s.offers = offers;
@@ -493,7 +493,7 @@ impl Zone {
 
     pub(crate) fn trade_confirm(&mut self, player: PlayerId, out: &mut TickOutput) -> Result<(), Refusal> {
         let i = self.social.trade_index(player).ok_or(Refusal::NoTrade)?;
-        let until = self.tick.0 + TRADE_TICKS;
+        let until = self.tick.0.saturating_add(TRADE_TICKS);
         let both = {
             let t = self.social.trades.get_mut(i).ok_or(Refusal::NoTrade)?;
             if !t.open {
@@ -602,7 +602,7 @@ impl Zone {
             };
             for &(from, to) in moved_held.get(n).map(Vec::as_slice).unwrap_or_default() {
                 if let Some(inst) = gear.take_bag(from)
-                    && let Some(v) = inbound.get_mut(1 - n)
+                    && let Some(v) = inbound.get_mut(1usize.saturating_sub(n))
                 {
                     v.push((to, inst));
                 }

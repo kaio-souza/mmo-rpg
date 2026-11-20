@@ -66,7 +66,7 @@ pub(crate) fn run(z: &mut Zone) {
                     walk.steps = steps.into();
                 }
             }
-            walk.blocked += 1;
+            walk.blocked = walk.blocked.saturating_add(1);
             if walk.blocked > BLOCKED_GIVE_UP_TICKS {
                 walk.steps.clear();
                 walk.blocked = 0;
@@ -79,6 +79,6 @@ pub(crate) fn run(z: &mut Zone) {
         body.pos = next;
         body.facing = dir;
         body.moved_tick = now;
-        walk.ready = now + dir.step_ticks();
+        walk.ready = now.saturating_add(dir.step_ticks());
     }
 }

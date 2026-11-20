@@ -1,6 +1,7 @@
 //! Phase 3 slice: an NPC defined only in `content/` is seen, talks in the
 //! player's locale through the text pack, and refuses from afar. Runs the
 //! real binary in dev mode with the repository content.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{CharacterName, EntityId, Locale, TextRef, TilePos};
 use i18n::Bundle;

@@ -60,13 +60,13 @@ impl ShopComp {
                 continue;
             }
             let ticks = now.saturating_sub(line.settled);
-            let back = ticks / u64::from(stock.restock_ticks);
+            let back = ticks.checked_div(u64::from(stock.restock_ticks)).unwrap_or(0);
             if back > 0 {
                 let back = u32::try_from(back).unwrap_or(u32::MAX);
                 line.left = line.left.saturating_add(back).min(stock.qty);
                 line.settled = line
                     .settled
-                    .saturating_add(back as u64 * u64::from(stock.restock_ticks));
+                    .saturating_add(u64::from(back).saturating_mul(u64::from(stock.restock_ticks)));
             }
             if line.left >= stock.qty {
                 line.settled = now;
@@ -248,7 +248,7 @@ impl Zone {
             && let Some(line) = s.lines.get_mut(usize::from(index))
             && line.left != UNLIMITED
         {
-            line.left -= qty;
+            line.left = line.left.saturating_sub(qty);
         }
         self.mark_shop(handle);
         self.tell(
@@ -318,9 +318,15 @@ impl Zone {
             if piece == 0 || rarity > cat.formulas().economy.npc_buy_max {
                 return Err(Refusal::NotTraded);
             }
-            unit = unit.saturating_mul(u64::from(piece)) / u64::from(own);
+            unit = unit
+                .saturating_mul(u64::from(piece))
+                .checked_div(u64::from(own))
+                .unwrap_or(0);
             if max > 0 {
-                unit = unit.saturating_mul(u64::from(cur)) / u64::from(max);
+                unit = unit
+                    .saturating_mul(u64::from(cur))
+                    .checked_div(u64::from(max))
+                    .unwrap_or(0);
             }
         }
         let total = unit.saturating_mul(u64::from(qty));
@@ -409,7 +415,13 @@ impl Zone {
             return Err(Refusal::NotTraded);
         }
         let value = cat.item(item).map_or(0, |d| d.value);
-        let price = defs::repair_price(value, max - cur, max, economy.repair_permille, def.price_permille);
+        let price = defs::repair_price(
+            value,
+            max.saturating_sub(cur),
+            max,
+            economy.repair_permille,
+            def.price_permille,
+        );
         let name = cat.item(item).map(|d| d.name);
         {
             let p = self
@@ -514,9 +526,13 @@ impl Zone {
             return Err(Refusal::NotTraded);
         };
         // The share of the recipe's bars that the wear is worth, at least one.
-        let need = u32::try_from((u64::from(main.qty) * u64::from(max - cur)).div_ceil(u64::from(max)))
-            .unwrap_or(u32::MAX)
-            .max(1);
+        let need = u32::try_from(
+            u64::from(main.qty)
+                .saturating_mul(u64::from(max.saturating_sub(cur)))
+                .div_ceil(u64::from(max).max(1)),
+        )
+        .unwrap_or(u32::MAX)
+        .max(1);
         let material_name = cat.item(main.item).map(|d| d.name);
         {
             let p = self
@@ -712,7 +728,7 @@ pub(crate) fn purse_left(sales: &[(String, u64, u64)], shop: &str, purse: Purse,
     match sales.iter().find(|(s, _, _)| s == shop) {
         Some((_, paid, since)) if now < since.saturating_add(period) => (
             purse.coins.saturating_sub(*paid),
-            u32::try_from(since.saturating_add(period) - now).unwrap_or(u32::MAX),
+            u32::try_from(since.saturating_add(period).saturating_sub(now)).unwrap_or(u32::MAX),
         ),
         _ => (purse.coins, u32::try_from(period).unwrap_or(u32::MAX)),
     }

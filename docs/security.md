@@ -27,7 +27,7 @@
 | Login storm | argon2 runs on its own pool with a cap on simultaneous logins; resuming with a token skips it |
 | Malicious or broken content | No scripting; closed blocks validated before loading |
 | Memory corruption | `unsafe_code = "forbid"` for the whole workspace |
-| A panic taking the server down | `unwrap`, `expect` and direct indexing denied in `combat` and `defs`; each zone tick isolated with `catch_unwind` ([runtime](runtime.md#crashes-and-replays)) |
+| A panic taking the server down | `unwrap` and `expect` denied in the whole workspace (tests excepted); direct indexing also denied in `shared/` crates and `sim`; arithmetic that can overflow or divide by zero denied in `sim`, `combat` and `progression` (saturating or checked operations instead); each zone tick isolated with `catch_unwind` as the last net ([runtime](runtime.md#crashes-and-replays)) |
 | Item duplication | Items have no `Clone`; one owner per item id (unique key); trades and escrow saved atomically |
 | Bots | Not allowed. Per-character telemetry (kills per hour, hours without a break); `admin suspects` lists them for a human to review; progress gives less for repetition and nodes empty per player |
 | Compromised dependency | Few dependencies, `cargo deny` in CI, nothing downloaded during the build |

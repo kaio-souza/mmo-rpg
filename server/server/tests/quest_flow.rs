@@ -3,6 +3,7 @@
 //! binary; the character keeps coins, items and the quest after logging in
 //! again; editing `content/` while the server runs reaches the client as
 //! `TextPackChanged` without a restart, and broken content is not loaded.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{CharacterName, EntityId, Locale, TextRef, TilePos};
 use i18n::Bundle;

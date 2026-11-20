@@ -70,7 +70,7 @@ impl Ward {
         if now >= self.until {
             return base;
         }
-        let share = u32::try_from(u64::from(base) * u64::from(self.permille) / 1000).unwrap_or(u32::MAX);
+        let share = u32::try_from(combat::permille(u64::from(base), self.permille)).unwrap_or(u32::MAX);
         base.saturating_add(share.max(self.flat))
     }
 }
@@ -106,7 +106,11 @@ impl Fighter {
         if self.max_hp == 0 {
             return 100;
         }
-        (u64::from(self.hp) * 100 / u64::from(self.max_hp)) as u8
+        let pct = u64::from(self.hp)
+            .saturating_mul(100)
+            .checked_div(u64::from(self.max_hp))
+            .unwrap_or(100);
+        u8::try_from(pct).unwrap_or(100)
     }
 }
 
@@ -124,7 +128,7 @@ pub(crate) struct MonsterComp {
 /// without enough the blow waits twice as long.
 pub(crate) fn blow_wait(f: &mut Fighter, attack_ticks: u32, vigor: u32) -> u64 {
     if f.vigor >= vigor {
-        f.vigor -= vigor;
+        f.vigor = f.vigor.saturating_sub(vigor);
         u64::from(attack_ticks)
     } else {
         u64::from(attack_ticks) * 2
@@ -176,8 +180,8 @@ fn arms(z: &Zone, h: hecs::Entity) -> Option<Arms> {
             ..
         }) => {
             // The piece's rarity adds to both ends of the damage.
-            let k = 1000 + gear.weapon_permille(cat);
-            let up = |d: u32| u32::try_from(u64::from(d) * u64::from(k) / 1000).unwrap_or(u32::MAX);
+            let k = gear.weapon_permille(cat).saturating_add(1000);
+            let up = |d: u32| u32::try_from(combat::permille(u64::from(d), k)).unwrap_or(u32::MAX);
             (
                 (up(damage.0), up(damage.1)),
                 *attribute,
@@ -509,7 +513,7 @@ pub(crate) fn kill_xp(z: &Zone, m: &MonsterComp, monster: hecs::Entity, xp: u64)
         }
         let Some(members) = z.party_members(player) else {
             if share >= MIN_CONTRIBUTION_PERMILLE {
-                out.push((id, xp * u64::from(share) / 1000));
+                out.push((id, combat::permille(xp, share)));
             }
             continue;
         };
@@ -538,8 +542,13 @@ pub(crate) fn kill_xp(z: &Zone, m: &MonsterComp, monster: hecs::Entity, xp: u64)
         if n == 0 {
             continue;
         }
-        let pool = xp * pooled / 1000 * (1000 + PARTY_BONUS_PERMILLE * (n - 1)) / 1000;
-        out.extend(takers.into_iter().map(|t| (t, pool / n)));
+        let bonus = PARTY_BONUS_PERMILLE
+            .saturating_mul(n.saturating_sub(1))
+            .saturating_add(1000);
+        let pool = xp.saturating_mul(pooled) / 1000;
+        let pool = pool.saturating_mul(bonus) / 1000;
+        let each = pool.checked_div(n).unwrap_or(0);
+        out.extend(takers.into_iter().map(|t| (t, each)));
     }
     out.sort_by_key(|(id, _)| *id);
     out
@@ -580,7 +589,7 @@ fn on_kill(z: &mut Zone, att: EntityId, tgt: EntityId, out: &mut TickOutput) {
             if let Some(l) = looter.and_then(|l| z.by_id.get(&l).copied()) {
                 loot(z, l, m.monster, out);
             }
-            let respawn_at = z.tick.0 + u64::from(def.respawn_ticks);
+            let respawn_at = z.tick.0.saturating_add(u64::from(def.respawn_ticks));
             z.respawns.push((respawn_at, m.spawn));
             z.remove_entity(tgt);
         }
@@ -758,7 +767,7 @@ pub(crate) fn wear_on_death(z: &mut Zone, h: hecs::Entity) {
     }
     if let Ok(gear) = z.world.query_one_mut::<&mut Gear>(h) {
         for (_, inst) in gear.equipped.iter_mut() {
-            let loss = u32::try_from(u64::from(inst.max_durability) * u64::from(permille) / 1000)
+            let loss = u32::try_from(combat::permille(u64::from(inst.max_durability), permille))
                 .unwrap_or(0)
                 .max(1);
             // Death never breaks a piece outright: it leaves one blow.
@@ -798,7 +807,7 @@ pub(crate) fn give_instance(z: &mut Zone, h: hecs::Entity, item: base::ItemId, o
 /// HP at zero: fallen, waiting for help.
 fn fall(z: &mut Zone, h: hecs::Entity, out: &mut TickOutput) {
     let ticks = u64::from(z.content.catalog.formulas().progression.fallen_ticks);
-    let until = z.tick.0 + ticks.max(1);
+    let until = z.tick.0.saturating_add(ticks.max(1));
     let Ok((f, walk, p)) = z.world.query_one_mut::<(&mut Fighter, &mut Walk, &PlayerComp)>(h) else {
         return;
     };
@@ -942,7 +951,7 @@ pub(crate) fn ai(z: &mut Zone, out: &mut TickOutput) {
                     }
                     if now >= fighter.next_attack {
                         if let Ok(f) = z.world.query_one_mut::<&mut Fighter>(h) {
-                            f.next_attack = now + u64::from(def.attack_ticks);
+                            f.next_attack = now.saturating_add(u64::from(def.attack_ticks));
                         }
                         strike(z, id, t, 1000, None, out);
                     }
@@ -971,7 +980,7 @@ fn step_away(z: &Zone, pos: TilePos, from: TilePos, home: TilePos, leash: u16) -
         (0, 1),
         (1, 1),
     ] {
-        let p = TilePos::new(pos.x + dx, pos.y + dy);
+        let p = TilePos::new(pos.x.saturating_add(dx), pos.y.saturating_add(dy));
         let d = p.distance(from);
         if d > pos.distance(from)
             && p.distance(home) <= u32::from(leash)
@@ -1004,7 +1013,7 @@ fn walk_to(z: &mut Zone, h: hecs::Entity, from: TilePos, to: TilePos, now: u64) 
     let Ok((f, w)) = z.world.query_one_mut::<(&mut Fighter, &mut Walk)>(h) else {
         return;
     };
-    if !w.steps.is_empty() && now < f.last_path + REPATH_TICKS {
+    if !w.steps.is_empty() && now < f.last_path.saturating_add(REPATH_TICKS) {
         return;
     }
     f.last_path = now;
@@ -1038,7 +1047,7 @@ pub(crate) fn attacks(z: &mut Zone, out: &mut TickOutput) {
                 Ok(()) => {
                     if now >= fighter.next_attack {
                         if let Ok(f) = z.world.query_one_mut::<&mut Fighter>(h) {
-                            f.next_attack = now + blow_wait(f, a.attack_ticks, a.vigor);
+                            f.next_attack = now.saturating_add(blow_wait(f, a.attack_ticks, a.vigor));
                         }
                         strike(z, id, t, 1000, None, out);
                     }
@@ -1087,11 +1096,13 @@ pub(crate) fn regen(z: &mut Zone) {
             fi.ward = Ward::default();
         }
         if now.saturating_sub(fi.last_combat) >= u64::from(f.out_of_combat_ticks) && fi.hp < fi.max_hp {
-            let add = (u64::from(fi.max_hp) * u64::from(f.hp_regen_permille) / 1000).max(1) as u32;
+            let add = u32::try_from(combat::permille(u64::from(fi.max_hp), f.hp_regen_permille).max(1))
+                .unwrap_or(u32::MAX);
             fi.hp = fi.hp.saturating_add(add).min(fi.max_hp);
         }
         if fi.vigor < fi.max_vigor {
-            let add = (u64::from(fi.max_vigor) * u64::from(f.vigor_regen_permille) / 1000).max(1) as u32;
+            let add = u32::try_from(combat::permille(u64::from(fi.max_vigor), f.vigor_regen_permille).max(1))
+                .unwrap_or(u32::MAX);
             fi.vigor = fi.vigor.saturating_add(add).min(fi.max_vigor);
         }
         if fi.mp < fi.max_mp {
@@ -1139,6 +1150,14 @@ pub(crate) fn respawn(z: &mut Zone) {
 }
 
 impl Zone {
+    /// An offset in `-r..=r` from the zone's generator.
+    fn wander(&mut self, r: i32) -> i32 {
+        let span = u32::try_from(r.saturating_mul(2)).unwrap_or(0);
+        i32::try_from(self.rng.range(0, span))
+            .unwrap_or(0)
+            .saturating_sub(r)
+    }
+
     /// Places one monster of entry `spawn` of `monsters.ron` on a free
     /// tile near its point (deterministic: the zone's generator).
     pub(crate) fn spawn_monster(&mut self, spawn: u16) {
@@ -1154,8 +1173,8 @@ impl Zone {
         let mut pos = s.pos;
         for _ in 0..8 {
             let p = TilePos::new(
-                s.pos.x + self.rng.range(0, (2 * r) as u32) as i32 - r,
-                s.pos.y + self.rng.range(0, (2 * r) as u32) as i32 - r,
+                s.pos.x.saturating_add(self.wander(r)),
+                s.pos.y.saturating_add(self.wander(r)),
             );
             if self.free(p) && self.region(p) != Some(RegionKind::Safe) {
                 pos = p;
@@ -1164,7 +1183,7 @@ impl Zone {
         }
         let pos = self.nearest_free(pos);
         if !self.free(pos) {
-            self.respawns.push((self.tick.0 + 20, spawn));
+            self.respawns.push((self.tick.0.saturating_add(20), spawn));
             return;
         }
         let id = EntityId::new(self.next_id);

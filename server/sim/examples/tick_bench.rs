@@ -1,6 +1,6 @@
 //! Tick cost with N players walking at random on an open 256x256 map.
 //! `cargo run --release -p sim --example tick_bench -- 1000 [content-dir zone]`
-#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::unwrap_used)]
 
 use base::{CharacterName, PlayerId, TilePos, ZoneId};
 use sim::*;

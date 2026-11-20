@@ -5,6 +5,8 @@
 //! never floating point.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 #![deny(clippy::float_arithmetic)]
+// Overflow and division by zero never panic in a tick; tests may use plain arithmetic.
+#![cfg_attr(not(test), deny(clippy::arithmetic_side_effects))]
 
 use base::{Attribute, Rng64};
 use defs::{Attributes, CombatFormulas};
@@ -31,10 +33,17 @@ pub enum HitResult {
 
 /// Chance to hit in thousandths: `scale × acc / (acc + dodge)`, clamped.
 pub fn hit_chance(f: &CombatFormulas, at: &CombatSheet, df: &CombatSheet) -> u32 {
-    let acc = u64::from(at.attributes.dex) + u64::from(at.weapon_prof) + 1;
-    let dodge = u64::from(df.attributes.agi) + 1;
-    let raw = u64::from(f.hit_scale_permille) * acc / (acc + dodge);
-    (raw as u32).clamp(f.hit_min_permille, f.hit_max_permille)
+    let acc = u64::from(at.attributes.dex)
+        .saturating_add(u64::from(at.weapon_prof))
+        .saturating_add(1);
+    let dodge = u64::from(df.attributes.agi).saturating_add(1);
+    let raw = u64::from(f.hit_scale_permille)
+        .saturating_mul(acc)
+        .checked_div(acc.saturating_add(dodge))
+        .unwrap_or(0);
+    let raw = u32::try_from(raw).unwrap_or(u32::MAX);
+    // `max` before `min`: an inverted range from unchecked formulas never panics.
+    raw.max(f.hit_min_permille).min(f.hit_max_permille)
 }
 
 pub fn crit_chance(f: &CombatFormulas, at: &CombatSheet) -> u32 {
@@ -50,10 +59,12 @@ pub fn crit_chance(f: &CombatFormulas, at: &CombatSheet) -> u32 {
 /// the target has above the attacker takes `step` off, and adds it the
 /// other way, capped.
 pub fn level_factor(f: &CombatFormulas, at_level: u8, df_level: u8) -> u32 {
-    let gap = i64::from(df_level) - i64::from(at_level);
+    let gap = i64::from(df_level).saturating_sub(i64::from(at_level));
     let cap = i64::from(f.level_diff_cap_permille);
-    let delta = (gap * i64::from(f.level_diff_step_permille)).clamp(-cap, cap);
-    (1000 - delta).max(0) as u32
+    let delta = gap
+        .saturating_mul(i64::from(f.level_diff_step_permille))
+        .clamp(cap.saturating_neg(), cap);
+    u32::try_from(1000i64.saturating_sub(delta).max(0)).unwrap_or(u32::MAX)
 }
 
 /// One blow. `mult` is the technique multiplier in thousandths (1000 for
@@ -72,24 +83,37 @@ pub fn resolve_hit(
     }
     // (attribute × coef + weapon) × mult × (1 + prof/divisor) × variance.
     let weapon = u64::from(rng.range(at.weapon_damage.0, at.weapon_damage.1));
-    let attr = u64::from(at.attributes.get(at.weapon_attribute)) * u64::from(f.attribute_coef_permille);
-    let mut dmg = (attr + weapon * 1000) * u64::from(mult) / 1000; // thousandths of a point
-    dmg = dmg * (u64::from(f.prof_damage_divisor) + u64::from(at.weapon_prof))
-        / u64::from(f.prof_damage_divisor);
-    dmg = dmg * u64::from(rng.range(f.variance_min_permille, f.variance_max_permille)) / 1000;
+    let attr = u64::from(at.attributes.get(at.weapon_attribute))
+        .saturating_mul(u64::from(f.attribute_coef_permille));
+    // Thousandths of a point.
+    let mut dmg = permille(attr.saturating_add(weapon.saturating_mul(1000)), mult);
+    let divisor = u64::from(f.prof_damage_divisor);
+    dmg = dmg
+        .saturating_mul(divisor.saturating_add(u64::from(at.weapon_prof)))
+        .checked_div(divisor)
+        .unwrap_or(dmg);
+    dmg = permille(dmg, rng.range(f.variance_min_permille, f.variance_max_permille));
     let crit = rng.chance(crit_chance(f, at));
     if crit {
-        dmg = dmg * u64::from(f.crit_damage_permille) / 1000;
+        dmg = permille(dmg, f.crit_damage_permille);
     }
     dmg = if pvp {
-        dmg * u64::from(f.pvp_damage_permille) / 1000
+        permille(dmg, f.pvp_damage_permille)
     } else {
-        dmg * u64::from(level_factor(f, at.level, df.level)) / 1000
+        permille(dmg, level_factor(f, at.level, df.level))
     };
     // Diminishing returns: × 100 / (100 + defense); never below 1.
-    dmg = dmg * 100 / (100 + u64::from(df.defense));
+    dmg = dmg
+        .saturating_mul(100)
+        .checked_div(100u64.saturating_add(u64::from(df.defense)))
+        .unwrap_or(0);
     let damage = u32::try_from(dmg / 1000).unwrap_or(u32::MAX).max(1);
     HitResult::Hit { damage, crit }
+}
+
+/// `value × permille / 1000`, saturating: never panics, whatever the content says.
+pub fn permille(value: u64, permille: u32) -> u64 {
+    value.saturating_mul(u64::from(permille)) / 1000
 }
 
 /// Who a creature fights: damage dealt to it by each attacker, decaying.
@@ -118,7 +142,7 @@ impl<K: Copy + Ord> ThreatTable<K> {
     /// Keeps `keep` thousandths of every entry; drops the ones at zero.
     pub fn decay(&mut self, keep: u32) {
         for e in &mut self.entries {
-            e.1 = e.1 * u64::from(keep) / 1000;
+            e.1 = permille(e.1, keep);
         }
         self.entries.retain(|(_, v)| *v > 0);
     }
@@ -158,7 +182,11 @@ impl<K: Copy + Ord> ThreatTable<K> {
         if total == 0 {
             return 0;
         }
-        u32::try_from(u128::from(self.get(who)) * 1000 / u128::from(total)).unwrap_or(1000)
+        let share = u128::from(self.get(who))
+            .saturating_mul(1000)
+            .checked_div(u128::from(total))
+            .unwrap_or(0);
+        u32::try_from(share).unwrap_or(1000)
     }
 
     pub fn is_empty(&self) -> bool {

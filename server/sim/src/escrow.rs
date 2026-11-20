@@ -94,7 +94,7 @@ impl Zone {
                 }
                 match s {
                     Slot::Stack { qty: have, .. } => {
-                        *have -= qty;
+                        *have = (*have).saturating_sub(qty);
                         if *have == 0 {
                             *s = Slot::Empty;
                         }
@@ -109,7 +109,7 @@ impl Zone {
         }
         // Past this point nothing fails: every slot was checked above.
         let ticket = self.escrows.next;
-        self.escrows.next += 1;
+        self.escrows.next = self.escrows.next.saturating_add(1);
         let Ok((p, gear)) = self
             .world
             .query_one_mut::<(&mut crate::zone::PlayerComp, &mut Gear)>(h)

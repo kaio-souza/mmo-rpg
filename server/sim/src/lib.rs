@@ -6,6 +6,8 @@
 //! items and do quests (phase 3).
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 #![deny(clippy::float_arithmetic)]
+// Overflow and division by zero never panic in a tick; tests may use plain arithmetic.
+#![cfg_attr(not(test), deny(clippy::arithmetic_side_effects))]
 
 mod actions;
 mod craft;

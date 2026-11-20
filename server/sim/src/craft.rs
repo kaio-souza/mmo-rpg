@@ -82,8 +82,11 @@ pub(crate) fn roll_quality(
     let e = &cat.formulas().economy;
     let mut chance = e
         .craft_quality_permille
-        .saturating_add(e.craft_quality_per_point_permille * u32::from(points))
-        .saturating_add(e.craft_quality_per_dex_permille * u32::from(dex))
+        .saturating_add(
+            e.craft_quality_per_point_permille
+                .saturating_mul(u32::from(points)),
+        )
+        .saturating_add(e.craft_quality_per_dex_permille.saturating_mul(u32::from(dex)))
         .min(e.craft_quality_max_permille);
     let mut rarity = base;
     while rarity < cap {
@@ -308,7 +311,7 @@ impl Zone {
         let (prof, xp) = (def.proficiency, def.xp);
         let (coins, got) = self.roll_table(table);
         if let Ok(n) = self.world.query_one_mut::<&mut NodeComp>(th) {
-            n.empty_for(player, now + u64::from(cooldown), now);
+            n.empty_for(player, now.saturating_add(u64::from(cooldown)), now);
         }
         crate::fight::give_loot(self, handle, coins, &got, crate::types::CoinFlow::Gift, out);
         // Gathering is the work itself: it always pays its own XP in full.

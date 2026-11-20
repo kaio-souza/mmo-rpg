@@ -71,8 +71,11 @@ impl ItemInstance {
             &e.rarity_durability_permille,
             self.rarity,
         ));
-        let max =
-            u64::from(def.durability) * (1000 + rarity) / 1000 * (10_000 + u64::from(self.mastery)) / 10_000;
+        let max = combat::permille(
+            u64::from(def.durability),
+            u32::try_from(rarity).unwrap_or(u32::MAX).saturating_add(1000),
+        );
+        let max = max.saturating_mul(u64::from(self.mastery).saturating_add(10_000)) / 10_000;
         self.max_durability = u32::try_from(max).unwrap_or(u32::MAX);
         self.durability = self.max_durability;
         // Hidden attributes: only some common pieces carry them; Epic and
@@ -96,7 +99,7 @@ impl ItemInstance {
         self.power = None;
         if !def.powers.is_empty() && chance > 0 && rng.chance(chance) {
             let n = u32::try_from(def.powers.len()).unwrap_or(u32::MAX);
-            let i = rng.range(0, n - 1) as usize;
+            let i = rng.range(0, n.saturating_sub(1)) as usize;
             self.power = def.powers.get(i).copied();
         }
     }
@@ -137,7 +140,7 @@ impl ItemInstance {
         if self.max_durability == 0 || permille == 0 {
             return false;
         }
-        let at = u64::from(self.max_durability) * u64::from(permille) / 1000;
+        let at = combat::permille(u64::from(self.max_durability), permille);
         u64::from(before) > at && u64::from(self.durability) <= at
     }
 
@@ -150,7 +153,12 @@ impl ItemInstance {
         }
         let permille = u64::from(max_loss_permille.min(1000));
         // Rounded up, so a cheap piece with a small maximum also pays.
-        let loss = u32::try_from((u64::from(self.max_durability) * permille).div_ceil(1000)).unwrap_or(0);
+        let loss = u32::try_from(
+            u64::from(self.max_durability)
+                .saturating_mul(permille)
+                .div_ceil(1000),
+        )
+        .unwrap_or(0);
         // Never below one blow: a repaired piece is always usable.
         self.max_durability = self.max_durability.saturating_sub(loss).max(1);
         self.durability = self.max_durability;
@@ -317,7 +325,10 @@ impl Gear {
             if let (Some(Equip::Armor { defense, .. } | Equip::Offhand { defense, .. }), Some(i)) =
                 (self.equip_def(slot, cat), self.slot(slot))
             {
-                total += u64::from(*defense) * u64::from(1000 + i.power_permille(cat)) / 1000;
+                total = total.saturating_add(combat::permille(
+                    u64::from(*defense),
+                    i.power_permille(cat).saturating_add(1000),
+                ));
             }
         }
         u32::try_from(total).unwrap_or(u32::MAX)
@@ -373,7 +384,7 @@ pub(crate) fn slot_of(e: Option<&Equip>) -> Option<EquipSlot> {
 /// Deterministic appraisal: one roll per item and player level, so asking
 /// again only helps after leveling. Chance: 30% + 1% per DEX, up to 95%.
 pub(crate) fn appraisal_succeeds(item: ItemInstanceId, level: u8, dex: u16, seed: u64) -> bool {
-    let chance = (300 + u32::from(dex) * 10).min(950);
+    let chance = u32::from(dex).saturating_mul(10).saturating_add(300).min(950);
     let mut rng = Rng64::new(seed ^ item.get().rotate_left(17) ^ u64::from(level).rotate_left(41));
     rng.chance(chance)
 }

@@ -41,7 +41,7 @@ impl Zone {
                 });
                 // The tick in transit counts toward the wait: the walk keeps
                 // its pace across the seam (no step on arrival).
-                let ready = self.tick.0 + arrival.step_wait.saturating_sub(1);
+                let ready = self.tick.0.saturating_add(arrival.step_wait.saturating_sub(1));
                 if let Ok((f, body, walk, p)) =
                     self.world
                         .query_one_mut::<(&mut Fighter, &mut Body, &mut Walk, &mut PlayerComp)>(h)

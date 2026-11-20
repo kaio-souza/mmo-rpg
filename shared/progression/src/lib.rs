@@ -6,6 +6,8 @@
 //! keeping.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 #![deny(clippy::float_arithmetic)]
+// Overflow and division by zero never panic in a tick; tests may use plain arithmetic.
+#![cfg_attr(not(test), deny(clippy::arithmetic_side_effects))]
 
 use base::{Attribute, ClassId, ProficiencyId, TechniqueId, TitleId};
 use defs::{Attributes, ClassReq, PercentBonus, SPECIAL_MAX, TitleBonus, TitleTrigger, ValidatedCatalog};
@@ -119,8 +121,8 @@ pub fn add_xp(s: &mut ProgressionSheet, amount: u64, cat: &ValidatedCatalog) -> 
     let mut changes = Vec::new();
     s.xp = s.xp.saturating_add(amount);
     while s.level < f.progression.max_level && s.xp >= f.level_xp(s.level) {
-        s.xp -= f.level_xp(s.level);
-        s.level += 1;
+        s.xp = s.xp.saturating_sub(f.level_xp(s.level));
+        s.level = s.level.saturating_add(1);
         changes.push(Change::LeveledUp(s.level));
         if s.level > s.max_level {
             s.max_level = s.level;
@@ -153,7 +155,7 @@ pub fn add_xp(s: &mut ProgressionSheet, amount: u64, cat: &ValidatedCatalog) -> 
 pub fn lose_level(s: &mut ProgressionSheet) -> Vec<Change> {
     s.xp = 0;
     if s.level > 1 {
-        s.level -= 1;
+        s.level = s.level.saturating_sub(1);
         return vec![Change::LevelLost(s.level)];
     }
     Vec::new()
@@ -166,7 +168,9 @@ pub fn allocate(s: &mut ProgressionSheet, points: &Attributes) -> Result<(), Pro
         return Err(ProgressError::NotEnoughPoints);
     }
     s.attributes = s.attributes.plus(points);
-    s.free_points -= total as u16;
+    s.free_points = s
+        .free_points
+        .saturating_sub(u16::try_from(total).unwrap_or(u16::MAX));
     Ok(())
 }
 
@@ -174,15 +178,16 @@ pub fn allocate(s: &mut ProgressionSheet, points: &Attributes) -> Result<(), Pro
 /// below, up to ×1.5 above (thousandths).
 pub fn difficulty_factor(target_level: u8, points: u8) -> u64 {
     let equivalent = i64::from(points.max(1));
-    let gap = i64::from(target_level) - equivalent;
-    if gap <= -10 {
+    let gap = i64::from(target_level).saturating_sub(equivalent);
+    let factor = if gap <= -10 {
         0
     } else if gap < 0 {
         // -9..-1: fades from 1000 down to 100.
-        (1000 + gap * 100) as u64
+        gap.saturating_mul(100).saturating_add(1000)
     } else {
-        (1000 + gap.min(10) * 50) as u64
-    }
+        gap.min(10).saturating_mul(50).saturating_add(1000)
+    };
+    u64::try_from(factor).unwrap_or(0)
 }
 
 /// One effective use of a proficiency (a blow that landed). Raises points
@@ -228,12 +233,13 @@ pub fn use_proficiency(
         return changes;
     }
     p.last_gain = tick.max(1);
-    let gain = USE_XP * difficulty_factor(target_level, p.points) / 1000 * mult / 1000;
+    let gain = USE_XP.saturating_mul(difficulty_factor(target_level, p.points)) / 1000;
+    let gain = gain.saturating_mul(mult) / 1000;
     p.xp = p.xp.saturating_add(gain);
     let mut raised = false;
     while p.points < f.progression.prof_max && p.xp >= f.prof_xp(p.points) {
-        p.xp -= f.prof_xp(p.points);
-        p.points += 1;
+        p.xp = p.xp.saturating_sub(f.prof_xp(p.points));
+        p.points = p.points.saturating_add(1);
         raised = true;
     }
     if raised {
@@ -293,10 +299,10 @@ pub fn use_technique(s: &mut ProgressionSheet, id: TechniqueId, cat: &ValidatedC
     else {
         return Vec::new();
     };
-    t.uses += 1;
+    t.uses = t.uses.saturating_add(1);
     if t.uses >= f.technique_uses(t.level) {
         t.uses = 0;
-        t.level += 1;
+        t.level = t.level.saturating_add(1);
         return vec![Change::TechniqueRaised(id, t.level)];
     }
     Vec::new()
@@ -471,7 +477,7 @@ pub fn special_attribute(s: &ProgressionSheet, id: &str, cat: &ValidatedCatalog)
             if let TitleBonus::Special(s, v) = bonus
                 && s == id
             {
-                total += u32::from(*v);
+                total = total.saturating_add(u32::from(*v));
             }
         }
     }
@@ -507,7 +513,7 @@ pub fn effective_proficiency(s: &ProgressionSheet, id: ProficiencyId, cat: &Vali
         }
     }
     let max = u32::from(cat.formulas().progression.prof_max);
-    u8::try_from((u32::from(s.proficiency(id)) + extra).min(max)).unwrap_or(u8::MAX)
+    u8::try_from(u32::from(s.proficiency(id)).saturating_add(extra).min(max)).unwrap_or(u8::MAX)
 }
 
 /// The technique's special attributes hold.

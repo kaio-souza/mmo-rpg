@@ -126,7 +126,7 @@ pub(crate) fn run(z: &mut Zone, out: &mut TickOutput) {
             let Some(o) = observers.get_mut(count) else {
                 continue;
             };
-            count += 1;
+            count = count.saturating_add(1);
             o.player = player;
             o.handle = handle;
             o.me = b.id;
@@ -264,20 +264,20 @@ impl Ctx<'_> {
                             view.updated.push(s.id);
                         }
                     }
-                    i += 1;
-                    j += 1;
+                    i = i.saturating_add(1);
+                    j = j.saturating_add(1);
                 }
                 (Some(k), Some(v)) if k < v => {
                     view.left.push(*k);
-                    i += 1;
+                    i = i.saturating_add(1);
                 }
                 (Some(k), None) => {
                     view.left.push(*k);
-                    i += 1;
+                    i = i.saturating_add(1);
                 }
                 (_, Some(v)) => {
                     view.entered.push(*v);
-                    j += 1;
+                    j = j.saturating_add(1);
                 }
                 (None, None) => break,
             }

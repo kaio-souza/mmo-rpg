@@ -79,19 +79,22 @@ impl Zone {
         if r == 0 {
             return self.nearest_free(self.spawn);
         }
-        let span = (2 * r + 1) as u64;
+        let span = u64::try_from(r.saturating_mul(2).saturating_add(1)).unwrap_or(1);
+        let offset = |v: u64| {
+            i64::try_from(v.checked_rem(span).unwrap_or(0))
+                .unwrap_or(0)
+                .saturating_sub(r)
+        };
         for attempt in 0..16u64 {
             let mut h = Fnv64::new();
             h.write_u64(self.seed);
             h.write_u64(u64::from(id.get()));
             h.write_u64(attempt);
             let v = h.finish();
-            let dx = (v % span) as i64 - r;
-            let dy = ((v / span) % span) as i64 - r;
-            let p = TilePos::new(
-                (i64::from(self.spawn.x) + dx) as i32,
-                (i64::from(self.spawn.y) + dy) as i32,
-            );
+            let dx = offset(v);
+            let dy = offset(v.checked_div(span).unwrap_or(0));
+            let at = |o: i32, d: i64| i32::try_from(i64::from(o).saturating_add(d)).unwrap_or(o);
+            let p = TilePos::new(at(self.spawn.x, dx), at(self.spawn.y, dy));
             if self.free(p) {
                 return p;
             }
@@ -109,8 +112,8 @@ impl Zone {
     /// First free tile in rings around `p` (fixed order), or `p` itself.
     pub(crate) fn nearest_free(&self, p: TilePos) -> TilePos {
         for r in 0..=SPAWN_SEARCH_RADIUS {
-            for dy in -r..=r {
-                for dx in -r..=r {
+            for dy in r.saturating_neg()..=r {
+                for dx in r.saturating_neg()..=r {
                     if dx.abs().max(dy.abs()) != r {
                         continue;
                     }

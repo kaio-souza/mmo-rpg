@@ -2,6 +2,7 @@
 //! reaches the backpack when its character enters the game, with the
 //! crafter's signature on the piece, and the sheet holding it is on disk
 //! before the next checkpoint.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{CharacterName, Locale};
 use persistence::{EscrowParcel, Repository, SavedItem, SavedSheet, SavedStack};

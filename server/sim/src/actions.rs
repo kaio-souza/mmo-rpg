@@ -188,14 +188,14 @@ impl Zone {
                 self.can_hit(me, *target, def.range).map_err(|e| (player, e))?;
                 let gcd_ticks = u64::from(cat.formulas().combat.global_cooldown_ticks);
                 if let Ok((p, f)) = self.world.query_one_mut::<(&mut PlayerComp, &mut Fighter)>(h) {
-                    f.vigor -= def.vigor;
-                    f.mp -= def.mp;
-                    f.gcd_until = now + gcd_ticks;
+                    f.vigor = f.vigor.saturating_sub(def.vigor);
+                    f.mp = f.mp.saturating_sub(def.mp);
+                    f.gcd_until = now.saturating_add(gcd_ticks);
                     f.target = Some(*target);
                     f.retaliating = false;
                     f.last_order = now;
                     p.growth
-                        .set_cooldown(*technique, now + u64::from(def.cooldown_ticks));
+                        .set_cooldown(*technique, now.saturating_add(u64::from(def.cooldown_ticks)));
                     p.dirty_stats = true;
                 }
                 let mult = def.damage_permille.saturating_add(
@@ -337,18 +337,18 @@ impl Zone {
                     .iter()
                     .find(|(i, _)| *i == item)
                     .map_or(0, |(_, t)| *t);
-                let gain_hp = effect.hp.min(f.max_hp - f.hp.min(f.max_hp));
-                let gain_vigor = effect.vigor.min(f.max_vigor - f.vigor.min(f.max_vigor));
-                let gain_mp = effect.mp.min(f.max_mp - f.mp.min(f.max_mp));
+                let gain_hp = effect.hp.min(f.max_hp.saturating_sub(f.hp));
+                let gain_vigor = effect.vigor.min(f.max_vigor.saturating_sub(f.vigor));
+                let gain_mp = effect.mp.min(f.max_mp.saturating_sub(f.mp));
                 // Resting, or nothing to restore: the item is not wasted.
                 if now < ready || (gain_hp == 0 && gain_vigor == 0 && gain_mp == 0) {
                     return fail(Refusal::NotReady);
                 }
                 p.data.take(item, 1).map_err(|_| (player, Refusal::InvalidSlot))?;
-                f.hp += gain_hp;
-                f.vigor += gain_vigor;
-                f.mp += gain_mp;
-                let until = now + u64::from(effect.cooldown_ticks);
+                f.hp = f.hp.saturating_add(gain_hp);
+                f.vigor = f.vigor.saturating_add(gain_vigor);
+                f.mp = f.mp.saturating_add(gain_mp);
+                let until = now.saturating_add(u64::from(effect.cooldown_ticks));
                 match p.item_ready.binary_search_by_key(&item, |(i, _)| *i) {
                     Ok(i) => {
                         if let Some(r) = p.item_ready.get_mut(i) {
@@ -464,12 +464,12 @@ impl Zone {
         }
         let gcd_ticks = u64::from(cat.formulas().combat.global_cooldown_ticks);
         if let Ok((p, f)) = self.world.query_one_mut::<(&mut PlayerComp, &mut Fighter)>(h) {
-            f.vigor -= def.vigor;
-            f.mp -= def.mp;
-            f.gcd_until = now + gcd_ticks;
+            f.vigor = f.vigor.saturating_sub(def.vigor);
+            f.mp = f.mp.saturating_sub(def.mp);
+            f.gcd_until = now.saturating_add(gcd_ticks);
             f.last_order = now;
             p.growth
-                .set_cooldown(technique, now + u64::from(def.cooldown_ticks));
+                .set_cooldown(technique, now.saturating_add(u64::from(def.cooldown_ticks)));
             p.dirty_stats = true;
         }
         let (me, them) = (self.name_of(player), self.name_of(other));
@@ -483,13 +483,15 @@ impl Zone {
                 smallvec::smallvec![Arg::Str(them)],
             );
         } else {
-            let gain = (u64::from(max_hp) * u64::from(grown(def.heal_permille)) / 1000).max(1);
-            let gain = u32::try_from(gain).unwrap_or(u32::MAX).min(max_hp - hp);
+            let gain = combat::permille(u64::from(max_hp), grown(def.heal_permille)).max(1);
+            let gain = u32::try_from(gain)
+                .unwrap_or(u32::MAX)
+                .min(max_hp.saturating_sub(hp));
             if let Ok((f, p, b)) = self
                 .world
                 .query_one_mut::<(&mut Fighter, &mut PlayerComp, &mut Body)>(th)
             {
-                f.hp += gain;
+                f.hp = f.hp.saturating_add(gain);
                 p.dirty_stats = true;
                 b.status_tick = now;
             }
@@ -552,21 +554,21 @@ impl Zone {
                 .world
                 .query_one_mut::<(&mut PlayerComp, &mut Fighter, &mut Body)>(h)
                 .map_err(|_| Refusal::NotReady)?;
-            f.vigor -= def.vigor;
-            f.mp -= def.mp;
-            f.gcd_until = now + gcd_ticks;
+            f.vigor = f.vigor.saturating_sub(def.vigor);
+            f.mp = f.mp.saturating_sub(def.mp);
+            f.gcd_until = now.saturating_add(gcd_ticks);
             f.last_order = now;
             match buff.stat {
                 defs::BuffStat::Defense => {
                     f.ward = fight::Ward {
                         permille,
                         flat: buff.flat,
-                        until: now + u64::from(buff.duration_ticks),
+                        until: now.saturating_add(u64::from(buff.duration_ticks)),
                     };
                 }
             }
             p.growth
-                .set_cooldown(technique, now + u64::from(def.cooldown_ticks));
+                .set_cooldown(technique, now.saturating_add(u64::from(def.cooldown_ticks)));
             p.dirty_stats = true;
             b.status_tick = now;
             p.growth.sheet.level
@@ -607,7 +609,7 @@ impl Zone {
             .query_one_mut::<(&mut Fighter, &mut PlayerComp, &mut Body)>(th)
         {
             f.fallen_until = 0;
-            let share = u64::from(f.max_hp) * u64::from(permille) / 1000;
+            let share = combat::permille(u64::from(f.max_hp), u32::from(permille));
             f.hp = u32::try_from(share).unwrap_or(f.max_hp).clamp(1, f.max_hp.max(1));
             p.dirty_stats = true;
             b.status_tick = now;
@@ -668,7 +670,7 @@ impl Zone {
                 return Err(Refusal::NotReady);
             }
             p.data.take(item, 1).map_err(|_| Refusal::InvalidSlot)?;
-            let until = now + u64::from(effect.cooldown_ticks);
+            let until = now.saturating_add(u64::from(effect.cooldown_ticks));
             match p.item_ready.binary_search_by_key(&item, |(i, _)| *i) {
                 Ok(i) => {
                     if let Some(r) = p.item_ready.get_mut(i) {
@@ -745,7 +747,7 @@ impl Zone {
                 .cooldowns
                 .iter()
                 .filter(|(_, r)| *r > now)
-                .map(|(t, r)| (*t, u32::try_from(r - now).unwrap_or(u32::MAX)))
+                .map(|(t, r)| (*t, u32::try_from(r.saturating_sub(now)).unwrap_or(u32::MAX)))
                 .collect(),
             global_cooldown: u32::try_from(f.gcd_until.saturating_sub(now)).unwrap_or(u32::MAX),
             recipes: p.data.recipes.clone(),

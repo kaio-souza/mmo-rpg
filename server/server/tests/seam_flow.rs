@@ -3,6 +3,7 @@
 //! over the seam into the field without noticing: no second `Welcome`, the
 //! same entity id, the walk goes on, and the gateway saves the character
 //! under the zone it ends in. Real binary, repository content.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{CharacterName, EntityId, Locale, TilePos};
 use protocol::{ClientMsg, MAX_SERVER_FRAME, PROTOCOL_VERSION, ServerMsg};

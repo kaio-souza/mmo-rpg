@@ -2,6 +2,7 @@
 //! past the wait, the account's own wait stops guesses from many IPs but
 //! not the owner's device, and the shield asks for a proof of work.
 //! Different source addresses come from the loopback range (127.0.0.x).
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{AccountName, Locale};
 use protocol::{ClientMsg, DeviceToken, ErrorCode, MAX_SERVER_FRAME, PROTOCOL_VERSION, Password, ServerMsg};

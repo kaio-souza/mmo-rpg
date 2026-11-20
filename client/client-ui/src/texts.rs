@@ -44,7 +44,7 @@ impl UiText {
     pub fn new(locale: Locale) -> UiText {
         let keys = sources("en")
             .and_then(|f| KeyTable::from_source(&f).ok())
-            .unwrap_or_else(|| KeyTable::from_source(&[]).expect("empty key table"));
+            .unwrap_or_else(KeyTable::empty);
         let bundle = sources(locale.code()).and_then(|f| Bundle::from_text(locale, &keys, &f).ok());
         let english = sources("en").and_then(|f| Bundle::from_text(Locale::EN, &keys, &f).ok());
         UiText {

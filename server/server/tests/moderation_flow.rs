@@ -1,6 +1,7 @@
 //! Phase 2 moderation done criterion: a temporary password forces a change,
 //! and an account sanction refuses the login with the reason. Runs the real
 //! binary over TLS and changes the database while it is online.
+#![allow(clippy::unwrap_used, clippy::expect_used)] // test helpers
 
 use base::{AccountName, Arg, CharacterName, Locale};
 use persistence::{NewSanction, Repository, SanctionKind};

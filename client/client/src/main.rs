@@ -192,7 +192,7 @@ fn run() -> Result<(), String> {
 
     let event_loop = EventLoop::new().map_err(|e| format!("cannot open the event loop: {e}"))?;
     let mut assets = interface::Assets::new(args.assets.clone().into(), args.theme.clone(), locale);
-    let mut ui = assets.ui();
+    let mut ui = assets.ui()?;
     ui.screens.server = server;
     ui.screens.account = args
         .account
