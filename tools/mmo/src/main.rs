@@ -6,7 +6,7 @@
 //! mmo new <folder> [--kit DIR]   copy the new-game template to <folder>
 //! mmo edit                       the editor on this game
 //! mmo check                      validate this game's content and assets
-//! mmo play [--name NAME]         server (--dev) and client together
+//! mmo play [--name NAME]         server (--dev) and client; --name skips the login
 //! mmo publish [--out DIR]        check, then copy content, assets and the binaries to DIR
 //! ```
 //!
@@ -49,9 +49,10 @@ enum Cmd {
     Check,
     /// Run the server (dev mode) and the client on this game.
     Play {
-        /// The player's name: 3 to 16 letters, digits or `_`.
-        #[arg(long, default_value = "Dev")]
-        name: String,
+        /// Skip the screens and enter as this character (3 to 16 letters,
+        /// digits or `_`); without it the login screen opens.
+        #[arg(long)]
+        name: Option<String>,
     },
     /// Check, then copy content, assets and the server and client binaries to a folder.
     Publish {
@@ -67,7 +68,7 @@ fn main() -> ExitCode {
         Cmd::New { folder, kit } => new_game(&folder, kit.as_deref()),
         Cmd::Edit => game_here().and_then(|()| run("editor", &[])),
         Cmd::Check => check(),
-        Cmd::Play { name } => play(&name),
+        Cmd::Play { name } => play(name.as_deref()),
         Cmd::Publish { out } => publish(&out),
     };
     match result {
@@ -98,7 +99,7 @@ fn check() -> Outcome {
     run("validate", &["content", "--assets", "assets"])
 }
 
-fn play(name: &str) -> Outcome {
+fn play(name: Option<&str>) -> Outcome {
     game_here()?;
     if TcpStream::connect_timeout(&PLAY_ADDR, Duration::from_millis(200)).is_ok() {
         return Err(format!("something already listens on {PLAY_ADDR}: stop it first"));
@@ -108,8 +109,11 @@ fn play(name: &str) -> Outcome {
         .spawn()
         .map_err(|e| format!("cannot start the server: {e}"))?;
     let addr = PLAY_ADDR.to_string();
-    let result = wait_for_server(&mut server)
-        .and_then(|()| run("client", &["--dev", "--server", addr.as_str(), "--name", name]));
+    let mut client_args = vec!["--dev", "--server", addr.as_str()];
+    if let Some(name) = name {
+        client_args.extend(["--name", name]);
+    }
+    let result = wait_for_server(&mut server).and_then(|()| run("client", &client_args));
     // The server runs for the client only: it stops when the client does.
     let _ = server.kill();
     let _ = server.wait();

@@ -24,10 +24,10 @@ cd ~/mygame
 ## 3. Play it
 
 ```sh
-mmo play --name Ana
+mmo play
 ```
 
-It starts `server --dev` and the client on it, and stops the server when the client closes. Two terminals do the same by hand: `server --dev`, then `client --dev --server 127.0.0.1:7000 --name Ana`.
+It starts `server --dev` and the client on its login screen, and stops the server when the client closes. `mmo play --name Ana` skips the screens and enters as Ana. Two terminals do the same by hand: `server --dev`, then `client --dev --server 127.0.0.1:7000 --name Ana`.
 
 Click a tile to walk, scroll to zoom, `Tab` targets the nearest monster, `I` `C` `K` `L` `M` `O` `G` open inventory, sheet, techniques, quests, map, social and crafting, `Enter` opens chat, `F1` is help.
 

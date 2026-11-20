@@ -52,6 +52,8 @@ The editor and any other team tool are reachable only through the server's WireG
 
 `--dev`: plain TCP and login by name only, characters saved under a passwordless `dev` account. It listens only on `127.0.0.1` and refuses any other address.
 
+The client's `--name` (used by `mmo play --name`) only sends that development login; it gives nothing on a real server. A server without `--dev`, or a connection that is not from the same machine, answers `DevLogin` with `NotAllowed`. The guard is in the server, because any client can be modified; `server/tests/account_flow.rs` tests both rules.
+
 ## Chat
 
 Messages up to 200 characters, no control characters, a rate limit per player, mute and report. Player text is never interpreted as formatting.

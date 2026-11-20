@@ -11,7 +11,7 @@ One command for a game. It runs the kit's other tools, which must sit in the sam
 | `mmo new <folder> [--kit DIR]` | copies the new-game template to a new folder (`--kit` when `mmo` does not run from the kit) |
 | `mmo edit` | the editor on this game |
 | `mmo check` | `validate content --assets assets` |
-| `mmo play [--name NAME]` | `server --dev`, then `client --dev` on it; the server stops with the client |
+| `mmo play [--name NAME]` | `server --dev`, then `client --dev` on it (the login screen; `--name` enters directly as that character); the server stops with the client |
 | `mmo publish [--out DIR]` | checks the game, then copies `content/`, `assets/`, `server` and `client` to `dist/` (or `DIR`); it refuses to overwrite a folder |
 
 ## `editor`

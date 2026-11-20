@@ -279,3 +279,65 @@ async fn character_returns_where_it_stopped_after_restart() {
     drop(server);
     let _ = std::fs::remove_dir_all(&data);
 }
+
+/// A published server (no `--dev`) never takes the development login, even
+/// from a client on the same machine: `DevLogin` is refused, whatever the
+/// client binary allows on its command line.
+#[tokio::test(flavor = "multi_thread")]
+async fn dev_login_is_refused_without_dev() {
+    let data: PathBuf = std::env::temp_dir().join(format!("server-devlogin-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&data);
+    let port = free_port();
+    let server = Server::start(&data, port);
+    wait_ready(port).await;
+
+    let mut c = Client::connect(port, &data.join("tls/cert.pem")).await;
+    c.send(&ClientMsg::DevLogin {
+        name: CharacterName::try_from("Intruder").unwrap(),
+    })
+    .await;
+    assert!(matches!(
+        c.recv().await,
+        ServerMsg::Error {
+            code: ErrorCode::NotAllowed,
+            ..
+        }
+    ));
+
+    drop(c);
+    drop(server);
+    let _ = std::fs::remove_dir_all(&data);
+}
+
+/// `--dev` (plain TCP, no passwords) refuses to start on an address other
+/// machines can reach.
+#[test]
+fn dev_refuses_a_public_address() {
+    let data: PathBuf = std::env::temp_dir().join(format!("server-devpublic-{}", std::process::id()));
+    let mut child = Command::new(env!("CARGO_BIN_EXE_server"))
+        .arg("--dev")
+        .args(["--address", &format!("0.0.0.0:{}", free_port())])
+        .arg("--data-dir")
+        .arg(&data)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let mut status = None;
+    for _ in 0..100 {
+        status = child.try_wait().unwrap();
+        if status.is_some() {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    if status.is_none() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+    let _ = std::fs::remove_dir_all(&data);
+    assert!(
+        status.is_some_and(|s| !s.success()),
+        "--dev must not start on 0.0.0.0"
+    );
+}
