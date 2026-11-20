@@ -15,7 +15,3 @@ serde.workspace = true
 ron.workspace = true
 fontdue.workspace = true
 smallvec.workspace = true
-
-[build-dependencies]
-serde.workspace = true
-ron.workspace = true

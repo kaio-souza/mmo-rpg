@@ -2,6 +2,14 @@ use super::*;
 use base::Locale;
 
 const ASSETS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/riftara/assets");
+const GAME: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/riftara");
+
+/// Reads the example game's interface texts (once per test run).
+fn init_game() {
+    let game = std::path::Path::new(GAME);
+    // Already set by another test: the same game, so the error is ignored.
+    let _ = set_game(&game.join("content"), &game.join("assets"));
+}
 
 fn read(path: &str) -> Option<Vec<u8>> {
     std::fs::read(format!("{ASSETS}/{path}")).ok()
@@ -12,6 +20,7 @@ fn theme(id: &str) -> UiTheme {
 }
 
 pub(crate) fn ui(locale: Locale) -> Ui {
+    init_game();
     let t = theme("isekai");
     let (fonts, problems) = Fonts::load(&t, locale.code(), &mut read);
     // The CJK font is downloaded apart (fetch-cjk.sh); Latin ones are in git.
@@ -63,20 +72,26 @@ fn theme_rules_refuse_typos_and_bad_numbers() {
 
 #[test]
 fn ui_texts_exist_in_every_required_locale() {
-    let en: Vec<(&str, &str)> = TEXT_FILES
+    init_game();
+    let files = text_files();
+    let en: Vec<(&str, &str)> = files
         .iter()
-        .filter(|(c, _, _, _)| *c == "en")
-        .flat_map(|(_, u, e, _)| [("ui.ron", *u), ("error.ron", *e)])
+        .filter(|f| f.code == "en")
+        .flat_map(|f| [("ui.ron", f.ui.as_str()), ("error.ron", f.error.as_str())])
         .collect();
     let keys = i18n::KeyTable::from_source(&en).unwrap();
-    assert!(!TEXT_FILES.is_empty());
-    for (code, u, e, required) in TEXT_FILES {
-        let loc: Locale = code.parse().unwrap();
-        let problems: Vec<_> = i18n::check_locale(&keys, loc, &[("ui.ron", u), ("error.ron", e)])
-            .into_iter()
-            // An optional language may lack texts: English shows.
-            .filter(|p| *required || p.kind != i18n::TextProblemKind::MissingKey)
-            .collect();
+    assert!(!files.is_empty());
+    for f in files {
+        let loc: Locale = f.code.parse().unwrap();
+        let problems: Vec<_> = i18n::check_locale(
+            &keys,
+            loc,
+            &[("ui.ron", f.ui.as_str()), ("error.ron", f.error.as_str())],
+        )
+        .into_iter()
+        // An optional language may lack texts: English shows.
+        .filter(|p| f.required || p.kind != i18n::TextProblemKind::MissingKey)
+        .collect();
         assert!(problems.is_empty(), "{loc:?}: {problems:?}");
         let t = UiText::new(loc);
         assert_ne!(t.t("ui.login.enter"), "ui.login.enter");
@@ -86,8 +101,13 @@ fn ui_texts_exist_in_every_required_locale() {
 
 #[test]
 fn login_lists_only_required_languages() {
+    init_game();
     let names = crate::language_names();
-    let required: Vec<&str> = TEXT_FILES.iter().filter(|f| f.3).map(|f| f.0).collect();
+    let required: Vec<&str> = text_files()
+        .iter()
+        .filter(|f| f.required)
+        .map(|f| f.code.as_str())
+        .collect();
     assert_eq!(names.iter().map(|(l, _)| l.code()).collect::<Vec<_>>(), required);
 }
 

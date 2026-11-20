@@ -18,7 +18,7 @@ assets/
 ├── icons/<name>.png           items, techniques, classes, titles, monsters, emotes, interface (32×32)
 ├── themes/<id>.ron            colours, fonts and widget style of the interface
 ├── fonts/                     font files and their licences
-├── text/<code>/ui.ron         interface texts (built into the client)
+├── text/<code>/ui.ron         interface texts (read when the client starts)
 ├── sounds/, music/            .ogg files; sounds/sounds.ron binds them to events
 ├── ui/login_background.png    optional login screen background (16:9, 640×360 or more)
 └── CREDITS.md                 author and licence of every file that needs one

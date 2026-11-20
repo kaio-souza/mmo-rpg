@@ -34,7 +34,7 @@ One `server` binary runs as `all` (gateway and every zone in one process), `gate
 | `client-ui` | client | theme, widgets, HUD, interface texts |
 | `client-net` | client | the client's connection, on its own thread |
 | `client` | client | the binary: frame loop, input, wiring |
-| `validate`, `bots`, `pack`, `replay`, `admin`, `editor` | tools | see [tools](tools.md) |
+| `validate`, `bots`, `pack`, `replay`, `admin`, `editor`, `mmo` | tools | see [tools](tools.md) |
 
 ## Allowed dependencies
 

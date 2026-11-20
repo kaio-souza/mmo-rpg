@@ -47,7 +47,7 @@ impl Sounds {
 
     /// Opens the sound server and loads the sounds the events use.
     pub fn open(assets: &Path) -> Sounds {
-        let (audio, why) = Audio::new(client_ui::GAME_ID);
+        let (audio, why) = Audio::new(client_ui::game_id());
         if let Some(why) = why {
             warn!("sound off: {why}");
         }

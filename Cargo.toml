@@ -24,6 +24,7 @@ members = [
     "tools/replay",
     "tools/admin",
     "tools/editor",
+    "tools/mmo",
 ]
 
 [workspace.package]

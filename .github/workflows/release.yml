@@ -46,6 +46,9 @@ jobs:
           mkdir -p "dist/$name"
           cp target/release/client "dist/$name/"
           cp -r examples/riftara/assets "dist/$name/"
+          # Interface texts the client reads at start: error texts and the language list.
+          mkdir -p "dist/$name/content"
+          cp -r examples/riftara/content/text "dist/$name/content/"
           tar -C dist -czf "dist/$name.tar.gz" "$name"
       - uses: actions/upload-artifact@v4
         with:
@@ -66,6 +69,9 @@ jobs:
           New-Item -ItemType Directory -Force "dist/$name" | Out-Null
           Copy-Item target/release/client.exe "dist/$name/"
           Copy-Item -Recurse examples/riftara/assets "dist/$name/"
+          # Interface texts the client reads at start: error texts and the language list.
+          New-Item -ItemType Directory -Force "dist/$name/content" | Out-Null
+          Copy-Item -Recurse examples/riftara/content/text "dist/$name/content/"
           Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
       - uses: actions/upload-artifact@v4
         with:

@@ -28,7 +28,7 @@ server --address 0.0.0.0:7000 --data-dir /var/lib/game --content /opt/game/curre
 
 ## Release
 
-A `vX.Y.Z` tag runs `.github/workflows/release.yml`: it builds `server` and `admin` in a glibc container and the client for Linux and Windows, and publishes the server package (binaries, `content/`, `ops/`), the client with `assets/` beside it, and `SHA256SUMS`. Today the workflow packages the example game; for your game, point it at your game folder ([roadmap](roadmap.md)).
+A `vX.Y.Z` tag runs `.github/workflows/release.yml`: it builds `server` and `admin` in a glibc container and the client for Linux and Windows, and publishes the server package (binaries, `content/`, `ops/`), the client with `assets/` and `content/text/` beside it, and `SHA256SUMS`. Today the workflow packages the example game; for your game, point it at your game folder ([roadmap](roadmap.md)).
 
 `ops/deploy.sh VERSION HOST [WAIT]` downloads the release, checks the sums, copies it over SSH, unpacks it into `/opt/game/<version>/` and schedules the update.
 

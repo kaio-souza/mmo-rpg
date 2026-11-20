@@ -29,7 +29,7 @@ pub use screens::{
     CharacterCard, CreateModel, Figure, LoginModel, LookList, PasswordModel, Screen, ScreenState,
     SelectModel, figure,
 };
-pub use texts::{FILES as TEXT_FILES, GAME_ID, UiText, language_names};
+pub use texts::{TextFile, UiText, game_id, language_names, set_game, text_files};
 pub use theme::{
     COLORS, Color, ColorSpec, Colors, FALLBACK_THEME, FontSet, GAME_THEME_FILE, GameTheme, Panel, Sizes,
     SystemWindow, ThemeError, ThemeFile, UiTheme, WindowAnim, check_theme, load_theme, parse_color,

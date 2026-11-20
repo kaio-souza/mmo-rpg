@@ -40,5 +40,7 @@
         // and the Theme screen, checked by the client's own theme loader
         // (client-ui).
         "editor": ["defs", "i18n", "admin", "replay", "client-ui"],
+        // One command for a game: runs the other tools as programs, depends on none.
+        "mmo": [],
     },
 )

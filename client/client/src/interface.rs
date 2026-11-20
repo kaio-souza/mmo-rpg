@@ -156,7 +156,7 @@ impl Assets {
 }
 
 /// The user folder: `~/.config/<game>/` on Linux, `%APPDATA%\<game>\`
-/// on Windows, `<game>` being [`client_ui::GAME_ID`].
+/// on Windows, `<game>` being [`client_ui::game_id`].
 pub fn config_dir() -> Option<PathBuf> {
     let base = if cfg!(windows) {
         std::env::var_os("APPDATA").map(PathBuf::from)
@@ -165,7 +165,7 @@ pub fn config_dir() -> Option<PathBuf> {
             .map(PathBuf::from)
             .or_else(|| std::env::var_os("HOME").map(|h| Path::new(&h).join(".config")))
     };
-    base.map(|b| b.join(client_ui::GAME_ID))
+    base.map(|b| b.join(client_ui::game_id()))
 }
 
 /// `login.ron` in the user folder: the server list (the official one

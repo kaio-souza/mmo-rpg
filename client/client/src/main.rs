@@ -59,9 +59,10 @@ const PASSWORD_ENV: &str = "GAME_PASSWORD";
 const DEFAULT_SERVER: &str = "127.0.0.1:7000";
 
 const USAGE: &str = "usage: client [--server HOST:PORT] [--account NAME] [--register] [--character NAME]
-                 [--trust-cert FILE] [--change-password] [--locale CODE] [--assets DIR] [--theme ID]
-                 [--screenshot-after SECS]
-       client --dev --server HOST:PORT [--name NAME] [--locale CODE] [--assets DIR] [--theme ID]
+                 [--trust-cert FILE] [--change-password] [--locale CODE] [--content DIR] [--assets DIR]
+                 [--theme ID] [--screenshot-after SECS]
+       client --dev --server HOST:PORT [--name NAME] [--locale CODE] [--content DIR] [--assets DIR]
+                 [--theme ID] [--screenshot-after SECS]
                  [--screenshot-after SECS]
 With --account and GAME_PASSWORD set, the login screen is filled and sent.
 --dev uses plain TCP (server in --dev); with --name it skips the screens (DevLogin).
@@ -91,7 +92,9 @@ struct Args {
     trust_cert: Option<String>,
     change_password: bool,
     locale: Option<Locale>,
-    /// Folder with `themes/` and `fonts/` (default `assets`).
+    /// The game's `content/` (its interface texts are in `content/text`).
+    content: String,
+    /// Folder with `themes/`, `fonts/` and `text/` (default `assets`).
     assets: String,
     /// Theme to try instead of the game's (`assets/theme.ron`, set in the
     /// editor): for a designer testing a theme, not a player option.
@@ -104,6 +107,7 @@ struct Args {
 impl Args {
     fn parse() -> Result<Args, String> {
         let mut args = Args {
+            content: "content".into(),
             assets: "assets".into(),
             theme: None,
             ..Args::default()
@@ -120,6 +124,7 @@ impl Args {
                 "--character" => args.character = Some(value()?),
                 "--trust-cert" => args.trust_cert = Some(value()?),
                 "--change-password" => args.change_password = true,
+                "--content" => args.content = value()?,
                 "--assets" => args.assets = value()?,
                 "--theme" => args.theme = Some(value()?),
                 "--screenshot-after" => {
@@ -158,6 +163,11 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = Args::parse()?;
+    // The game's interface texts, read once; without them nothing is shown.
+    client_ui::set_game(
+        std::path::Path::new(&args.content),
+        std::path::Path::new(&args.assets),
+    )?;
     let config = interface::LoginConfig::load();
     let locale = args
         .locale

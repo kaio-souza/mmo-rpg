@@ -12,7 +12,7 @@ server --dev --allow-missing-text
 client --dev --server 127.0.0.1:7000 --name Ana --locale en
 ```
 
-Build the client with `MMO_GAME_DIR=examples/riftara cargo build --release -p client` to see Riftara's title and interface texts.
+Riftara's title and interface texts are read from this folder when the client starts: nothing to build.
 
 ## A first hour
 

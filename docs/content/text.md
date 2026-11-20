@@ -24,8 +24,8 @@ No sentence of the game is written in code, content or images: only **keys**. Ea
 | File | What | Who resolves it |
 |---|---|---|
 | `content/text/<code>/*.ron` | content texts (items, monsters, NPCs, quests, System messages) | the client, with the text pack the server sends |
-| `content/text/<code>/error.ron` | error messages | built into the client |
-| `assets/text/<code>/ui.ron` | interface (menus, HUD, options, game title) | built into the client |
+| `content/text/<code>/error.ron` | error messages | read when the client starts |
+| `assets/text/<code>/ui.ron` | interface (menus, HUD, options, game title) | read when the client starts |
 
 Any number of files per language; the template splits them into `kit.ron` (System, moderation, appearance), `error.ron` and `game.ron` (its own content).
 

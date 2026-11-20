@@ -79,28 +79,28 @@ echo "export PATH=\"$PWD/target/release:\$PATH\"" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Now `server`, `client`, `editor`, `validate` and `admin` work in any new terminal.
+Now `mmo`, `server`, `client`, `editor`, `validate` and `admin` work in any new terminal.
 
 **3. Make your game** from the template:
 
 ```sh
-cp -r templates/new-game ~/mygame
+mmo new ~/mygame
 ```
 
-**4. Play it.** Open two terminals, and in each one `cd ~/mygame` first:
-
-```sh
-server --dev                                      # terminal 1: wait for "server ready"
-client --dev                                      # terminal 2: the game window opens
-```
-
-You appear on a stone plaza. Click to walk; wolves roam two corners of the meadow, and clicking one attacks it. `F1` shows every key. Close the window and press `Ctrl+C` in terminal 1 to stop; your character is saved.
-
-**5. Change it.** With the server still running, in a third terminal:
+**4. Play it:**
 
 ```sh
 cd ~/mygame
-editor                                            # then open http://127.0.0.1:7878
+mmo play                                          # starts the server, then the game window opens
+```
+
+You appear on a stone plaza. Click to walk; wolves roam two corners of the meadow, and clicking one attacks it. `F1` shows every key. Close the window to stop; the server stops with it and your character is saved.
+
+**5. Change it.** With the game still running, in a second terminal:
+
+```sh
+cd ~/mygame
+mmo edit                                          # then open http://127.0.0.1:7878
 ```
 
 Edit an item or a monster and save: the server reloads it within seconds, and the game shows the change.

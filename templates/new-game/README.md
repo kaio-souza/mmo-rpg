@@ -25,7 +25,7 @@ With the kit's binaries on your `PATH` (`cargo build --release` in the kit). Wit
 | `assets/sprites/` | floors (`tiles/`), player and wolf (`creatures/`, strips of 4 frames × 4 directions) |
 | `assets/icons/`, `assets/fonts/`, `assets/themes/`, `assets/text/` | icons, fonts, theme and interface texts |
 
-Replace any image with yours under the same name. The game's name is `ui.game.title` in `assets/text/<language>/ui.ron`; interface texts are built into the client, so build the client with `MMO_GAME_DIR=<your game folder>` to see it.
+Replace any image with yours under the same name. The game's name is `ui.game.title` in `assets/text/<language>/ui.ron`; the client reads it when it starts, so there is nothing to build.
 
 ## Art
 

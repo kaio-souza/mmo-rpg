@@ -1,6 +1,18 @@
 # Tools
 
-Every tool runs from the game folder and takes `--help`.
+Every tool runs from the game folder and takes `--help`. `mmo` runs the others for you.
+
+## `mmo`
+
+One command for a game. It runs the kit's other tools, which must sit in the same folder (`target/release` after `cargo build --release`), so it needs no flags to remember.
+
+| Command | Does |
+|---|---|
+| `mmo new <folder> [--kit DIR]` | copies the new-game template to a new folder (`--kit` when `mmo` does not run from the kit) |
+| `mmo edit` | the editor on this game |
+| `mmo check` | `validate content --assets assets` |
+| `mmo play [--name NAME]` | `server --dev`, then `client --dev` on it; the server stops with the client |
+| `mmo publish [--out DIR]` | checks the game, then copies `content/`, `assets/`, `server` and `client` to `dist/` (or `DIR`); it refuses to overwrite a folder |
 
 ## `editor`
 

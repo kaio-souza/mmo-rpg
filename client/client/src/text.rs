@@ -121,7 +121,7 @@ fn default_cache_dir() -> Option<PathBuf> {
             .map(PathBuf::from)
             .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
     }?;
-    Some(base.join(client_ui::GAME_ID).join("text"))
+    Some(base.join(client_ui::game_id()).join("text"))
 }
 
 #[cfg(test)]

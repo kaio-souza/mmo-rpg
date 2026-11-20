@@ -8,8 +8,8 @@ The engine runs a complete game (the Riftara example: seven zones, combat, class
 
 | # | Deliverable | Done when |
 |---|---|---|
-| 1 | **`mmo` command**: `mmo new <folder>`, `mmo edit`, `mmo play` (server and client together), `mmo check`, `mmo publish` | a new game is one command away and runs with one more |
-| 2 | **One client for any game**: interface texts and game title loaded from the game's `assets/` at runtime | no rebuild per game; `MMO_GAME_DIR` gone |
+| 1 | ✅ **Done: `mmo` command**: `mmo new <folder>`, `mmo edit`, `mmo play` (server and client together), `mmo check`, `mmo publish` | a new game is one command away and runs with one more |
+| 2 | ✅ **Done: one client for any game**: interface texts and game title loaded from the game's `assets/` at runtime | no rebuild per game; `MMO_GAME_DIR` gone |
 | 3 | **Prebuilt binaries** for Linux and Windows in releases, with the template | users need no Rust |
 | 4 | **Generic release workflow**: package any game folder (server with `content/`, client with `assets/`) | publishing a game is one command |
 | 5 | **Content format version** and a migration path between kit versions | updating the kit never silently breaks a game |
@@ -42,7 +42,6 @@ After these, mechanics from the [possible list](mechanics.md#possible-mechanics-
 | ⚠ Open: how players' clients receive new art and sound from a live server (download on login, by content hash, like the text pack) | E6 |
 | ⚠ Open: where the live content lives on the server (outside the release folder, e.g. `/var/lib/game/content`) and how a developer's local copy syncs with it | E3 |
 | ⚠ Open: which of the engine's fixed choices become configuration (tile size, tick, directions, number of bodies) | step 5 |
-| ⚠ Open: CI has never run on GitHub (no remote yet), so the Windows job is untested | releases |
 | ⚠ Open: interface sounds in the template | nothing (the client plays nothing without them) |
 | ⚠ Open: Postgres next to SQLite | servers that outgrow one machine's database |
 | ⚠ Open: acting across seams, a gate queue between two sides, groups and trades across zones | dense borders between zones |
