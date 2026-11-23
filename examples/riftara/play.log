@@ -1,0 +1,81 @@
+2026-11-23T20:39:28.657209Z  INFO server: database open db=sqlite:data/game.db
+2026-11-23T20:39:28.779891Z  INFO server: content loaded zones=["aurelia", "briar_hills", "dev_field", "fenmoor", "ironridge", "load_test", "stonebrook", "testania", "whisperwood"] start=aurelia hash=a70390d64450bf8c
+2026-11-23T20:39:28.826031Z  INFO server_net: listening local_addr=127.0.0.1:7000
+2026-11-23T20:39:28.826059Z  INFO server: server ready (dev mode, plain TCP) address=127.0.0.1:7000 mode=All link=Memory max_players=2000
+2026-11-23T20:39:28.827637Z  INFO server::content: watching content for changes dir=content
+2026-11-23T20:39:28.829244Z  INFO server::gateway::play: zone up zone=aurelia
+2026-11-23T20:39:28.829262Z  INFO server::gateway::play: zone up zone=briar_hills
+2026-11-23T20:39:28.829269Z  INFO server::gateway::play: zone up zone=dev_field
+2026-11-23T20:39:28.829272Z  INFO server::gateway::play: zone up zone=fenmoor
+2026-11-23T20:39:28.829274Z  INFO server::gateway::play: zone up zone=ironridge
+2026-11-23T20:39:28.829276Z  INFO server::gateway::play: zone up zone=load_test
+2026-11-23T20:39:28.829279Z  INFO server::gateway::play: zone up zone=stonebrook
+2026-11-23T20:39:28.829281Z  INFO server::gateway::play: zone up zone=testania
+2026-11-23T20:39:28.829284Z  INFO server::gateway::play: zone up zone=whisperwood
+[2m2026-11-23T20:39:28.894988Z[0m [32m INFO[0m [2mclient::interface[0m[2m:[0m theme loaded [3mtheme[0m[2m=[0misekai
+[2m2026-11-23T20:39:28.920345Z[0m [32m INFO[0m [2mclient::graphics[0m[2m:[0m graphics loaded [3msprites[0m[2m=[0m59 [3micons[0m[2m=[0m60 [3msheet[0m[2m=[0m2048x2048
+[2m2026-11-23T20:39:29.287738Z[0m [32m INFO[0m [2mclient[0m[2m:[0m window open
+2026-11-23T20:39:33.735952Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=0 mean_us=154 sim_us=137 worst_us=275
+2026-11-23T20:39:33.741883Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=222 sim_us=200 worst_us=519
+2026-11-23T20:39:33.747223Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=211 sim_us=195 worst_us=358
+2026-11-23T20:39:33.752717Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=188 sim_us=171 worst_us=373
+2026-11-23T20:39:33.758239Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=183 sim_us=166 worst_us=417
+2026-11-23T20:39:33.763588Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=26 sim_us=19 worst_us=90
+2026-11-23T20:39:33.769335Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=113 sim_us=94 worst_us=378
+2026-11-23T20:39:33.774775Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=64 sim_us=48 worst_us=280
+2026-11-23T20:39:33.780540Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=177 sim_us=162 worst_us=251
+2026-11-23T20:39:38.736199Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=0 mean_us=152 sim_us=137 worst_us=326
+2026-11-23T20:39:38.741635Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=244 sim_us=222 worst_us=483
+2026-11-23T20:39:38.747208Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=228 sim_us=209 worst_us=579
+2026-11-23T20:39:38.752926Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=184 sim_us=169 worst_us=411
+2026-11-23T20:39:38.758238Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=203 sim_us=181 worst_us=589
+2026-11-23T20:39:38.763636Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=30 sim_us=22 worst_us=191
+2026-11-23T20:39:38.769280Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=97 sim_us=81 worst_us=295
+2026-11-23T20:39:38.774712Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=73 sim_us=54 worst_us=221
+2026-11-23T20:39:38.780516Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=184 sim_us=169 worst_us=289
+[2m2026-11-23T20:39:43.634601Z[0m [32m INFO[0m [2mclient::text[0m[2m:[0m text pack received [3mlocale[0m[2m=[0men
+2026-11-23T20:39:43.735954Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=0 mean_us=196 sim_us=173 worst_us=394
+2026-11-23T20:39:43.741617Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=200 sim_us=184 worst_us=365
+2026-11-23T20:39:43.747268Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=218 sim_us=203 worst_us=386
+2026-11-23T20:39:43.752888Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=236 sim_us=213 worst_us=455
+2026-11-23T20:39:43.758195Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=148 sim_us=135 worst_us=255
+2026-11-23T20:39:43.763640Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=27 sim_us=20 worst_us=105
+2026-11-23T20:39:43.769410Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=150 sim_us=126 worst_us=425
+2026-11-23T20:39:43.774746Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=50 sim_us=39 worst_us=121
+2026-11-23T20:39:43.780573Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=184 sim_us=167 worst_us=269
+2026-11-23T20:39:48.736050Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=1 mean_us=182 sim_us=162 worst_us=386
+2026-11-23T20:39:48.741619Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=185 sim_us=169 worst_us=240
+2026-11-23T20:39:48.747188Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=249 sim_us=231 worst_us=415
+2026-11-23T20:39:48.752683Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=188 sim_us=174 worst_us=360
+2026-11-23T20:39:48.758253Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=148 sim_us=135 worst_us=226
+2026-11-23T20:39:48.763572Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=36 sim_us=26 worst_us=152
+2026-11-23T20:39:48.769280Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=110 sim_us=90 worst_us=378
+2026-11-23T20:39:48.774772Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=50 sim_us=38 worst_us=91
+2026-11-23T20:39:48.780411Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=210 sim_us=190 worst_us=328
+2026-11-23T20:39:53.736046Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=1 mean_us=162 sim_us=147 worst_us=228
+2026-11-23T20:39:53.741747Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=200 sim_us=181 worst_us=330
+2026-11-23T20:39:53.747144Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=209 sim_us=193 worst_us=359
+2026-11-23T20:39:53.752603Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=161 sim_us=147 worst_us=267
+2026-11-23T20:39:53.758245Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=165 sim_us=147 worst_us=432
+2026-11-23T20:39:53.763591Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=30 sim_us=22 worst_us=127
+2026-11-23T20:39:53.769277Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=87 sim_us=74 worst_us=150
+2026-11-23T20:39:53.774676Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=60 sim_us=46 worst_us=187
+2026-11-23T20:39:53.780434Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=173 sim_us=157 worst_us=257
+2026-11-23T20:39:58.736077Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=1 mean_us=212 sim_us=190 worst_us=327
+2026-11-23T20:39:58.741589Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=242 sim_us=219 worst_us=502
+2026-11-23T20:39:58.747193Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=217 sim_us=202 worst_us=369
+2026-11-23T20:39:58.752741Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=191 sim_us=175 worst_us=264
+2026-11-23T20:39:58.758229Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=205 sim_us=184 worst_us=432
+2026-11-23T20:39:58.763571Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=28 sim_us=21 worst_us=115
+2026-11-23T20:39:58.769321Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=107 sim_us=88 worst_us=218
+2026-11-23T20:39:58.774745Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=70 sim_us=53 worst_us=159
+2026-11-23T20:39:58.780488Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=188 sim_us=174 worst_us=319
+2026-11-23T20:40:03.736053Z  INFO server::zone_loop: tick stats (5 s) zone=aurelia players=1 mean_us=219 sim_us=195 worst_us=415
+2026-11-23T20:40:03.741607Z  INFO server::zone_loop: tick stats (5 s) zone=briar_hills players=0 mean_us=200 sim_us=184 worst_us=363
+2026-11-23T20:40:03.748322Z  INFO server::zone_loop: tick stats (5 s) zone=dev_field players=0 mean_us=237 sim_us=219 worst_us=369
+2026-11-23T20:40:03.752714Z  INFO server::zone_loop: tick stats (5 s) zone=fenmoor players=0 mean_us=216 sim_us=197 worst_us=400
+2026-11-23T20:40:03.758221Z  INFO server::zone_loop: tick stats (5 s) zone=ironridge players=0 mean_us=157 sim_us=143 worst_us=289
+2026-11-23T20:40:03.763589Z  INFO server::zone_loop: tick stats (5 s) zone=load_test players=0 mean_us=32 sim_us=23 worst_us=60
+2026-11-23T20:40:03.769371Z  INFO server::zone_loop: tick stats (5 s) zone=stonebrook players=0 mean_us=123 sim_us=104 worst_us=275
+2026-11-23T20:40:03.774775Z  INFO server::zone_loop: tick stats (5 s) zone=testania players=0 mean_us=51 sim_us=39 worst_us=81
+2026-11-23T20:40:03.780534Z  INFO server::zone_loop: tick stats (5 s) zone=whisperwood players=0 mean_us=193 sim_us=178 worst_us=282
