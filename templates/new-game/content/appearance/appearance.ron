@@ -4,7 +4,7 @@
 // Names: appearance.<list>.<id> in content/text/<locale>/appearance.ron.
 (
     bodies: [
-        (id: "body_a", color: "#5b6b8c"),
+        (id: "body_a", color: "#5b6b8c", sprite: "body_a", clothes: "clothes_a"),
         (id: "body_b", color: "#6b5b8c"),
     ],
     skins: [
@@ -16,9 +16,9 @@
         (id: "skin_6", color: "#4f3224"),
     ],
     hair_styles: [
-        (id: "short"),
+        (id: "short", sprite: "hair_short"),
         (id: "long"),
-        (id: "ponytail"),
+        (id: "ponytail", sprite: "hair_ponytail"),
         (id: "braid"),
         (id: "curly"),
         (id: "spiky"),

@@ -80,6 +80,9 @@ impl VisibleEntity {
     /// How far the drawing is along the current step: 0 at its start, 1
     /// once it stands on `pos`.
     pub fn step_progress(&self, now_ms: f64) -> f64 {
+        if self.step_ms <= 0.0 {
+            return 1.0;
+        }
         ((now_ms - self.step_start_ms) / self.step_ms).clamp(0.0, 1.0)
     }
 
@@ -92,11 +95,17 @@ impl VisibleEntity {
         // Continue from where it is drawn now: no jump if a step arrives early.
         let here = self.visual_pos(now_ms);
         let far = (here.0 - f64::from(pos.x)).abs() > 2.0 || (here.1 - f64::from(pos.y)).abs() > 2.0;
-        self.from = if far {
-            (f64::from(pos.x), f64::from(pos.y))
-        } else {
-            here
-        };
+        if far {
+            // A jump (a respawn, a seam) is not a walk: it lands at once, and
+            // no walk frames play while it stands there.
+            self.from = (f64::from(pos.x), f64::from(pos.y));
+            self.pos = pos;
+            self.direction = direction;
+            self.step_start_ms = now_ms;
+            self.step_ms = 0.0;
+            return;
+        }
+        self.from = here;
         // A step that arrives early finds the drawing still on the last one:
         // running both in one fixed time would sprint. The time follows the
         // distance in ticks, the server's own pace (`Direction::step_ticks`:
@@ -1042,6 +1051,18 @@ mod tests {
         // Teleport-like jump: no slide across the map.
         e.move_to(TilePos::new(50, 0), Direction::E, 2000.0);
         assert_eq!(e.visual_pos(2000.0), (50.0, 0.0));
+    }
+
+    #[test]
+    fn a_respawn_far_away_does_not_walk_on_the_spot() {
+        // Dying far from the respawn point: the jump must not leave the walk
+        // frames playing while the character stands on the new tile.
+        let mut e = VisibleEntity::new(ent(1, 0, 0), 0.0);
+        e.move_to(TilePos::new(30, 0), Direction::E, 1000.0);
+        assert_eq!(e.visual_pos(1000.0), (30.0, 0.0));
+        assert!(!e.moving(1000.0));
+        assert!(!e.moving(1100.0));
+        assert_eq!(e.visual_pos(1100.0), (30.0, 0.0));
     }
 
     #[test]
