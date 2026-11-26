@@ -110,16 +110,15 @@ fn slug(name: &str) -> String {
 fn read_files(content: &Path, assets: &Path) -> Vec<TextFile> {
     let ui_dir = assets.join("text");
     let error_dir = content.join("text");
-    let list: Vec<Entry> = std::fs::read_to_string(error_dir.join("locales.ron"))
+    let list: Vec<Entry> = client_files::read_to_string(error_dir.join("locales.ron"))
         .ok()
         .and_then(|t| ron::from_str(&t).ok())
         .unwrap_or_else(|| {
-            let mut codes: Vec<String> = std::fs::read_dir(&ui_dir)
+            let mut codes: Vec<String> = client_files::list(&ui_dir)
                 .into_iter()
                 .flatten()
-                .flatten()
-                .filter(|e| e.path().is_dir())
-                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .filter(|e| e.is_dir)
+                .filter_map(|e| e.path.file_name().map(|n| n.to_string_lossy().into_owned()))
                 .collect();
             codes.sort_by_key(|c| (c != "en", c.clone()));
             codes
@@ -138,7 +137,7 @@ fn read_files(content: &Path, assets: &Path) -> Vec<TextFile> {
 }
 
 fn read_or_empty(path: &Path) -> String {
-    std::fs::read_to_string(path).unwrap_or_else(|_| "{}".to_owned())
+    client_files::read_to_string(path).unwrap_or_else(|_| "{}".to_owned())
 }
 
 /// The required languages, each named in itself (`ui.locale.name` of its

@@ -8,6 +8,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Writes `shot` as `<user folder>/screenshots/<unix seconds>.png`.
 pub fn save(shot: &Screenshot) -> Result<PathBuf, String> {
+    // A page has no folder to save into: the browser's own capture is there.
+    if cfg!(target_arch = "wasm32") {
+        return Err("screenshots are not saved in a browser".into());
+    }
     let dir = config_dir()
         .ok_or("no user folder for screenshots")?
         .join("screenshots");

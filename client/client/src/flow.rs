@@ -10,8 +10,9 @@ use protocol::{
     CharacterSummary, ClientMsg, DeviceToken, ErrorCode, PROTOCOL_VERSION, Password, ServerMsg, SessionToken,
 };
 use std::sync::mpsc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tracing::{info, warn};
+use web_time::Instant;
 
 /// Reconnection tries after the connection drops, one every `RETRY_EVERY`.
 const RECONNECT_TRIES: u32 = 5;
@@ -209,12 +210,8 @@ impl Flow {
         self.challenge = None;
         self.want_password = None;
         self.solving = None;
-        let (tx, rx) = mpsc::channel();
         let (server, tls) = (self.server.clone(), self.tls.clone());
-        std::thread::spawn(move || {
-            let _ = tx.send(Connection::connect(&server, tls.as_ref()));
-        });
-        self.connecting = Some(rx);
+        self.connecting = Some(in_background(move || Connection::connect(&server, tls.as_ref())));
         if !matches!(self.stage, Stage::Reconnecting { .. }) {
             self.stage = Stage::Connecting(auth.clone());
         }
@@ -376,10 +373,9 @@ impl Flow {
             return;
         };
         let device = self.device.clone();
-        let (tx, rx) = mpsc::channel();
-        std::thread::spawn(move || {
+        self.solving = Some(in_background(move || {
             let proof = protocol::solve_proof(&seed, account.as_str(), bits);
-            let _ = tx.send(if register {
+            if register {
                 ClientMsg::Register {
                     account,
                     password,
@@ -392,9 +388,8 @@ impl Flow {
                     device,
                     proof,
                 }
-            });
-        });
-        self.solving = Some(rx);
+            }
+        }));
     }
 
     /// The `TooManyAttempts` message with the seconds still left.
@@ -681,4 +676,23 @@ pub fn error_text(t: &UiText, code: ErrorCode, args: &[Arg]) -> String {
         })
         .collect();
     t.t_args(code.text_key(), &args)
+}
+
+/// Runs `work` in a thread; its result arrives on the receiver. A browser
+/// page has no threads: there it runs at once (opening a WebSocket does
+/// not wait, and the proof of work is short).
+#[cfg(not(target_arch = "wasm32"))]
+fn in_background<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) -> mpsc::Receiver<T> {
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(work());
+    });
+    rx
+}
+
+#[cfg(target_arch = "wasm32")]
+fn in_background<T>(work: impl FnOnce() -> T) -> mpsc::Receiver<T> {
+    let (tx, rx) = mpsc::channel();
+    let _ = tx.send(work());
+    rx
 }

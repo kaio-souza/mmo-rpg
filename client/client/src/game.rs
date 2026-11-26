@@ -6,8 +6,9 @@ use base::SoundEvent;
 use base::{Arg, EntityId, TextRef, TilePos};
 use client_state::{ChatLine, QuestNews};
 use protocol::{ChatChannel, ClientMsg, EntityKind, TILE_SWITCH};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tracing::error;
+use web_time::Instant;
 use winit::event_loop::ActiveEventLoop;
 
 /// Tiles within which a revival item reaches a fallen player; the

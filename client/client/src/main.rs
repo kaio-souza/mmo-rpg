@@ -22,6 +22,8 @@ mod screenshot;
 mod social;
 mod sound;
 mod text;
+#[cfg(target_arch = "wasm32")]
+mod web;
 
 use base::{CharacterName, EntityId, Locale, Look, TilePos};
 use client_net::TlsConfig;
@@ -30,11 +32,11 @@ use client_state::WorldState;
 use client_ui::{CharacterCard, CreateModel, LoginModel, PasswordModel, Screen, SelectModel, UiAction};
 use flow::{Flow, Stage};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tracing::{error, info};
-use tracing_subscriber::EnvFilter;
+use std::time::Duration;
+use tracing::info;
+use web_time::Instant;
 use winit::application::ApplicationHandler;
-use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
+use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::Ime;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
@@ -105,14 +107,17 @@ struct Args {
 }
 
 impl Args {
-    fn parse() -> Result<Args, String> {
+    /// The command line; in a browser, the page's query string
+    /// (`?server=host:7001&locale=pt-BR` reads as `--server host:7001
+    /// --locale pt-BR`).
+    fn parse(words: impl IntoIterator<Item = String>) -> Result<Args, String> {
         let mut args = Args {
             content: "content".into(),
             assets: "assets".into(),
             theme: None,
             ..Args::default()
         };
-        let mut it = std::env::args().skip(1);
+        let mut it = words.into_iter();
         while let Some(flag) = it.next() {
             let mut value = || it.next().ok_or(format!("{flag} needs a value"));
             match flag.as_str() {
@@ -151,18 +156,36 @@ impl Args {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
         .init();
-    if let Err(e) = run() {
-        error!("{e}");
+    let started = Args::parse(std::env::args().skip(1)).and_then(start);
+    if let Err(e) = started {
+        tracing::error!("{e}");
         std::process::exit(1);
     }
 }
 
-fn run() -> Result<(), String> {
-    let args = Args::parse()?;
+/// In a browser: the game's files are fetched first, then the same start.
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    web::init_logging();
+    wasm_bindgen_futures::spawn_local(async {
+        if let Err(e) = web::load_game().await {
+            return web::fail(&e);
+        }
+        if let Err(e) = Args::parse(web::query_args()).and_then(start) {
+            web::fail(&e);
+        }
+    });
+}
+
+fn start(args: Args) -> Result<(), String> {
     // The game's interface texts, read once; without them nothing is shown.
     client_ui::set_game(
         std::path::Path::new(&args.content),
@@ -227,10 +250,20 @@ fn run() -> Result<(), String> {
         app.flow
             .log_in(&app.ui.text, &server, account, &password, args.register, device);
     }
-    event_loop
-        .run_app(&mut app)
-        .map_err(|e| format!("event loop: {e}"))?;
-    app.failure.map_or(Ok(()), Err)
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        event_loop
+            .run_app(&mut app)
+            .map_err(|e| format!("event loop: {e}"))?;
+        app.failure.map_or(Ok(()), Err)
+    }
+    // The page's loop runs after this returns; failures are shown on it.
+    #[cfg(target_arch = "wasm32")]
+    {
+        use winit::platform::web::EventLoopExtWebSys;
+        event_loop.spawn_app(app);
+        Ok(())
+    }
 }
 
 struct App {
@@ -238,6 +271,9 @@ struct App {
     state: WorldState,
     window: Option<Arc<Window>>,
     render: Option<Render>,
+    /// In a browser the renderer is built asynchronously: it lands here.
+    #[cfg(target_arch = "wasm32")]
+    render_slot: web::RenderSlot,
     items: Vec<ItemDesign>,
     /// What the player sees, for the shaded ground.
     fog: scene::Fog,
@@ -322,6 +358,8 @@ impl App {
             state: WorldState::new(),
             window: None,
             render: None,
+            #[cfg(target_arch = "wasm32")]
+            render_slot: web::RenderSlot::default(),
             items: Vec::new(),
             fog: scene::Fog::default(),
             lights: Vec::new(),
@@ -437,16 +475,25 @@ impl App {
             return Ok(());
         };
         let size = window.inner_size();
-        let render = pollster::block_on(Render::new(
+        let building = Render::new(
             window,
-            (size.width, size.height),
+            (size.width.max(1), size.height.max(1)),
             RenderConfig::default(),
-        ))
-        .map_err(|e| e.to_string())?;
+        );
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let render = pollster::block_on(building).map_err(|e| e.to_string())?;
+            self.render_built(render);
+        }
+        #[cfg(target_arch = "wasm32")]
+        self.render_slot.build(building);
+        Ok(())
+    }
+
+    fn render_built(&mut self, render: Render) {
         self.render = Some(render);
         self.ui.fonts.invalidate_atlas();
         self.graphics.request_upload();
-        Ok(())
     }
 
     /// Messages of the connection: the login answers go to `flow`, the
@@ -723,6 +770,25 @@ impl App {
     }
 
     fn frame(&mut self, event_loop: &ActiveEventLoop) {
+        #[cfg(target_arch = "wasm32")]
+        match self.render_slot.take() {
+            Some(Ok(render)) => {
+                if let Some(w) = &self.window {
+                    let size = w.inner_size();
+                    let mut render = render;
+                    render.resize((size.width, size.height));
+                    self.render_built(render);
+                } else {
+                    self.render_built(render);
+                }
+            }
+            Some(Err(e)) => {
+                web::fail(&e);
+                self.failure = Some(e);
+                return event_loop.exit();
+            }
+            None => {}
+        }
         if self.render.as_ref().is_some_and(Render::is_lost) {
             tracing::warn!("rebuilding the renderer after a device loss");
             if let Err(e) = self.build_render() {
@@ -811,9 +877,15 @@ impl ApplicationHandler for App {
             }
             return;
         }
-        let attrs = Window::default_attributes()
-            .with_title(self.ui.text.t("ui.game.title"))
-            .with_inner_size(LogicalSize::new(1280.0, 720.0));
+        let attrs = Window::default_attributes().with_title(self.ui.text.t("ui.game.title"));
+        #[cfg(not(target_arch = "wasm32"))]
+        let attrs = attrs.with_inner_size(winit::dpi::LogicalSize::new(1280.0, 720.0));
+        // The page's canvas, sized by the page.
+        #[cfg(target_arch = "wasm32")]
+        let attrs = {
+            use winit::platform::web::WindowAttributesExtWebSys;
+            attrs.with_canvas(web::canvas()).with_prevent_default(true)
+        };
         let window = match event_loop.create_window(attrs) {
             Ok(w) => Arc::new(w),
             Err(e) => {
@@ -955,7 +1027,7 @@ impl ApplicationHandler for App {
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         // Redraw continuously; presentation waits for vsync.
-        if self.render.is_some() && self.drawable() {
+        if self.drawable() && (self.render.is_some() || cfg!(target_arch = "wasm32")) {
             event_loop.set_control_flow(ControlFlow::Wait);
             if let Some(w) = self.window.as_ref() {
                 w.request_redraw();

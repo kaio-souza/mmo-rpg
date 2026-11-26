@@ -44,6 +44,8 @@
 
 Production uses `--tls-cert` and `--tls-key` (PEM, e.g. Let's Encrypt). Without them the server creates a self-signed certificate for `localhost` and its address in `data/tls/`. The client trusts Mozilla's roots and, with `--trust-cert FILE`, that file; it has no option to trust anything.
 
+Browser clients connect to `--ws-address` with the same certificate (`wss://`) and trust what the browser trusts, so a public server needs a real certificate. `--ws-origin` limits which pages may open the WebSocket; the frames, rate limits and per-IP limits are the same as on TCP ([web](web.md)).
+
 ## Team tools
 
 The editor and any other team tool are reachable only through the server's WireGuard private network, never on the public IP, and still require a game account with the right role. Every action goes to `admin_log` ([operations](operations.md#private-network-planned); planned).

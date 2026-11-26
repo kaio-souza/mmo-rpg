@@ -17,9 +17,10 @@ use client_ui::{
 };
 use protocol::{DeviceToken, EntityKind, EntityName, ObjectiveView, QuestMarker, QuestState, TILE_BLOCKS};
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant, SystemTime};
+use std::path::PathBuf;
+use std::time::{Duration, SystemTime};
 use tracing::{info, warn};
+use web_time::Instant;
 
 const CHECK_EVERY: Duration = Duration::from_secs(1);
 /// Lines kept in the log.
@@ -59,7 +60,7 @@ impl Assets {
             return t.clone();
         }
         let path = self.dir.join(client_ui::GAME_THEME_FILE);
-        match std::fs::read_to_string(&path)
+        match client_files::read_to_string(&path)
             .map_err(|e| e.to_string())
             .and_then(|t| read_game_theme(&t).map_err(|e| e.to_string()))
         {
@@ -78,8 +79,8 @@ impl Assets {
     /// Theme and fonts; `None` if the theme file is missing or broken.
     fn load(&mut self) -> Option<(client_ui::UiTheme, Fonts)> {
         let path = self.theme_path();
-        self.stamp = std::fs::metadata(&path).and_then(|m| m.modified()).ok();
-        let text = match std::fs::read_to_string(&path) {
+        self.stamp = client_files::modified(&path);
+        let text = match client_files::read_to_string(&path) {
             Ok(t) => t,
             Err(e) => {
                 warn!(path = %path.display(), "theme not read: {e}");
@@ -95,7 +96,7 @@ impl Assets {
         };
         let dir = self.dir.clone();
         let (fonts, problems) = Fonts::load(&theme, self.locale.code(), &mut |p: &str| {
-            std::fs::read(dir.join(p)).ok()
+            client_files::read(dir.join(p)).ok()
         });
         for p in problems {
             warn!("{p}");
@@ -143,9 +144,7 @@ impl Assets {
         if switched {
             self.theme = wanted;
         }
-        let stamp = std::fs::metadata(self.theme_path())
-            .and_then(|m| m.modified())
-            .ok();
+        let stamp = client_files::modified(self.theme_path());
         if stamp.is_some()
             && (switched || stamp != self.stamp)
             && let Some((theme, fonts)) = self.load()
@@ -158,14 +157,7 @@ impl Assets {
 /// The user folder: `~/.config/<game>/` on Linux, `%APPDATA%\<game>\`
 /// on Windows, `<game>` being [`client_ui::game_id`].
 pub fn config_dir() -> Option<PathBuf> {
-    let base = if cfg!(windows) {
-        std::env::var_os("APPDATA").map(PathBuf::from)
-    } else {
-        std::env::var_os("XDG_CONFIG_HOME")
-            .map(PathBuf::from)
-            .or_else(|| std::env::var_os("HOME").map(|h| Path::new(&h).join(".config")))
-    };
-    base.map(|b| b.join(client_ui::game_id()))
+    client_files::config_base().map(|b| b.join(client_ui::game_id()))
 }
 
 /// `login.ron` in the user folder: the server list (the official one
@@ -187,7 +179,7 @@ impl LoginConfig {
         let Some(path) = config_dir().map(|d| d.join("login.ron")) else {
             return LoginConfig::default();
         };
-        match std::fs::read_to_string(&path) {
+        match client_files::read_to_string(&path) {
             Ok(text) => ron::from_str(&text).unwrap_or_else(|e| {
                 warn!(path = %path.display(), "{e}");
                 LoginConfig::default()
@@ -202,8 +194,8 @@ impl LoginConfig {
             Ok(t) => t,
             Err(e) => return warn!("login.ron: {e}"),
         };
-        let written =
-            std::fs::create_dir_all(&dir).and_then(|()| write_private(&dir.join("login.ron"), &text));
+        let written = client_files::create_dir_all(&dir)
+            .and_then(|()| client_files::write_private(dir.join("login.ron"), &text));
         if let Err(e) = written {
             warn!(dir = %dir.display(), "cannot save login.ron: {e}");
         }
@@ -222,28 +214,6 @@ impl LoginConfig {
     pub fn set_device(&mut self, server: &str, account: &str, token: &DeviceToken) {
         self.devices
             .insert(Self::device_key(server, account), to_hex(&token.0));
-    }
-}
-
-/// Owner-only file on Unix (it holds device tokens).
-fn write_private(path: &Path, text: &str) -> std::io::Result<()> {
-    #[cfg(unix)]
-    {
-        use std::io::Write;
-        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
-        let mut f = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(path)?;
-        // An older file keeps its mode on open: set it again.
-        f.set_permissions(std::fs::Permissions::from_mode(0o600))?;
-        f.write_all(text.as_bytes())
-    }
-    #[cfg(not(unix))]
-    {
-        std::fs::write(path, text)
     }
 }
 
@@ -266,7 +236,7 @@ pub fn key_map() -> KeyMap {
     let Some(path) = config_dir().map(|d| d.join("keybinds.ron")) else {
         return KeyMap::default();
     };
-    match std::fs::read_to_string(&path) {
+    match client_files::read_to_string(&path) {
         Ok(text) => {
             let (map, problems) = KeyMap::load(&text);
             for p in problems {

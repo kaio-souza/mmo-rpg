@@ -51,7 +51,7 @@ impl Hotbar {
         self.save();
         self.owner = Some(owner.to_owned());
         self.layout = path(owner)
-            .and_then(|p| std::fs::read_to_string(p).ok())
+            .and_then(|p| client_files::read_to_string(p).ok())
             .and_then(|t| {
                 ron::from_str(&t)
                     .map_err(|e| warn!(owner, "hotbar file: {e}"))
@@ -168,8 +168,8 @@ impl Hotbar {
         };
         let written = p
             .parent()
-            .map_or(Ok(()), std::fs::create_dir_all)
-            .and_then(|()| std::fs::write(&p, text));
+            .map_or(Ok(()), client_files::create_dir_all)
+            .and_then(|()| client_files::write(&p, text));
         if let Err(e) = written {
             warn!(path = %p.display(), "cannot save the hotbar: {e}");
         }

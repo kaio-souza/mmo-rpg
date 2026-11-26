@@ -24,6 +24,8 @@ server --address 0.0.0.0:7000 --data-dir /var/lib/game --content /opt/game/curre
        --replay-dir /var/lib/game/replays --tls-cert ... --tls-key ...
 ```
 
+For browser players add `--ws-address 0.0.0.0:7001 --ws-origin https://<the page's site>` and open that port too ([web](web.md)).
+
 `SIGINT` stops it after saving everyone (`TimeoutStopSec=60`); `Restart=always`. Logs go to journald (`journalctl -u game`), with tick statistics every 5 s.
 
 ## Release

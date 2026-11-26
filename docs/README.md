@@ -12,6 +12,7 @@ Start here, then read only the page you need.
 | [Content](content/README.md) | Every content file type, with its fields and an example to copy |
 | [Assets](assets.md) | Images, animation strips, tiles, icons, themes, fonts, sounds |
 | [Client](client.md) | Screens, controls, chat commands, what the client keeps |
+| [Browser client](web.md) | Build the client for the browser, serve it, and the server's WebSocket port |
 | [Character parts](character-parts.md) | Planned: a look built from parts and colours, and its editor screen |
 | [Mechanics](mechanics.md) | What the engine does today, and the mechanics a game could add later |
 | [Translation](translation.md) | How texts are translated: rules, glossary, tone per language |
