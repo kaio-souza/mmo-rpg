@@ -17,6 +17,7 @@ The engine runs a complete game (the Riftara example: seven zones, combat, class
 | 7 | **Kit defaults as one package** (theme, fonts, interface icons, interface sounds, interface texts) that the template and the example share | defaults live in one place |
 | 8 | **Full world measured**: 2000 bots with combat spread over the example's zones | the targets in [performance](performance.md) are measured |
 | 9 | **`pack`**: grid and palette checks, cut CJK fonts, `assets.pak` | releases ship one checked file |
+| 11 | **Browser client in releases**: `mmo publish` writes the web folder (page, `.wasm`, `game.bundle`) beside the desktop package. *The client already builds for the browser ([web](web.md))* | a game is playable from a link |
 | 10 | **Layered characters**: body, hair and clothes recoloured by palette keys. *Engine done (body, clothes and hair layers tinted by skin and hair colours); first art in review in `testes-arte/layers-v1/`. Next: [character parts](character-parts.md), a look built from parts (body, hair, clothes) each with its options and palette, a "Character" screen in the editor, and the MVP tops, trousers and shoes as options* | a character's look is combinations, not one sprite each |
 
 ### The editor on a published game
@@ -44,6 +45,7 @@ After these, mechanics from the [possible list](mechanics.md#possible-mechanics-
 | ⚠ Open: whether equipped armour hides the clothes parts or is drawn over them | [character parts](character-parts.md) |
 | ⚠ Open: how players' clients receive new art and sound from a live server (download on login, by content hash, like the text pack) | E6 |
 | ⚠ Open: where the live content lives on the server (outside the release folder, e.g. `/var/lib/game/content`) and how a developer's local copy syncs with it | E3 |
+| ⚠ Open: WebAudio through an `AudioWorklet` instead of the deprecated script node | [web](web.md) |
 | ⚠ Open: which of the engine's fixed choices become configuration (tile size, tick, directions, number of bodies) | step 5 |
 | ⚠ Open: interface sounds in the template | nothing (the client plays nothing without them) |
 | ⚠ Open: Postgres next to SQLite | servers that outgrow one machine's database |

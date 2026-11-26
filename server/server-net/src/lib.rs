@@ -8,6 +8,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod tls;
+mod ws;
 
 pub use tls::{TlsFiles, server_config};
 
@@ -15,6 +16,7 @@ use bytes::Bytes;
 use protocol::{ClientMsg, ErrorCode, MAX_CLIENT_FRAME, ProtocolError, ServerMsg};
 use std::collections::BTreeMap;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -40,6 +42,12 @@ pub struct NetConfig {
     /// Open connections per IP (IPv6: per /64) before new ones are closed
     /// on accept; 0: no limit. Loopback is never limited (bots).
     pub max_conns_per_ip: usize,
+    /// Second listener for browser clients: WebSocket carrying the same
+    /// frames, over the same TLS (`wss://`) or plain in dev mode (`ws://`).
+    pub ws_address: Option<SocketAddr>,
+    /// Pages allowed to open a WebSocket (`Origin` header, such as
+    /// `https://play.example.com`); empty: any page.
+    pub ws_origins: Vec<String>,
 }
 
 impl NetConfig {
@@ -50,6 +58,8 @@ impl NetConfig {
             max_msgs_per_sec: protocol::MAX_CLIENT_MSGS_PER_SEC,
             max_queued_frames: 512,
             max_conns_per_ip: 8,
+            ws_address: None,
+            ws_origins: Vec::new(),
         }
     }
 }
@@ -89,6 +99,7 @@ pub struct Net {
     /// Open connections per IP group (`ip_group`).
     per_ip: Arc<Mutex<BTreeMap<IpAddr, usize>>>,
     local_addr: SocketAddr,
+    ws_local_addr: Option<SocketAddr>,
 }
 
 /// IPv4 as is, IPv6 by its /64: one host often holds a whole /64.
@@ -152,19 +163,45 @@ impl Net {
     pub async fn start(cfg: NetConfig) -> Result<(Net, mpsc::Receiver<NetEvent>), NetError> {
         let listener = TcpListener::bind(cfg.address).await.map_err(NetError::Bind)?;
         let local_addr = listener.local_addr().map_err(NetError::Bind)?;
+        let ws_listener = match cfg.ws_address {
+            Some(a) => Some(TcpListener::bind(a).await.map_err(NetError::Bind)?),
+            None => None,
+        };
+        let ws_local_addr = match &ws_listener {
+            Some(l) => Some(l.local_addr().map_err(NetError::Bind)?),
+            None => None,
+        };
         let (events, rx) = mpsc::channel(4096);
         let net = Net {
             writers: Arc::default(),
             per_ip: Arc::default(),
             local_addr,
+            ws_local_addr,
         };
         info!(%local_addr, "listening");
-        tokio::spawn(accept_loop(listener, net.clone(), cfg, events));
+        let ids = Arc::new(AtomicU64::new(1));
+        if let Some(l) = ws_listener {
+            info!(address = %l.local_addr().map_err(NetError::Bind)?, "listening for WebSocket");
+            tokio::spawn(accept_loop(
+                l,
+                true,
+                ids.clone(),
+                net.clone(),
+                cfg.clone(),
+                events.clone(),
+            ));
+        }
+        tokio::spawn(accept_loop(listener, false, ids, net.clone(), cfg, events));
         Ok((net, rx))
     }
 
     pub fn local_addr(&self) -> SocketAddr {
         self.local_addr
+    }
+
+    /// Where the WebSocket listener is, if there is one.
+    pub fn ws_local_addr(&self) -> Option<SocketAddr> {
+        self.ws_local_addr
     }
 
     /// Queues one already encoded frame. A full queue drops the connection.
@@ -212,8 +249,14 @@ impl Net {
     }
 }
 
-async fn accept_loop(listener: TcpListener, net: Net, cfg: NetConfig, events: mpsc::Sender<NetEvent>) {
-    let mut next_id = 1u64;
+async fn accept_loop(
+    listener: TcpListener,
+    ws: bool,
+    ids: Arc<AtomicU64>,
+    net: Net,
+    cfg: NetConfig,
+    events: mpsc::Sender<NetEvent>,
+) {
     loop {
         let (stream, peer) = match listener.accept().await {
             Ok(s) => s,
@@ -229,35 +272,64 @@ async fn accept_loop(listener: TcpListener, net: Net, cfg: NetConfig, events: mp
             continue;
         };
         let _ = stream.set_nodelay(true);
-        let id = ConnectionId(next_id);
-        next_id += 1;
+        let id = ConnectionId(ids.fetch_add(1, Ordering::Relaxed));
         let acceptor = cfg.tls.clone().map(TlsAcceptor::from);
         // The handshake runs in the connection's own task, so a slow client
         // never holds up the accept loop.
         let (net, cfg, events) = (net.clone(), cfg.clone(), events.clone());
         tokio::spawn(async move {
-            serve(id, stream, peer, acceptor, net, cfg, events).await;
+            serve(id, stream, peer, acceptor, ws, net, cfg, events).await;
             drop(slot);
         });
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn serve(
     id: ConnectionId,
     stream: TcpStream,
     peer: SocketAddr,
     acceptor: Option<TlsAcceptor>,
+    ws: bool,
     net: Net,
     cfg: NetConfig,
     events: mpsc::Sender<NetEvent>,
 ) {
     match acceptor {
-        None => run_connection(id, stream, peer, net, cfg, events).await,
+        None => serve_plain(id, stream, peer, ws, net, cfg, events).await,
         Some(acceptor) => match tokio::time::timeout(HANDSHAKE_TIMEOUT, acceptor.accept(stream)).await {
-            Ok(Ok(tls)) => run_connection(id, tls, peer, net, cfg, events).await,
+            Ok(Ok(tls)) => serve_plain(id, tls, peer, ws, net, cfg, events).await,
             Ok(Err(e)) => debug!(%peer, error = %e, "TLS handshake failed"),
             Err(_) => debug!(%peer, "TLS handshake timed out"),
         },
+    }
+}
+
+/// After TLS: either the frames themselves, or a WebSocket carrying them
+/// (bridged to an in-memory pipe, so the rest is the same code).
+async fn serve_plain<S>(
+    id: ConnectionId,
+    stream: S,
+    peer: SocketAddr,
+    ws: bool,
+    net: Net,
+    cfg: NetConfig,
+    events: mpsc::Sender<NetEvent>,
+) where
+    S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+{
+    if !ws {
+        return run_connection(id, stream, peer, net, cfg, events).await;
+    }
+    let accepted = tokio::time::timeout(HANDSHAKE_TIMEOUT, ws::accept(stream, &cfg.ws_origins)).await;
+    match accepted {
+        Ok(Ok(socket)) => {
+            let (inner, outer) = tokio::io::duplex(2 * MAX_CLIENT_FRAME);
+            tokio::spawn(ws::bridge(socket, outer));
+            run_connection(id, inner, peer, net, cfg, events).await;
+        }
+        Ok(Err(e)) => debug!(%peer, error = %e, "WebSocket handshake failed"),
+        Err(_) => debug!(%peer, "WebSocket handshake timed out"),
     }
 }
 
@@ -430,6 +502,64 @@ mod tests {
                 return None;
             }
             buf.extend_from_slice(&chunk[..n]);
+        }
+    }
+
+    async fn start_ws(origins: Vec<String>) -> (Net, mpsc::Receiver<NetEvent>) {
+        let mut cfg = NetConfig::new("127.0.0.1:0".parse().unwrap());
+        cfg.ws_address = Some("127.0.0.1:0".parse().unwrap());
+        cfg.ws_origins = origins;
+        Net::start(cfg).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn websocket_carries_the_same_frames() {
+        use futures_util::{SinkExt, StreamExt};
+        use tokio_tungstenite::tungstenite::Message;
+        let (net, mut rx) = start_ws(Vec::new()).await;
+        let addr = net.ws_local_addr().unwrap();
+        let tcp = TcpStream::connect(addr).await.unwrap();
+        let (mut ws, _) = tokio_tungstenite::client_async(format!("ws://{addr}/"), tcp)
+            .await
+            .unwrap();
+        let NetEvent::Connected(id, _) = rx.recv().await.unwrap() else {
+            panic!()
+        };
+        // One frame split over two messages arrives whole.
+        let f = frame(&ClientMsg::Ping { n: 9 });
+        let (a, b) = f.split_at(3);
+        ws.send(Message::Binary(a.to_vec().into())).await.unwrap();
+        ws.send(Message::Binary(b.to_vec().into())).await.unwrap();
+        let NetEvent::Message(_, ClientMsg::Ping { n: 9 }) = rx.recv().await.unwrap() else {
+            panic!()
+        };
+        net.send_msg(id, &ServerMsg::Pong { n: 9 });
+        let Some(Ok(Message::Binary(bytes))) = ws.next().await else {
+            panic!()
+        };
+        let (m, _) = protocol::decode_frame::<ServerMsg>(&bytes, protocol::MAX_SERVER_FRAME)
+            .unwrap()
+            .unwrap();
+        assert_eq!(m, ServerMsg::Pong { n: 9 });
+    }
+
+    #[tokio::test]
+    async fn websocket_from_an_unlisted_page_is_refused() {
+        use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+        let (net, _rx) = start_ws(vec!["https://play.example.com".into()]).await;
+        let addr = net.ws_local_addr().unwrap();
+        for (origin, ok) in [
+            ("https://evil.example.com", false),
+            ("https://play.example.com", true),
+        ] {
+            let tcp = TcpStream::connect(addr).await.unwrap();
+            let mut req = format!("ws://{addr}/").into_client_request().unwrap();
+            req.headers_mut().insert("origin", origin.parse().unwrap());
+            assert_eq!(
+                tokio_tungstenite::client_async(req, tcp).await.is_ok(),
+                ok,
+                "{origin}"
+            );
         }
     }
 

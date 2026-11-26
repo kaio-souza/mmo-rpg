@@ -23,6 +23,8 @@ jobs:
         run: cmp shared/clippy.toml server/sim/clippy.toml
       - name: clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: clippy (browser client)
+        run: rustup target add wasm32-unknown-unknown && cargo clippy --locked -p client --target wasm32-unknown-unknown -- -D warnings
       - name: test
         run: cargo test --workspace --locked
       - name: validate arch

@@ -17,6 +17,7 @@ members = [
     "client/client-audio",
     "client/client-ui",
     "client/client-net",
+    "client/client-files",
     "client/client",
     "tools/validate",
     "tools/bots",
@@ -49,6 +50,7 @@ client-render = { path = "client/client-render" }
 client-audio = { path = "client/client-audio" }
 client-ui = { path = "client/client-ui" }
 client-net = { path = "client/client-net" }
+client-files = { path = "client/client-files" }
 # Tools used as libraries by the editor.
 admin = { path = "tools/admin" }
 replay = { path = "tools/replay" }
@@ -97,6 +99,16 @@ lewton = { version = "0.10", default-features = false, features = ["ogg"] }
 pulseaudio = { version = "0.3", default-features = false }
 wasapi = "0.27"
 futures = { version = "0.3", default-features = false, features = ["executor"] }
+# WebSocket for browser clients: the server side (server-net).
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["handshake"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+# Browser (wasm32) client only: the page's APIs, its clock and its loop.
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["BinaryType", "WebSocket", "MessageEvent", "CloseEvent", "Event", "Window", "Location", "Storage", "Document", "Element", "HtmlCanvasElement", "Response", "AudioContext", "AudioContextState", "AudioDestinationNode", "AudioNode", "AudioBuffer", "AudioProcessingEvent", "ScriptProcessorNode", "BaseAudioContext", "AudioContextOptions", "EventTarget", "console", "UrlSearchParams"] }
+web-time = "1"
+console_error_panic_hook = "0.1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

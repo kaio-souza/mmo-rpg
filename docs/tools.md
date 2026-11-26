@@ -62,6 +62,10 @@ Behaviours: `idle`, `walk`, `trade`, `seam`.
 
 Re-runs a zone recording and compares the state hash of every tick ([runtime](runtime.md#crashes-and-replays)).
 
+## `web-bundle`
+
+`web-bundle CONTENT ASSETS OUT` writes a game's files as the one `game.bundle` the browser client fetches; `client/client/web/build.sh` runs it ([web](web.md)).
+
 ## `pack`
 
 Planned: check art against the grid and palette, cut CJK fonts to the characters in use, and build `assets.pak` for release. Today it is a stub; releases ship the `assets/` folder.

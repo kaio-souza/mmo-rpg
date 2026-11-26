@@ -7,6 +7,7 @@ To change a crate you should only need its own code and the **public API** of th
 ```mermaid
 graph LR
     C[client] -- TLS over TCP --> G[gateway: connections, login, database]
+    B[browser client] -- WebSocket over TLS --> G
     G -- zone link --> Z1[zone process: zones A, B]
     G -- zone link --> Z2[zone process: zones C, D]
 ```
@@ -32,7 +33,8 @@ One `server` binary runs as `all` (gateway and every zone in one process), `gate
 | `client-render` | client | isometric projection, sprites, light and fog shaders (`wgpu`) |
 | `client-audio` | client | mixer and per-platform audio backends |
 | `client-ui` | client | theme, widgets, HUD, interface texts |
-| `client-net` | client | the client's connection, on its own thread |
+| `client-net` | client | the client's connection: TCP on its own thread, or a WebSocket in a browser |
+| `client-files` | client | the client's files: the disk, or in a browser a fetched bundle and `localStorage` ([web](web.md)) |
 | `client` | client | the binary: frame loop, input, wiring |
 | `validate`, `bots`, `pack`, `replay`, `admin`, `editor`, `mmo` | tools | see [tools](tools.md) |
 
@@ -53,9 +55,10 @@ graph TD
     cstate[client-state] --> protocol
     crender[client-render] --> base
     caudio[client-audio] --> base
-    cui[client-ui] --> base & i18n
+    cfiles[client-files]
+    cui[client-ui] --> base & i18n & cfiles
     cnet[client-net] --> protocol
-    client --> cstate & crender & caudio & cui & cnet & i18n
+    client --> cstate & crender & caudio & cui & cnet & cfiles & i18n
     validate --> defs & i18n
     pack --> i18n
     bots --> cnet
@@ -88,4 +91,4 @@ Indirect dependencies are allowed. The checked source of truth is `arch.ron`: `v
 
 ## Protocol in short
 
-Messages (`ClientMsg`, `ServerMsg`) are encoded with `postcard`, framed with a `u32` length, over TLS (`rustls`) on TCP; swapping TCP for WebSocket or QUIC changes only that last layer. The client sends `Hello { version, locale }`, logs in, enters a character and gets definitions, a snapshot and then a diff every tick. Messages carry codes and text keys, never sentences; strings are bounded and numbers ranged at decoding. A client of another protocol version gets `IncompatibleVersion`.
+Messages (`ClientMsg`, `ServerMsg`) are encoded with `postcard`, framed with a `u32` length, over TLS (`rustls`) on TCP, or for browser clients over a WebSocket on its own port (each binary message carries bytes of the same frame stream, [web](web.md)); a transport changes only that last layer. The client sends `Hello { version, locale }`, logs in, enters a character and gets definitions, a snapshot and then a diff every tick. Messages carry codes and text keys, never sentences; strings are bounded and numbers ranged at decoding. A client of another protocol version gets `IncompatibleVersion`.

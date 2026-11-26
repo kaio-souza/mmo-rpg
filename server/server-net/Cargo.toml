@@ -16,4 +16,6 @@ rustls.workspace = true
 tokio-rustls.workspace = true
 rcgen.workspace = true
 bytes.workspace = true
+tokio-tungstenite.workspace = true
+futures-util.workspace = true
 tracing.workspace = true

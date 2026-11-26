@@ -56,7 +56,9 @@ impl Texts {
         if self.requested == Some(content_hash) {
             return Need::Nothing;
         }
-        if let Some(bytes) = self.cache_file(content_hash).and_then(|p| std::fs::read(p).ok())
+        if let Some(bytes) = self
+            .cache_file(content_hash)
+            .and_then(|p| client_files::read(p).ok())
             && let Ok(bundle) = Bundle::from_pack(&bytes)
             && bundle.locale() == self.locale
         {
@@ -92,8 +94,8 @@ impl Texts {
         if let Some(path) = self.cache_file(content_hash) {
             let saved = path
                 .parent()
-                .map_or(Ok(()), std::fs::create_dir_all)
-                .and_then(|()| std::fs::write(&path, &pack.data));
+                .map_or(Ok(()), client_files::create_dir_all)
+                .and_then(|()| client_files::write(&path, &pack.data));
             if let Err(e) = saved {
                 warn!(error = %e, path = %path.display(), "cannot cache the text pack");
             }
@@ -114,13 +116,7 @@ impl Texts {
 /// `<cache>/<game>/text`, holding `<hash>-<locale>.pack` files:
 /// `$XDG_CACHE_HOME` or `~/.cache` on Linux, `%LOCALAPPDATA%` on Windows.
 fn default_cache_dir() -> Option<PathBuf> {
-    let base = if cfg!(windows) {
-        std::env::var_os("LOCALAPPDATA").map(PathBuf::from)
-    } else {
-        std::env::var_os("XDG_CACHE_HOME")
-            .map(PathBuf::from)
-            .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
-    }?;
+    let base = client_files::cache_base()?;
     Some(base.join(client_ui::game_id()).join("text"))
 }
 

@@ -2,7 +2,7 @@
 //! no system library at build time.
 //!
 //! The mixer lives on the
-//! backend's audio thread; [`Audio`] only sends it orders, so a slow frame
+//! backend's audio thread (in a browser, WebAudio's callback); [`Audio`] only sends it orders, so a slow frame
 //! never cuts the sound. With no sound server (or no backend for the
 //! platform yet) everything still works, silently.
 
@@ -13,6 +13,8 @@ mod pulse;
 mod settings;
 #[cfg(windows)]
 mod wasapi_out;
+#[cfg(target_arch = "wasm32")]
+mod web_out;
 
 pub use base::SoundEvent;
 pub use bindings::{Binding, Bindings, ScreenTrack, SoundEntry, ZoneTrack, edge_fade, place};
@@ -204,9 +206,14 @@ fn backend(rx: std::sync::mpsc::Receiver<Order>, _app: &str) -> Result<Box<dyn s
     wasapi_out::open(rx)
 }
 
+#[cfg(target_arch = "wasm32")]
+fn backend(rx: std::sync::mpsc::Receiver<Order>, _app: &str) -> Result<Box<dyn std::any::Any>, String> {
+    web_out::open(rx)
+}
+
 /// Other platforms (macOS) have no backend yet: silent.
-#[cfg(not(any(target_os = "linux", windows)))]
-fn backend(_rx: std::sync::mpsc::Receiver<Order>) -> Result<Box<dyn std::any::Any>, String> {
+#[cfg(not(any(target_os = "linux", windows, target_arch = "wasm32")))]
+fn backend(_rx: std::sync::mpsc::Receiver<Order>, _app: &str) -> Result<Box<dyn std::any::Any>, String> {
     Err("no sound backend for this platform yet".into())
 }
 

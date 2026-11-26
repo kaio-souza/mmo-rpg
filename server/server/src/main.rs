@@ -52,6 +52,14 @@ struct Args {
     dev: bool,
     #[arg(long, default_value = "127.0.0.1:7000")]
     address: SocketAddr,
+    /// Also listen for browser clients (WebSocket, same TLS) here, such as
+    /// 0.0.0.0:7001.
+    #[arg(long)]
+    ws_address: Option<SocketAddr>,
+    /// A page allowed to open the WebSocket (its origin, such as
+    /// https://play.example.com); repeat for more. None: any page.
+    #[arg(long = "ws-origin")]
+    ws_origins: Vec<String>,
     /// Database file and generated certificate live here.
     #[arg(long, default_value = "data")]
     data_dir: PathBuf,
@@ -156,6 +164,12 @@ fn run(args: Args) -> Result<(), String> {
     }
     if args.dev && !args.address.ip().is_loopback() {
         return Err(format!("--dev only listens on localhost, not {}", args.address));
+    }
+    if let Some(ws) = args.ws_address
+        && args.dev
+        && !ws.ip().is_loopback()
+    {
+        return Err(format!("--dev only listens on localhost, not {ws}"));
     }
     let tls = if args.dev {
         None
@@ -273,6 +287,8 @@ fn run(args: Args) -> Result<(), String> {
         let mut net_cfg = NetConfig::new(args.address);
         net_cfg.tls = tls;
         net_cfg.max_conns_per_ip = args.max_conns_per_ip;
+        net_cfg.ws_address = args.ws_address;
+        net_cfg.ws_origins = args.ws_origins.clone();
         let (net, events) = Net::start(net_cfg).await.map_err(|e| e.to_string())?;
         let mode = if args.dev { "dev mode, plain TCP" } else { "TLS" };
         info!(address = %net.local_addr(), mode = ?args.mode, link = ?args.zone_link, max_players = args.max_players, "server ready ({mode})");

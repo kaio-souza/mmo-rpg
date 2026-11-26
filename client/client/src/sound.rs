@@ -10,8 +10,9 @@ use client_audio::{Audio, Binding, Bindings, Channel, Play, Settings, SoundEvent
 use client_ui::{SoundModel, VolumeSlot};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, SystemTime};
 use tracing::warn;
+use web_time::Instant;
 
 /// How often `sounds.ron` is looked at for a change.
 const POLL: Duration = Duration::from_secs(1);
@@ -69,8 +70,8 @@ impl Sounds {
     /// Reads `sounds.ron` again and loads every file an event uses.
     fn reload(&mut self) {
         let path = self.bindings_path();
-        self.seen = std::fs::metadata(&path).and_then(|m| m.modified()).ok();
-        self.bindings = match std::fs::read_to_string(&path) {
+        self.seen = client_files::modified(&path);
+        self.bindings = match client_files::read_to_string(&path) {
             Ok(text) => Bindings::parse(&text).unwrap_or_else(|e| {
                 warn!("{e}");
                 Bindings::default()
@@ -99,7 +100,7 @@ impl Sounds {
                 continue;
             };
             let file = self.assets.join(&entry.file);
-            match std::fs::read(&file)
+            match client_files::read(&file)
                 .map_err(|e| e.to_string())
                 .and_then(|b| self.audio.load(&b))
             {
@@ -117,9 +118,7 @@ impl Sounds {
             return;
         }
         self.polled = Instant::now();
-        let now = std::fs::metadata(self.bindings_path())
-            .and_then(|m| m.modified())
-            .ok();
+        let now = client_files::modified(self.bindings_path());
         if now != self.seen {
             self.reload();
         }
@@ -249,7 +248,7 @@ fn load_settings() -> Settings {
     let Some(path) = config_dir().map(|d| d.join("sound.ron")) else {
         return Settings::default();
     };
-    match std::fs::read_to_string(&path) {
+    match client_files::read_to_string(&path) {
         Ok(text) => Settings::parse(&text).unwrap_or_else(|e| {
             warn!(path = %path.display(), "{e}");
             Settings::default()
@@ -260,8 +259,8 @@ fn load_settings() -> Settings {
 
 fn save_settings(s: &Settings) {
     let Some(dir) = config_dir() else { return };
-    let written =
-        std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(dir.join("sound.ron"), s.to_ron()));
+    let written = client_files::create_dir_all(&dir)
+        .and_then(|()| client_files::write(dir.join("sound.ron"), s.to_ron()));
     if let Err(e) = written {
         warn!(dir = %dir.display(), "cannot save sound.ron: {e}");
     }

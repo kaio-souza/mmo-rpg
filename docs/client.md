@@ -9,7 +9,7 @@ What players get with every game made with the kit.
 3. **Characters:** choose, create (name and appearance from `appearance.ron`, with a preview drawn as the game draws the character), delete (typing the name again; the name becomes free).
 4. **Game:** the world with the HUD over it.
 
-`client --dev --name <name>` skips the first three in development.
+`client --dev --name <name>` skips the first three in development. The same client runs in a browser ([web](web.md)).
 
 ## Controls
 

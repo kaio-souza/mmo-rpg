@@ -252,7 +252,13 @@ impl Gpu {
         target: impl Into<wgpu::SurfaceTarget<'static>>,
         size: (u32, u32),
     ) -> Result<Gpu, RenderError> {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
+        let desc = wgpu::InstanceDescriptor::new_without_display_handle_from_env();
+        // A browser may list WebGPU and still have no adapter for it: then
+        // WebGL2, decided before the canvas is bound to either.
+        #[cfg(target_arch = "wasm32")]
+        let instance = wgpu::util::new_instance_with_webgpu_detection(desc).await;
+        #[cfg(not(target_arch = "wasm32"))]
+        let instance = wgpu::Instance::new(desc);
         let surface = instance.create_surface(target).map_err(RenderError::Surface)?;
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {

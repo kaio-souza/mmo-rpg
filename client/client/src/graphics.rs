@@ -18,8 +18,9 @@ use serde::Deserialize;
 use serde::de::Error as _;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, SystemTime};
 use tracing::{info, warn};
+use web_time::Instant;
 
 const CHECK_EVERY: Duration = Duration::from_millis(700);
 
@@ -551,7 +552,7 @@ fn entry(img: &Image, placed: Placed) -> Entry {
 /// RON with `Some(..)` optional: `anchor: (32, 58)` reads as set, the way
 /// the manifest has always been written.
 fn read_ron<T: for<'de> Deserialize<'de>>(path: &Path) -> Option<T> {
-    let text = std::fs::read_to_string(path).ok()?;
+    let text = client_files::read_to_string(path).ok()?;
     let opts = ron::Options::default().with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
     match opts.from_str(&text) {
         Ok(v) => Some(v),
@@ -571,11 +572,12 @@ fn stem(path: &Path) -> String {
 /// Every PNG under `dir`, with the name of its first folder below `dir`.
 fn pngs(dir: &Path) -> Vec<(PathBuf, String)> {
     fn walk(dir: &Path, folder: &str, out: &mut Vec<(PathBuf, String)>) {
-        let Ok(rd) = std::fs::read_dir(dir) else { return };
-        let mut paths: Vec<PathBuf> = rd.filter_map(|e| e.ok().map(|e| e.path())).collect();
-        paths.sort();
-        for p in paths {
-            if p.is_dir() {
+        let Ok(mut entries) = client_files::list(dir) else {
+            return;
+        };
+        entries.sort();
+        for client_files::Entry { path: p, is_dir } in entries {
+            if is_dir {
                 let f = if folder.is_empty() {
                     stem(&p)
                 } else {
@@ -594,14 +596,13 @@ fn pngs(dir: &Path) -> Vec<(PathBuf, String)> {
 
 /// Latest modification time of anything under `dir`.
 fn newest(dir: &Path) -> Option<SystemTime> {
-    let mut best = std::fs::metadata(dir).and_then(|m| m.modified()).ok();
-    if let Ok(rd) = std::fs::read_dir(dir) {
-        for e in rd.flatten() {
-            let p = e.path();
-            let t = if p.is_dir() {
-                newest(&p)
+    let mut best = client_files::modified(dir);
+    if let Ok(entries) = client_files::list(dir) {
+        for e in entries {
+            let t = if e.is_dir {
+                newest(&e.path)
             } else {
-                e.metadata().and_then(|m| m.modified()).ok()
+                client_files::modified(&e.path)
             };
             best = best.max(t);
         }
@@ -611,8 +612,8 @@ fn newest(dir: &Path) -> Option<SystemTime> {
 
 /// PNG to RGBA8.
 fn decode(path: &Path) -> Result<(u32, u32, Vec<u8>), String> {
-    let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
-    let mut decoder = png::Decoder::new(std::io::BufReader::new(file));
+    let bytes = client_files::read(path).map_err(|e| e.to_string())?;
+    let mut decoder = png::Decoder::new(std::io::Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::normalize_to_color8() | png::Transformations::ALPHA);
     let mut reader = decoder.read_info().map_err(|e| e.to_string())?;
     let size = reader.output_buffer_size().ok_or("image too large")?;

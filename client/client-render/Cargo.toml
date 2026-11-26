@@ -13,3 +13,7 @@ base.workspace = true
 wgpu.workspace = true
 bytemuck.workspace = true
 tracing.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# WebGL2 where the browser has no WebGPU yet.
+wgpu = { workspace = true, features = ["webgl"] }

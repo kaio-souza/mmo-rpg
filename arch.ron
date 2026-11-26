@@ -26,9 +26,10 @@
         "client-state": ["protocol"],
         "client-render": ["base"],
         "client-audio": ["base"],
-        "client-ui": ["base", "i18n"],
+        "client-files": [],
+        "client-ui": ["base", "i18n", "client-files"],
         "client-net": ["protocol"],
-        "client": ["i18n", "client-state", "client-render", "client-audio", "client-ui", "client-net"],
+        "client": ["i18n", "client-state", "client-render", "client-audio", "client-ui", "client-net", "client-files"],
 
         // tools/
         "validate": ["defs", "i18n"],
