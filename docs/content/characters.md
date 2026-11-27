@@ -12,13 +12,13 @@ Six attributes: `str`, `vit`, `agi`, `dex`, `int`, `spi`. Three resources: HP, v
 (
     tier: 1, level: 5,                 // offered from level 5
     parent: None,                      // tier 2+: the class it grows from
-    requires: [Any([Proficiency("sword", 5), Attribute(Str, 15)])],   // all must hold; Any = one of
+    requires: [Any([Proficiency("sword", 5), Attribute(Str, 15)])],   // all must hold; Any = one of; also Title("id")
     auto_points: (str: 2, vit: 1),     // attribute points given per level
     growth: [("sword", 1200)],         // proficiencies that grow faster (thousandths)
 )
 ```
 
-Optional: `specials` (special attributes the class grows per level: `(special: "faith", base: 5, per_level_permille: 500)`), `techniques` (taught when the class is chosen), `craft_xp_permille` and `quality_cap` (production classes), `icon`. Choosing a class is permanent. Tiers 1 to 4 work; the level of each tier is content.
+Optional: `specials` (special attributes the class grows per level: `(special: "faith", base: 5, per_level_permille: 500)`), `techniques` (taught when the class is chosen), `craft_xp_permille` and `quality_cap` (production classes), `icon`. Choosing a class is permanent. Tiers 1 to 4 work; the level of each tier is content. A class is offered only once every requirement holds, so it stays unseen until then: a **rare class** is one whose door is `Title("<id>")`, a deed instead of numbers ([D66](../decisions.md)).
 
 ## Proficiencies
 

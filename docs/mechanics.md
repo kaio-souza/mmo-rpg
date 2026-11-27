@@ -18,7 +18,7 @@ What the engine does today, configured by [content](content/README.md), and the 
 - Levels, XP and attribute points; six attributes; HP, vigor and MP.
 - Proficiencies (0 to 100) that grow by use, with less gain for repetition.
 - Techniques unlocked by proficiency points, levelled 1 to 10 by use; techniques only taught by an NPC, quest or class.
-- Classes in tiers 1 to 4 with requirements, attribute points per level and faster proficiencies; production classes with a quality cap.
+- Classes in tiers 1 to 4 with requirements (attributes, proficiencies or titles; rare classes earned by a deed and unseen until then), attribute points per level and faster proficiencies; production classes with a quality cap.
 - Titles earned by level, counters, proficiencies or attributes; passive bonuses from every owned title; titles that teach techniques or replace others.
 - Special attributes earned by titles or grown by a class (used to gate techniques and add to a proficiency).
 - Titles and classes unique per server, passed to an heir when the holder stops playing; relics (items) that exist once.
@@ -59,7 +59,7 @@ Designed for the example game but not built. Each needs engine work before conte
 | Area | Mechanic |
 |---|---|
 | Combat | damage types; surviving a fatal blow; meditation; a murderer mark for player killers |
-| Progression | class change after level 30 within the tree; rare (hidden) classes; titles that give a penalty instead of a bonus; attributes earned by deeds; adventurer rank; bestiary, collections |
+| Progression | class change after level 30 within the tree; titles that give a penalty instead of a bonus; attributes earned by deeds; adventurer rank; bestiary, collections |
 | Items | enhancement +1 to +15 with protection stones; dismantling equipment; carry weight limits; dimensional storage; exclusive items created by legendary classes |
 | Economy | regional markets plus a global auction; buy orders; mail |
 | World | ranked and hidden quests; karma (hidden morality that opens or closes titles and quests); NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |

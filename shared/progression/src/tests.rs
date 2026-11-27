@@ -6,6 +6,8 @@ fn catalog() -> ValidatedCatalog {
         "class.warrior.desc",
         "class.knight.name",
         "class.knight.desc",
+        "class.beastmaster.name",
+        "class.beastmaster.desc",
         "proficiency.sword.name",
         "proficiency.unarmed.name",
         "technique.double_cut.name",
@@ -43,6 +45,11 @@ fn catalog() -> ValidatedCatalog {
         (
             "classes/warrior.ron",
             "(tier: 1, level: 5, requires: [Any([Proficiency(\"sword\", 3), Attribute(Str, 30)])], auto_points: (str: 2, vit: 1), growth: [(\"sword\", 1200)])",
+        ),
+        // A rare class: its only door is a deed (a title).
+        (
+            "classes/beastmaster.ron",
+            "(tier: 1, level: 1, requires: [Title(\"wolf_hunter\")])",
         ),
         (
             "classes/knight.ron",
@@ -401,4 +408,18 @@ fn the_vow_is_taught_by_the_class_when_faith_allows() {
     assert!(c.proficiency(light) > 1);
     assert!(c.technique(vow).is_none());
     assert!(c.technique(cat.technique_by_name("heal").unwrap().0).is_some());
+}
+
+#[test]
+fn a_class_can_require_a_title() {
+    let cat = catalog();
+    let (beastmaster, _) = cat.class_by_name("beastmaster").unwrap();
+    let mut s = ProgressionSheet::new(&cat);
+    assert!(!available_classes(&s, &cat).contains(&beastmaster), "no deed yet");
+    check_titles(
+        &mut s,
+        |f, k| if f == "kills" && k == "wolf" { 3 } else { 0 },
+        &cat,
+    );
+    assert!(available_classes(&s, &cat).contains(&beastmaster));
 }

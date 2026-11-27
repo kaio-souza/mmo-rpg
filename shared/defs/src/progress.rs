@@ -245,6 +245,9 @@ pub enum ClassReq {
     Proficiency(ProficiencyId, u8),
     /// At least one of these.
     Any(Vec<ClassReq>),
+    /// Owning this title: a deed, so a class can be earned by deeds
+    /// (a rare class whose door is a hidden title).
+    Title(TitleId),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -256,11 +259,13 @@ pub(crate) enum ClassReqFile {
         u8,
     ),
     Any(Vec<ClassReqFile>),
+    Title(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::TitleRef"))] String),
 }
 
 pub(crate) fn resolve_req(
     r: ClassReqFile,
     profs: &std::collections::BTreeMap<String, ProficiencyId>,
+    titles: &std::collections::BTreeMap<String, TitleId>,
 ) -> Result<ClassReq, String> {
     Ok(match r {
         ClassReqFile::Attribute(a, v) => ClassReq::Attribute(a, v),
@@ -270,9 +275,13 @@ pub(crate) fn resolve_req(
         },
         ClassReqFile::Any(list) => ClassReq::Any(
             list.into_iter()
-                .map(|r| resolve_req(r, profs))
+                .map(|r| resolve_req(r, profs, titles))
                 .collect::<Result<_, _>>()?,
         ),
+        ClassReqFile::Title(t) => match titles.get(&t) {
+            Some(&id) => ClassReq::Title(id),
+            None => return Err(format!("title `{t}` not found")),
+        },
     })
 }
 

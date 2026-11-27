@@ -1686,6 +1686,25 @@ mod tests {
     }
 
     #[test]
+    fn a_class_title_requirement_must_exist() {
+        let mut files = quest_content();
+        files.push((
+            "classes/hermit.ron".into(),
+            r#"(tier: 1, level: 1, requires: [Title("lost_soul")])"#.into(),
+        ));
+        let problems = from_text(&refs(&files)).unwrap().validate().unwrap_err();
+        let text = problems
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            text.contains("classes/hermit.ron: title `lost_soul` not found"),
+            "{text}"
+        );
+    }
+
+    #[test]
     fn a_title_bonus_must_name_something() {
         let mut files = quest_content();
         files.push((
@@ -2020,6 +2039,12 @@ impl Catalog {
         }
         // Class techniques resolve once the techniques have ids.
         let mut class_techniques: Vec<(String, Vec<String>)> = Vec::new();
+        let title_ids: BTreeMap<String, TitleId> = self
+            .titles
+            .keys()
+            .enumerate()
+            .filter_map(|(i, k)| Some((k.clone(), TitleId::new(u32::try_from(i).ok()?))))
+            .collect();
         for (id, text) in &self.classes {
             let path = format!("classes/{id}.ron");
             let f = match progress::parse_class(id, text) {
@@ -2047,7 +2072,7 @@ impl Catalog {
             };
             let mut requires = Vec::new();
             for r in f.requires {
-                match progress::resolve_req(r, prof_ids) {
+                match progress::resolve_req(r, prof_ids, &title_ids) {
                     Ok(r) => requires.push(r),
                     Err(m) => err(path.clone(), m),
                 }

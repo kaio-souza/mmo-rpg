@@ -313,6 +313,7 @@ fn holds(r: &ClassReq, s: &ProgressionSheet) -> bool {
         ClassReq::Attribute(a, v) => s.attributes.get(*a) >= *v,
         ClassReq::Proficiency(p, v) => s.proficiency(*p) >= *v,
         ClassReq::Any(list) => list.iter().any(|r| holds(r, s)),
+        ClassReq::Title(t) => s.titles.binary_search(t).is_ok(),
     }
 }
 

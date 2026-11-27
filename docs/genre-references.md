@@ -29,7 +29,7 @@ Distance: 🟢 close (mostly content), 🟡 one or two large mechanics, 🔴 far
 
 | Work | Missing |
 |---|---|
-| Overgeared | legendary class unique per server and inherited, recipes designed by players, [crafting with skill](crafting-minigames.md), guilds and kingdoms |
+| Overgeared | recipes designed by players, [crafting with skill](crafting-minigames.md), guilds and kingdoms |
 | Log Horizon | [living NPCs](living-npcs.md), [town politics](towns-and-politics.md), large raids |
 | Ark | quests with several outcomes that change the world, territory |
 | Solo Leveling | gates and dungeons, summons |
