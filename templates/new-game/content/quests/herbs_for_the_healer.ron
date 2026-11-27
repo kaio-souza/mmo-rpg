@@ -1,0 +1,2 @@
+// Bring five herbs from the patches of the meadow.
+(rank: F, repeatable: false, objectives: [Item(item: "herb", qty: 5)], rewards: [Coins(150), Item(item: "health_potion", qty: 3)])

@@ -39,6 +39,15 @@ pub struct ContentFrames {
     pub appearance: defs::AppearanceDef,
     /// Full reason keys an admin may use (`moderation.reason.*`).
     pub reasons: Vec<String>,
+    /// Public rankings (`/ranking`).
+    pub rankings: Vec<defs::RankingDef>,
+    /// Unique titles and classes (`title:<id>`, `class:<id>`) with their
+    /// days before an heir may take them.
+    pub unique: BTreeMap<String, u16>,
+    /// Zones that are instances, with their rule and their exit's zone.
+    pub instances: BTreeMap<base::ZoneId, (defs::InstanceRule, base::ZoneId)>,
+    /// Dungeons (lockouts, clears, `/firsts`).
+    pub dungeons: Vec<defs::DungeonDef>,
 }
 
 /// `allow_missing_text` (dev only): a key missing in a locale shows the
@@ -92,6 +101,10 @@ pub fn frames_with_part(content: &Content, part_size: usize) -> Result<ContentFr
         appearances: translation::appearances(catalog).map_err(|e| format!("appearances: {e}"))?,
         appearance: catalog.appearance().clone(),
         reasons: catalog.moderation_reasons().to_vec(),
+        rankings: catalog.rankings().to_vec(),
+        unique: crate::gateway::unique_keys(catalog),
+        instances: crate::gateway::instance_rules(catalog),
+        dungeons: catalog.dungeons().to_vec(),
     })
 }
 

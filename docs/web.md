@@ -87,4 +87,4 @@ The page's `#status` line shows a failure (bundle missing, no graphics adapter) 
 ## Next
 
 - `mmo publish` writing the web folder next to the desktop package ([roadmap](roadmap.md)).
-- ⚠ Open: WebAudio through an `AudioWorklet` instead of the deprecated script node (needs the mixer in a worklet module).
+- Decided ([D47](decisions.md)): the browser mixer moves to an `AudioWorklet`; the script node stays only as a fallback where worklets are missing.

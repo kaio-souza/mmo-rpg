@@ -1,0 +1,15 @@
+// The instant dungeon: every group gets its own copy, through the portal
+// on the plaza. The stone square at the door is safe; the far corner leads
+// back out.
+(
+    origin: (x: 100, y: 0),
+    view_radius: 20,
+    spawn: (x: 101, y: 1),
+    regions: [
+        (kind: Safe, min: (x: 101, y: 1), max: (x: 102, y: 2)),
+    ],
+    portals: [
+        (min: (x: 110, y: 8), max: (x: 110, y: 8), to: (x: 20, y: 13)),
+    ],
+    instance: Some((exit: (x: 20, y: 13), close_after_secs: 60, time_limit_secs: 1800)),
+)

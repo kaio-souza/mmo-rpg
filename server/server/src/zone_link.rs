@@ -109,6 +109,15 @@ pub enum FromZone {
     },
     /// Result of a `Command::Deliver`.
     Delivered(Box<sim::DeliveredOut>),
+    /// Titles earned that the server may hear of, by title id.
+    Feats(Vec<(PlayerId, String, defs::Announce)>),
+    /// Unique titles and classes players just got (`title:<id>`,
+    /// `class:<id>`): the gateway claims them.
+    Claims(Vec<(PlayerId, String)>),
+    /// Dungeon runs cleared.
+    Clears(Vec<sim::ClearOut>),
+    /// Unique items that left the game (`item:<id>`).
+    Released(Vec<String>),
 }
 
 pub struct GatewayEnd {

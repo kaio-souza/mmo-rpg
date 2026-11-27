@@ -22,6 +22,12 @@ pub(crate) fn run(z: &mut Zone) {
     let now = z.tick.0;
     for &handle in z.by_id.values() {
         let player = z.is_player(handle);
+        if z.world
+            .get::<&crate::fight::Fighter>(handle)
+            .is_ok_and(|f| f.stunned(now))
+        {
+            continue;
+        }
         let next_ok = {
             let Ok(walk) = z.world.get::<&Walk>(handle) else {
                 continue;

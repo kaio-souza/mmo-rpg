@@ -1,0 +1,1 @@
+(proficiency: "smithing", min_points: 10, materials: [(item: "iron_ingot", qty: 3), (item: "silver_ingot", qty: 2)], result: "steel_sword", xp: 120)

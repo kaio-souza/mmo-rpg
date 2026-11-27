@@ -12,6 +12,7 @@ mod appearance;
 mod assets;
 mod catalog;
 mod craft;
+mod dungeon;
 mod economy;
 #[cfg(feature = "editor")]
 pub mod editor;
@@ -24,6 +25,7 @@ mod npc;
 mod problem;
 mod progress;
 mod quest;
+mod rank;
 mod rules;
 mod sound;
 mod zone;
@@ -34,6 +36,7 @@ pub use catalog::{Catalog, ContentProblem, ValidatedCatalog};
 pub use craft::{
     MAX_MATERIALS, Material, NodeDef, NodeSpawn, RecipeDef, node_name_key, recipe_desc_key, recipe_name_key,
 };
+pub use dungeon::{DungeonDef, Lockout, MAX_DUNGEON_PARTY, dungeon_name_key};
 pub use economy::{
     LootTableDef, PRICE_PERMILLE, Purse, ShopDef, ShopStock, buy_price, repair_price, sell_price,
 };
@@ -48,11 +51,13 @@ pub use locales::{LocaleDef, parse_locales};
 pub use npc::{DialogueDef, DialogueNode, DialogueOption, MAX_OPTIONS, NpcDef, NpcSpawn, name_key};
 pub use problem::{ProblemPart, TEMPLATES as PROBLEM_TEMPLATES, problem_parts};
 pub use progress::{
-    Buff, BuffStat, COUNTER_FAMILIES, COUNTER_KEYS, ClassDef, ClassReq, ClassSpecial, LootDef, MonsterDef,
-    PercentBonus, ProficiencyDef, ProficiencyKind, SPECIAL_MAX, SpecialAttributeDef, TechniqueDef,
-    TitleBonus, TitleDef, TitleTrigger, UNARMED, counter_key_kind,
+    Announce, Buff, BuffStat, COUNTER_FAMILIES, COUNTER_KEYS, ClassDef, ClassReq, ClassSpecial, LootDef,
+    MAX_AREA, MAX_STATUS_TICKS, MonsterDef, MonsterPhase, PercentBonus, ProficiencyDef, ProficiencyKind,
+    SPECIAL_MAX, SpecialAttributeDef, Status, StatusKind, TechniqueDef, TitleBonus, TitleDef, TitleTrigger,
+    UNARMED, Unique, class_name_key, counter_key_kind, title_name_key,
 };
 pub use quest::{MAX_OBJECTIVES, Objective, QuestDef, Rank, Reward, quest_desc_key, quest_name_key};
+pub use rank::{MAX_RANKING_SIZE, RankBy, RankingDef, ranking_name_key};
 pub use rules::{AFFINITY_MAX, Condition, Effect, MAX_EFFECTS, QuestStatus};
 pub use sound::{
     DEFAULT_MUSIC_FADE, EventSounds, FULL_VOLUME, MAX_SOUND_VARIANTS, MUSIC_SCREENS, SOUND_LICENSES,
@@ -60,6 +65,7 @@ pub use sound::{
     valid_file as valid_sound_file,
 };
 pub use zone::{
-    DENSE_SPAWN, HANDOFF_DEPTH, MAX_FLOOR, MAX_VIEW_RADIUS, MAX_ZONE_SIDE, MonsterSpawn, Rect, RegionDef,
-    RegionKind, SEAM_BAND, TileDef, ZoneDef, in_workshop, neighbors, region_of,
+    DENSE_SPAWN, HANDOFF_DEPTH, InstanceRule, MAX_FLOOR, MAX_VIEW_RADIUS, MAX_ZONE_SIDE, MonsterSpawn,
+    PortalDef, Rect, RegionDef, RegionKind, SEAM_BAND, TileDef, ZoneDef, in_workshop, neighbors, region_of,
+    zone_at,
 };

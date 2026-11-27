@@ -39,6 +39,7 @@ An option shows only when its `when` holds; choosing it runs its `effects` in or
 | `QuestReady(id)` objectives done | `TopUpItem(item, qty)` gives only what is missing |
 | `Affinity(n)` with this NPC | `Affinity(n)` adds to it |
 | `RecipeKnown(id)`, `TechniqueKnown(id)` | `LearnRecipe(id)`, `LearnTechnique(id)` |
+| | `Teleport((x: 300, y: 12))`: to a tile of the world; ends the dialogue |
 | `All([...])`, `Any([...])`, `Not(...)` | |
 
 The editor shows the dialogue as a map of steps, writes conditions and effects as sentences, and has a preview you click through.

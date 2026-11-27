@@ -1,0 +1,4 @@
+// A rare drop of the shadow wolves.
+(kind: Weapon, weight: 2800, rarity: Epic, value: 3000, durability: 180,
+ equip: Some(Weapon(damage: (7, 15), attack_ticks: 26, attribute: Str, proficiency: "sword", vigor: 3)),
+ hidden: [(attribute: Agi, min: 1, max: 5)], icon: "dark_sword")

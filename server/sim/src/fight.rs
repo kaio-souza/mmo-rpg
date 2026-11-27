@@ -53,6 +53,9 @@ pub(crate) struct Fighter {
     pub retaliating: bool,
     /// A defense buff (a vow) while `now < ward.until`.
     pub ward: Ward,
+    /// Poison, stun and slow on this fighter, sorted by kind.
+    #[serde(default)]
+    pub statuses: Vec<crate::status::ActiveStatus>,
 }
 
 /// A timed defense buff: the defense rises by `permille`
@@ -95,6 +98,7 @@ impl Fighter {
             last_order: 0,
             retaliating: false,
             ward: Ward::default(),
+            statuses: Vec::new(),
         }
     }
 
@@ -121,6 +125,9 @@ pub(crate) struct MonsterComp {
     pub spawn: u16,
     pub home: TilePos,
     pub threat: ThreatTable<EntityId>,
+    /// Phase of the fight reached (1-based, 0: none); back to 0 on reset.
+    #[serde(default)]
+    pub phase: u8,
 }
 
 /// What a fighter brings to a blow besides the sheet.
@@ -403,6 +410,38 @@ pub(crate) fn strike(
     damage.is_some()
 }
 
+/// Everyone in the zone counts the clear; the binary records it.
+fn cleared(z: &mut Zone, d: &defs::DungeonDef, out: &mut TickOutput) {
+    let content = z.content.clone();
+    let cat = &content.catalog;
+    let secs = z.tick.0 / base::TICKS_PER_SECOND;
+    let players: Vec<(PlayerId, hecs::Entity)> = z.by_player.iter().map(|(p, h)| (*p, *h)).collect();
+    for &(player, h) in &players {
+        let changes = match z.world.query_one_mut::<&mut PlayerComp>(h) {
+            Ok(p) => {
+                p.growth.count(cat, "clears", &d.id, 1);
+                p.dirty_stats = true;
+                p.growth.check_titles(cat)
+            }
+            Err(_) => continue,
+        };
+        let args = smallvec::smallvec![
+            Arg::Ref(Box::new(TextRef::new(d.name))),
+            Arg::Int(i64::try_from(secs).unwrap_or(i64::MAX))
+        ];
+        z.tell(out, player, "system.dungeon_cleared", args);
+        if !changes.is_empty() {
+            refresh_player(z, h);
+            announce(z, player, &changes, out);
+        }
+    }
+    out.clears.push(crate::types::ClearOut {
+        dungeon: d.id.clone(),
+        players: players.into_iter().map(|(p, _)| p).collect(),
+        secs,
+    });
+}
+
 /// Turns progression changes into System messages.
 pub(crate) fn announce(z: &Zone, player: PlayerId, changes: &[Change], out: &mut TickOutput) {
     let cat = &z.content.catalog;
@@ -410,6 +449,24 @@ pub(crate) fn announce(z: &Zone, player: PlayerId, changes: &[Change], out: &mut
     let name =
         |id: Option<base::TextId>| Arg::Ref(Box::new(TextRef::new(id.unwrap_or(base::TextId::new(0)))));
     for c in changes {
+        if let Change::TitleEarned(t) | Change::TitleReplaced { new: t, .. } = c
+            && cat.title(*t).is_some_and(|d| !d.announce.is_quiet())
+        {
+            out.feats.push((player, *t));
+        }
+        match c {
+            Change::TitleEarned(t) | Change::TitleReplaced { new: t, .. } => {
+                if let Some(d) = cat.title(*t).filter(|d| d.unique.is_some()) {
+                    out.claims.push((player, format!("title:{}", d.id)));
+                }
+            }
+            Change::ClassChosen(k) => {
+                if let Some(d) = cat.class(*k).filter(|d| d.unique.is_some()) {
+                    out.claims.push((player, format!("class:{}", d.id)));
+                }
+            }
+            _ => {}
+        }
         let (key, args): (&str, SmallVec<[Arg; 2]>) = match c {
             Change::LeveledUp(l) => ("system.level_up", smallvec::smallvec![int(u64::from(*l))]),
             Change::LevelLost(l) => ("system.level_lost", smallvec::smallvec![int(u64::from(*l))]),
@@ -554,7 +611,7 @@ pub(crate) fn kill_xp(z: &Zone, m: &MonsterComp, monster: hecs::Entity, xp: u64)
     out
 }
 
-fn on_kill(z: &mut Zone, att: EntityId, tgt: EntityId, out: &mut TickOutput) {
+pub(crate) fn on_kill(z: &mut Zone, att: EntityId, tgt: EntityId, out: &mut TickOutput) {
     let Some(&th) = z.by_id.get(&tgt) else { return };
     let monster = z
         .world
@@ -592,6 +649,14 @@ fn on_kill(z: &mut Zone, att: EntityId, tgt: EntityId, out: &mut TickOutput) {
             let respawn_at = z.tick.0.saturating_add(u64::from(def.respawn_ticks));
             z.respawns.push((respawn_at, m.spawn));
             z.remove_entity(tgt);
+            // A dungeon's boss: the run is cleared.
+            if let Some(d) = content
+                .catalog
+                .dungeon_of_zone(z.zone_id())
+                .filter(|d| d.boss == Some(m.monster))
+            {
+                cleared(z, d, out);
+            }
         }
         None => fall(z, th, out),
     }
@@ -615,6 +680,8 @@ fn loot(z: &mut Zone, h: hecs::Entity, monster: MonsterId, out: &mut TickOutput)
         coins = coins.saturating_add(more_coins);
         got.extend(more);
     }
+    // A relic that exists somewhere does not drop.
+    got.retain(|(item, _)| !(cat.item(*item).is_some_and(|d| d.unique) && z.taken_items.contains(item)));
     give_loot(z, h, coins, &got, crate::types::CoinFlow::MonsterLoot, out);
 }
 
@@ -740,6 +807,9 @@ fn wear_by(z: &mut Zone, h: hecs::Entity, slot: EquipSlot, loss: u32, out: &mut 
         if let Ok(gear) = z.world.query_one_mut::<&mut Gear>(h) {
             let _ = gear.take_equipped(slot);
         }
+        if let Some(item) = name {
+            released(z, item, out);
+        }
         refresh_player(z, h);
         if let Ok(p) = z.world.query_one_mut::<&mut PlayerComp>(h) {
             p.dirty_bag = true;
@@ -776,9 +846,14 @@ pub(crate) fn wear_on_death(z: &mut Zone, h: hecs::Entity) {
     }
 }
 
-/// A new item with identity into the first free backpack slot.
+/// A new item with identity into the first free backpack slot. A unique
+/// item that exists already is not made (false).
 pub(crate) fn give_instance(z: &mut Zone, h: hecs::Entity, item: base::ItemId, out: &mut TickOutput) -> bool {
     let content = z.content.clone();
+    let unique = content.catalog.item(item).is_some_and(|d| d.unique);
+    if unique && z.taken_items.contains(&item) {
+        return false;
+    }
     let Some(ids) = z.item_ids.as_mut() else {
         out.need_item_ids = true;
         return false;
@@ -801,7 +876,50 @@ pub(crate) fn give_instance(z: &mut Zone, h: hecs::Entity, item: base::ItemId, o
     }
     gear.bag.push((slot as u16, inst));
     p.dirty_bag = true;
+    if unique {
+        let player = p.player;
+        z.taken_items.insert(item);
+        if let Some(d) = content.catalog.item(item) {
+            out.claims.push((player, format!("item:{}", d.id)));
+        }
+    }
     true
+}
+
+/// Takes one piece of `item` out of a player's backpack or hands (a unique
+/// piece someone else made first). True when there was one.
+pub(crate) fn remove_piece(z: &mut Zone, h: hecs::Entity, item: base::ItemId) -> bool {
+    let Ok((p, gear)) = z.world.query_one_mut::<(&mut PlayerComp, &mut Gear)>(h) else {
+        return false;
+    };
+    if let Some(slot) = gear.bag.iter().find(|(_, i)| i.item == item).map(|(s, _)| *s) {
+        let _ = gear.take_bag(slot);
+        if let Some(s) = p.data.slots.get_mut(usize::from(slot)) {
+            *s = Slot::Empty;
+        }
+        p.dirty_bag = true;
+        return true;
+    }
+    let worn = gear
+        .equipped
+        .iter()
+        .find(|(_, i)| i.item == item)
+        .map(|(s, _)| *s);
+    if let Some(slot) = worn {
+        let _ = gear.take_equipped(slot);
+        p.dirty_bag = true;
+        p.dirty_stats = true;
+        return true;
+    }
+    false
+}
+
+/// A unique piece left the game (broken, sold): it may exist again.
+pub(crate) fn released(z: &mut Zone, item: base::ItemId, out: &mut TickOutput) {
+    if let Some(d) = z.content.catalog.item(item).filter(|d| d.unique) {
+        z.taken_items.remove(&item);
+        out.released.push(format!("item:{}", d.id));
+    }
 }
 
 /// HP at zero: fallen, waiting for help.
@@ -854,6 +972,10 @@ pub(crate) fn die(z: &mut Zone, h: hecs::Entity, out: &mut TickOutput) {
         z.grid.remove(body.id, old);
         z.grid.insert(body.id, spot);
         z.tell(out, player, "system.revived", SmallVec::new());
+        // In a dungeon copy the sanctuary is outside: back to its exit.
+        if let Some(rule) = cat.zone(z.zone_id()).and_then(|d| d.instance) {
+            crate::portal::teleport(z, player, rule.exit, out);
+        }
         return;
     }
     let changes = progression::lose_level(&mut p.growth.sheet);
@@ -890,6 +1012,10 @@ pub(crate) fn ai(z: &mut Zone, out: &mut TickOutput) {
             let Some(def) = cat.monster(m.monster) else {
                 continue;
             };
+            // Stunned: no step, no blow.
+            if fighter.stunned(now) {
+                continue;
+            }
             let valid = |z: &Zone, t: EntityId| -> bool {
                 z.body_of(t).is_some_and(|(th, tpos)| {
                     z.world.get::<&Fighter>(th).is_ok_and(|f| f.alive())
@@ -950,10 +1076,27 @@ pub(crate) fn ai(z: &mut Zone, out: &mut TickOutput) {
                         w.steps.clear();
                     }
                     if now >= fighter.next_attack {
+                        // A boss hits as its phase says.
+                        let phase = crate::status::update_phase(z, h, &def.phases, def.name, out);
+                        let ticks = phase.and_then(|p| p.attack_ticks).unwrap_or(def.attack_ticks);
                         if let Ok(f) = z.world.query_one_mut::<&mut Fighter>(h) {
-                            f.next_attack = now.saturating_add(u64::from(def.attack_ticks));
+                            f.next_attack = now.saturating_add(f.paced(u64::from(ticks), now));
                         }
-                        strike(z, id, t, 1000, None, out);
+                        let (mult, area, status) = phase.map_or((1000, 0, None), |p| {
+                            (p.damage_permille, p.area, p.status.as_ref())
+                        });
+                        crate::status::blow(
+                            z,
+                            id,
+                            t,
+                            &crate::status::Hit {
+                                mult,
+                                technique: None,
+                                area,
+                                status,
+                            },
+                            out,
+                        );
                     }
                 }
                 Err(_) => {
@@ -1002,7 +1145,9 @@ fn reset_monster(z: &mut Zone, h: hecs::Entity, pos: TilePos, home: TilePos) {
         f.target = None;
         f.hp = f.max_hp;
         f.last_path = 0;
+        f.statuses.clear();
         m.threat.clear();
+        m.phase = 0;
         b.status_tick = now;
     }
     walk_to(z, h, pos, home, now);
@@ -1039,7 +1184,7 @@ pub(crate) fn attacks(z: &mut Zone, out: &mut TickOutput) {
                 continue;
             };
             let Some(t) = fighter.target else { continue };
-            if !fighter.alive() {
+            if !fighter.alive() || fighter.stunned(now) {
                 continue;
             }
             let Some(a) = arms(z, h) else { continue };
@@ -1047,7 +1192,8 @@ pub(crate) fn attacks(z: &mut Zone, out: &mut TickOutput) {
                 Ok(()) => {
                     if now >= fighter.next_attack {
                         if let Ok(f) = z.world.query_one_mut::<&mut Fighter>(h) {
-                            f.next_attack = now.saturating_add(blow_wait(f, a.attack_ticks, a.vigor));
+                            let wait = blow_wait(f, a.attack_ticks, a.vigor);
+                            f.next_attack = now.saturating_add(f.paced(wait, now));
                         }
                         strike(z, id, t, 1000, None, out);
                     }
@@ -1206,6 +1352,7 @@ impl Zone {
                     spawn,
                     home: pos,
                     threat: ThreatTable::default(),
+                    phase: 0,
                 },
             ),
         );

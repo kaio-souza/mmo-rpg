@@ -5,4 +5,5 @@
         MaxHp(150),
     ],
     techniques: [],
+    announce: First,
 )

@@ -191,6 +191,17 @@ impl Gateway {
                 escrow,
                 parcel,
             } => self.on_escrow_taken(player, character, escrow, parcel),
+            Done::FirstFeat { name, title } => self.on_first_feat(&name, &title),
+            Done::Claimed {
+                player,
+                character,
+                key,
+                holder,
+            } => self.on_claimed(player, character, key, holder),
+            Done::Holders(holders) => self.on_holders(holders),
+            Done::DungeonFirst { party, name } => self.on_dungeon_first(party, name),
+            Done::Ranked { lists, at } => self.on_ranked(lists, at),
+            Done::Firsts { c, rows } => self.on_firsts_read(c, &rows),
         }
     }
 
@@ -295,6 +306,9 @@ impl Gateway {
                 crossing: None,
             },
         );
+        // What others hold goes first: the zone checks titles on entering.
+        let keys = unique::keys_of(&p.sheet, &self.cfg.content.unique);
+        self.send_taken(player, p.character);
         self.to_player(
             player,
             Command::Enter {
@@ -303,6 +317,7 @@ impl Gateway {
                 pos: p.pos,
             },
         );
+        self.claim_all(player, p.character, keys);
     }
 
     pub(super) fn send_queue_positions(&mut self) {
@@ -342,8 +357,8 @@ impl Gateway {
         };
         let mut saves = vec![CharacterSave {
             id: who.character,
-            zone: self.zone_name(who.zone),
-            pos,
+            zone: self.place(who.zone, pos).0,
+            pos: self.place(who.zone, pos).1,
             sheet: translation::sheet_to_saved(&sheet),
         }];
         saves.extend(self.saves_of(staying));
@@ -361,8 +376,8 @@ impl Gateway {
             .filter_map(|(player, sheet, pos)| {
                 self.in_game.get(&player).map(|who| CharacterSave {
                     id: who.character,
-                    zone: self.zone_name(who.zone),
-                    pos,
+                    zone: self.place(who.zone, pos).0,
+                    pos: self.place(who.zone, pos).1,
                     sheet: translation::sheet_to_saved(&sheet),
                 })
             })

@@ -1,5 +1,8 @@
-// Wolves in two corners of the meadow, away from the plaza.
+// Wolves in two corners, their darker kin to the south west, a pale wolf in
+// the far south east; away from the plaza.
 [
     (monster: "wolf", pos: (x: 30, y: 7), count: 3, radius: 3),
     (monster: "wolf", pos: (x: 9, y: 22), count: 3, radius: 3),
+    (monster: "shadow_wolf", pos: (x: 6, y: 18), count: 2, radius: 2),
+    (monster: "frost_wolf", pos: (x: 35, y: 26)),
 ]

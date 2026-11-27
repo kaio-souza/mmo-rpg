@@ -1,0 +1,1 @@
+(trigger: Counter(family: "kills", key: "wolf", at: 25), bonuses: [Attribute(Str, 2)])

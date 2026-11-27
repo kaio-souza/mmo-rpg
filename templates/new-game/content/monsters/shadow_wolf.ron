@@ -1,0 +1,8 @@
+// Darker kin of the wolf, deeper in the meadow; rarely carries a dark blade.
+(
+    level: 4, hp: 60, attributes: (str: 9, vit: 7, agi: 8, dex: 7),
+    damage: (4, 7), defense: 2, attack_ticks: 28,
+    aggro_radius: 4, leash: 12, respawn_ticks: 600, xp: 90, sprite: "shadow_wolf", icon: "wolf",
+    coins: (6, 14),
+    loot: [(item: "wolf_pelt", chance: 800), (item: "dark_sword", chance: 15)],
+)

@@ -29,7 +29,7 @@ impl fmt::Display for ContentErrors {
             }
             Self::BadPath { path } => write!(
                 f,
-                "{path}: unexpected file (expected text/<locale>/<file>.ron, text/locales.ron, zones/<zone>/zone.ron|map.ron|npcs.ron, npcs/<id>.ron, npcs/dialogues/<id>.ron or moderation/reasons.ron, appearance/appearance.ron, items/<id>.ron, quests/<id>.ron, monsters|classes|proficiencies|techniques|titles|special_attributes|loot|shops|recipes|nodes|emotes/<id>.ron, counters.ron, progression/formulas.ron, combat/formulas.ron or economy/formulas.ron; zones may have monsters.ron and nodes.ron)"
+                "{path}: unexpected file (expected text/<locale>/<file>.ron, text/locales.ron, zones/<zone>/zone.ron|map.ron|npcs.ron, npcs/<id>.ron, npcs/dialogues/<id>.ron or moderation/reasons.ron, appearance/appearance.ron, items/<id>.ron, quests/<id>.ron, monsters|classes|proficiencies|techniques|titles|special_attributes|loot|shops|recipes|nodes|emotes|rankings|dungeons/<id>.ron, counters.ron, progression/formulas.ron, combat/formulas.ron or economy/formulas.ron; zones may have monsters.ron and nodes.ron)"
             ),
         }
     }
@@ -109,7 +109,8 @@ pub fn from_text(files: &[(&str, &str)]) -> Result<Catalog, ContentErrors> {
             }
             [
                 dir @ ("monsters" | "classes" | "proficiencies" | "techniques" | "titles"
-                | "special_attributes" | "loot" | "shops" | "recipes" | "nodes" | "emotes"),
+                | "special_attributes" | "loot" | "shops" | "recipes" | "nodes" | "emotes"
+                | "rankings" | "dungeons"),
                 name,
             ] if name.ends_with(".ron") => {
                 let id = name.trim_end_matches(".ron").to_owned();
@@ -124,6 +125,8 @@ pub fn from_text(files: &[(&str, &str)]) -> Result<Catalog, ContentErrors> {
                     "recipes" => &mut cat.recipes,
                     "nodes" => &mut cat.nodes,
                     "emotes" => &mut cat.emotes,
+                    "rankings" => &mut cat.rankings,
+                    "dungeons" => &mut cat.dungeons,
                     _ => &mut cat.special_attributes,
                 };
                 if map.insert(id, text.to_owned()).is_some() {

@@ -84,6 +84,8 @@ impl Gateway {
             self.poll_admin_changes();
         }
         self.backup_if_due(now);
+        self.heir_check_if_due(now);
+        self.instances_second();
         let Some(m) = &mut self.maintenance else {
             return false;
         };

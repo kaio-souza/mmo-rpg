@@ -1,0 +1,3 @@
+// Held in the other hand.
+(kind: Offhand, weight: 2000, value: 350, durability: 90,
+ equip: Some(Offhand(defense: 3)), icon: "wooden_shield")

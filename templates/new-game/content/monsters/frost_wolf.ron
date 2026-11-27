@@ -1,0 +1,9 @@
+// The pale wolf of the far corner: tougher, and its bite slows.
+(
+    level: 6, hp: 110, attributes: (str: 11, vit: 10, agi: 9, dex: 9),
+    damage: (5, 9), defense: 4, attack_ticks: 30,
+    aggro_radius: 4, leash: 12, respawn_ticks: 900, xp: 160, sprite: "frost_wolf", icon: "wolf",
+    coins: (10, 25),
+    loot: [(item: "wolf_pelt", chance: 1000), (item: "silver_ore", chance: 300)],
+    phases: [(below_hp_permille: 1000, status: Some((kind: Slow, duration_ticks: 60, power: 300)))],
+)

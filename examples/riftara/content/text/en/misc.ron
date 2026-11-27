@@ -266,4 +266,7 @@
     "emote.bow.name": (text: "bow", note: "Name of an emote; the player types it after /emote; shown over the character as an action.", max_chars: 16),
     "emote.cheer.name": (text: "cheer", note: "Name of an emote; the player types it after /emote; shown over the character as an action.", max_chars: 16),
     "emote.laugh.name": (text: "laugh", note: "Name of an emote; the player types it after /emote; shown over the character as an action.", max_chars: 16),
+    "ranking.level.name": (text: "Highest level", note: "Ranking of the highest-level characters.", max_chars: 30),
+    "ranking.hunters.name": (text: "Great hunters", note: "Ranking of the characters who defeated the most monsters.", max_chars: 30),
+    "ranking.titled.name": (text: "Most titles", note: "Ranking of the characters with the most titles.", max_chars: 30),
 }

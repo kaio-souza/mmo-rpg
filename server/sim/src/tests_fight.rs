@@ -20,7 +20,7 @@ const MAP: &str = r#####"(
     ],
 )"#####;
 
-const KEYS: [&str; 41] = [
+const KEYS: [&str; 49] = [
     "item.bread.name",
     "item.bread.desc",
     "item.tonic.name",
@@ -54,6 +54,14 @@ const KEYS: [&str; 41] = [
     "system.appraised",
     "system.appraise_failed",
     "system.title",
+    "system.unique_lost",
+    "monster.post.name",
+    "monster.brute.name",
+    "technique.quake.name",
+    "technique.quake.desc",
+    "system.status_poison",
+    "system.status_slow",
+    "system.boss_phase",
     "technique.slash.name",
     "technique.slash.desc",
     "technique.punch.name",
@@ -84,7 +92,7 @@ fn content() -> Arc<Content> {
         ("zones/f/map.ron", MAP),
         (
             "zones/f/monsters.ron",
-            "[(monster: \"wolf\", pos: (x: 12, y: 4)), (monster: \"dummy\", pos: (x: 6, y: 1)), (monster: \"ogre\", pos: (x: 18, y: 8))]",
+            "[(monster: \"wolf\", pos: (x: 12, y: 4)), (monster: \"dummy\", pos: (x: 6, y: 1)), (monster: \"ogre\", pos: (x: 18, y: 8)), (monster: \"post\", pos: (x: 6, y: 6)), (monster: \"post\", pos: (x: 8, y: 6)), (monster: \"brute\", pos: (x: 17, y: 0))]",
         ),
         // Wolf: aggressive, weak, drops a pelt and a sword.
         (
@@ -100,6 +108,16 @@ fn content() -> Arc<Content> {
         (
             "monsters/ogre.ron",
             "(level: 30, hp: 5000, damage: (500, 500), attributes: (dex: 500), xp: 1, aggro_radius: 2, leash: 4)",
+        ),
+        // Posts: stand still and take blows (area and poison).
+        (
+            "monsters/post.ron",
+            "(level: 1, hp: 1000, damage: (0, 0), xp: 1, aggro_radius: 0, leash: 30)",
+        ),
+        // Brute: below half HP its blows slow whoever they hit.
+        (
+            "monsters/brute.ron",
+            "(level: 1, hp: 100, damage: (1, 1), attributes: (dex: 500), xp: 1, attack_ticks: 5, aggro_radius: 1, leash: 30, phases: [(below_hp_permille: 500, status: Some((kind: Slow, duration_ticks: 200, power: 500)))])",
         ),
         ("items/pelt.ron", "(kind: Material, max_stack: 20)"),
         (
@@ -132,6 +150,11 @@ fn content() -> Arc<Content> {
             "techniques/bolt.ron",
             "(proficiency: \"unarmed\", unlock_at: 100, cooldown_ticks: 10, mp: 30, damage_permille: 1)",
         ),
+        // A punch that hits everything around the target and poisons it.
+        (
+            "techniques/quake.ron",
+            "(proficiency: \"unarmed\", unlock_at: 100, cooldown_ticks: 10, damage_permille: 1, area: 3, status: Some((kind: Poison, duration_ticks: 200, power: 5)))",
+        ),
         (
             "techniques/costly.ron",
             "(proficiency: \"unarmed\", unlock_at: 100, cooldown_ticks: 10, mp: 500, damage_permille: 1500)",
@@ -145,7 +168,7 @@ fn content() -> Arc<Content> {
         ("counters.ron", "[\"kills\", \"deaths\"]"),
         (
             "titles/wolf_bane.ron",
-            "(trigger: Counter(family: \"kills\", key: \"wolf\", at: 1))",
+            "(trigger: Counter(family: \"kills\", key: \"wolf\", at: 1), announce: First, unique: Some((heir_after_days: 7)))",
         ),
         (
             "titles/hardy.ron",
@@ -771,5 +794,101 @@ fn a_new_character_of_the_template_hurts_a_wolf() {
     assert!(
         s.progress.proficiencies.iter().any(|(p, _, _)| p == "unarmed"),
         "bare hands train the template's unarmed proficiency"
+    );
+}
+
+#[test]
+fn a_unique_announced_title_is_claimed_and_can_be_lost() {
+    let mut sheet = CharacterSheet::new(CharacterName::try_from("hero").unwrap());
+    sheet.progress.counters = vec![("kills".into(), "wolf".into(), 3)];
+    let mut r = Run::new();
+    // Earned on entering: the server hears of it and the gateway claims it.
+    r.tick(&[enter_at(1, TilePos::new(1, 1), Some(sheet.clone()))]);
+    let (tid, _) = r.zone.content().catalog.title_by_name("wolf_bane").unwrap();
+    assert_eq!(r.out.feats, vec![(P1, tid)]);
+    assert_eq!(r.out.claims, vec![(P1, "title:wolf_bane".to_owned())]);
+    // Someone else was first: it goes, with a System line.
+    r.tick(&[Command::Revoke {
+        player: P1,
+        key: "title:wolf_bane".into(),
+    }]);
+    assert!(r.sheet(1).progress.titles.is_empty());
+    assert_eq!(r.out.system.len(), 1);
+    // A player told before entering that it is taken never gets it.
+    let p2 = PlayerId::new(2);
+    r.tick(&[
+        Command::Taken {
+            player: p2,
+            keys: vec!["title:wolf_bane".into()],
+        },
+        enter_at(2, TilePos::new(2, 1), Some(sheet)),
+    ]);
+    assert!(r.sheet(2).progress.titles.is_empty());
+    assert!(r.out.claims.is_empty());
+}
+
+#[test]
+fn an_area_blow_poisons_every_post_around_the_target() {
+    let mut r = Run::new();
+    let mut sheet = CharacterSheet::new(CharacterName::try_from("hero").unwrap());
+    sheet.progress.techniques = vec![("quake".into(), 1, 0)];
+    sheet.progress.attributes.dex = 500;
+    r.tick(&[enter_at(1, TilePos::new(7, 7), Some(sheet))]);
+    let cat = r.zone.content().clone();
+    let (quake, _) = cat.catalog.technique_by_name("quake").unwrap();
+    let (post, _) = cat.catalog.monster_by_name("post").unwrap();
+    let posts = r.zone.monster_ids(post);
+    assert_eq!(posts.len(), 2);
+    r.tick(&[Command::UseTechnique {
+        player: P1,
+        technique: quake,
+        target: posts[0],
+    }]);
+    assert!(r.out.refused.is_empty(), "{:?}", r.out.refused);
+    let hit: Vec<_> = r
+        .out
+        .combat
+        .iter()
+        .filter(|c| c.technique == Some(quake))
+        .map(|c| c.target)
+        .collect();
+    assert_eq!(hit, posts, "the target and the post beside it");
+    let hp = |r: &Run, e| {
+        let h = r.zone.by_id[&e];
+        r.zone.world.get::<&fight::Fighter>(h).unwrap().hp
+    };
+    let before = [hp(&r, posts[0]), hp(&r, posts[1])];
+    r.run(41);
+    // Two bites of 5 HP each, on both (the target also takes the punches
+    // that follow).
+    assert_eq!(hp(&r, posts[1]), before[1] - 10);
+    assert!(hp(&r, posts[0]) <= before[0] - 10);
+}
+
+#[test]
+fn a_boss_changes_phase_below_half_and_slows() {
+    let mut r = Run::new();
+    r.tick(&[enter_at(1, TilePos::new(16, 0), None)]);
+    let cat = r.zone.content().clone();
+    let (brute, _) = cat.catalog.monster_by_name("brute").unwrap();
+    let id = r.zone.monster_ids(brute)[0];
+    let h = r.zone.by_id[&id];
+    r.zone.world.get::<&mut fight::Fighter>(h).unwrap().hp = 40;
+    let mut told = false;
+    for _ in 0..40 {
+        r.tick(&[]);
+        told |= !r.out.system.is_empty();
+    }
+    assert!(told, "the player hears of the phase");
+    assert_eq!(r.zone.world.get::<&fight::MonsterComp>(h).unwrap().phase, 1);
+    let ph = r.zone.by_player[&P1];
+    let now = r.zone.tick.0;
+    assert!(
+        r.zone
+            .world
+            .get::<&fight::Fighter>(ph)
+            .unwrap()
+            .status(defs::StatusKind::Slow, now)
+            .is_some()
     );
 }

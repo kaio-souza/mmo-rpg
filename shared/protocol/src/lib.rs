@@ -28,12 +28,13 @@ pub use frame::{
 pub use msg::{
     AdminCommand, AppearanceInfo, ChatChannel, ClientMsg, CombatEvent, Diff, Entity, EntityKind, EntityName,
     EquipSlot, ErrorCode, InstanceInfo, InviteKind, ItemInfo, ItemSlot, LightInfo, LookOptionInfo, NamedInfo,
-    ObjectiveView, PartyView, QuestEntry, QuestMarker, QuestState, ReasonId, RecipeInfo, ServerMsg, ShopLine,
-    ShopView, StatsInfo, TechniqueInfo, TechniqueUse, TitleBonusInfo, TradeView, UseInfo, ZoneInfo,
+    ObjectiveView, PartyView, QuestEntry, QuestMarker, QuestState, RankingId, ReasonId, RecipeInfo,
+    ServerMsg, ShopLine, ShopView, StatsInfo, TechniqueInfo, TechniqueUse, TitleBonusInfo, TradeView,
+    UseInfo, ZoneInfo,
 };
 
 /// Incompatible changes bump this; the server refuses other versions.
-pub const PROTOCOL_VERSION: u16 = 27;
+pub const PROTOCOL_VERSION: u16 = 28;
 
 /// Client messages per second per connection (`server-net` enforces it).
 pub const MAX_CLIENT_MSGS_PER_SEC: u32 = 30;

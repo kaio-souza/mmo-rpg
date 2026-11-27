@@ -1,0 +1,5 @@
+// The merchant and the herbalist on the plaza.
+[
+    (npc: "merchant", pos: (x: 17, y: 13)),
+    (npc: "herbalist", pos: (x: 23, y: 13)),
+]

@@ -234,6 +234,10 @@ mod tests {
             ClientMsg::ReportChat {
                 name: CharacterName::try_from("Ana").unwrap(),
             },
+            ClientMsg::Ranking {
+                id: Some(crate::RankingId::try_from("hunters").unwrap()),
+            },
+            ClientMsg::ServerFirsts,
         ] {
             roundtrip(m, MAX_CLIENT_FRAME);
         }

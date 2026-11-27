@@ -1,6 +1,6 @@
 # New game template
 
-The starting point of a game made with the kit. Copy this folder and you have a playable game: one area (`meadow`) with a safe stone plaza, dirt roads, a pond, mud, water all around, and wolves that drop their pelt and health, mana and vigor potions. System, error and interface texts in ten languages; the title is "My Game".
+The starting point of a game made with the kit. Copy this folder and you have a playable game: one area (`meadow`) with a safe stone plaza that is also a workshop, dirt roads, a pond, mud and water all around. On the plaza, a merchant (store, smelting and sword lessons) and a herbalist (a quest for herbs, the health potion recipe). Around it: wolves, shadow wolves (a rare dark sword), a frost wolf whose bite slows, iron and silver veins to mine and herb patches to gather; ore smelts into ingots and ingots into swords. System, error and interface texts in ten languages; the title is "My Game".
 
 ## Start
 

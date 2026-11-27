@@ -52,6 +52,8 @@ const ICONS = {
   proficiency: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
   class: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
   title: '<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/>',
+  dungeon: '<path d="M4 21V9l8-6 8 6v12M9 21v-6h6v6"/>',
+  ranking: '<path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7"/>',
   special_attribute: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
   map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
   advanced: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
@@ -238,6 +240,8 @@ const CATS = [
   { id: "class", kinds: ["class"] },
   { id: "title", kinds: ["title"] },
   { id: "special_attribute", kinds: ["special_attribute"] },
+  { id: "ranking", kinds: ["ranking"] },
+  { id: "dungeon", kinds: ["dungeon"] },
   { id: "map", kinds: ["map"] },
   { id: "shop", kinds: ["shop"] },
   { id: "recipe", kinds: ["recipe"] },
@@ -402,9 +406,9 @@ function railBtn(ic, label, on, onclick, badge) {
 
 // The rail groups the categories by what a designer is working on.
 const SECTIONS = [
-  ["world", ["map", "npc", "monster", "gather_node", "shop"]],
+  ["world", ["map", "npc", "monster", "gather_node", "shop", "dungeon"]],
   ["items", ["item", "recipe", "loot_table"]],
-  ["progress", ["technique", "proficiency", "class", "title", "special_attribute"]],
+  ["progress", ["technique", "proficiency", "class", "title", "special_attribute", "ranking"]],
   ["story", ["quest", "dialogue", "emote"]],
   ["system", ["advanced"]],
 ];

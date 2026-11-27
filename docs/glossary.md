@@ -44,3 +44,19 @@
 | **Appraisal** | Revealing a piece's hidden attribute rolls |
 | **Falling** | The state before death: a fallen character can be revived |
 | **System** | The voice of the game in the chat log (notices, warnings) |
+| **Signal** | A number measured in the world per window (monsters alive, deaths, treasury) that switches world quests on ([world quests](world-quests.md)) |
+| **World quest** | A quest written in the editor that is offered only while its condition holds, paid from a funder's escrow |
+| **Town** | A set of regions with a treasury, taxes, guards, laws and legitimacy ([towns and politics](towns-and-politics.md)) |
+| **Legitimacy** | A town's standing with its people (0 to 1000); low legitimacy means tax evasion and fewer guards |
+| **Masterwork** | A crafted piece made with a near-perfect minigame score; it carries a mark beside its maker's signature ([crafting](crafting-minigames.md)) |
+| **Server project** | A collective work for a town, guild or kingdom; delivered items go to an armoury, not into the void ([projects](server-projects.md)) |
+| **Armoury** | The items an organisation owns; its NPC guards wear them |
+| **Chronicle** | The written history of a town or kingdom, entries made only by the engine |
+| **Instance** | A zone created on demand for one party, never joined by seams ([dungeons](dungeons-and-raids.md)) |
+| **Siege** | A fight for a claimable town in a fixed window ([kingdoms](kingdoms-and-nations.md)) |
+| **Server first** | The first character of the server to earn a title marked `announce: First`; told to everyone and kept for good (`/firsts`) |
+| **Unique** | A title or class only one character of the server holds at a time ([D60](decisions.md)) |
+| **Heir** | The character who earns a unique title or class after its holder stopped playing for `heir_after_days` |
+| **Ranking** | A public list of the best characters by level, counter, proficiency or titles (`rankings/`, `/ranking`) |
+| **Status** | A timed effect a blow leaves: poison, stun or slow |
+| **Phase** | A stage of a monster's fight from a share of HP down, with its own blows |

@@ -1,0 +1,2 @@
+// Taught by the herbalist.
+(proficiency: "alchemy", materials: [(item: "herb", qty: 3)], result: "health_potion", xp: 12)

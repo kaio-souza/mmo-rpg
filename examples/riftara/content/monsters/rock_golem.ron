@@ -5,4 +5,8 @@
     aggro_radius: 4, leash: 8, respawn_ticks: 9000, xp: 3900, sprite: "rock_golem", icon: "rock_golem",
     coins: (200, 500),
     loot: [(item: "golem_core", chance: 1000), (item: "silver_ore", chance: 800, qty: (2, 5)), (item: "mithril_ore", chance: 80), (item: "iron_plate_armor", chance: 60)],
+    phases: [
+        (below_hp_permille: 600, damage_permille: 1200, area: 1),
+        (below_hp_permille: 250, damage_permille: 1500, attack_ticks: Some(45), area: 1, status: Some((kind: Stun, duration_ticks: 20))),
+    ],
 )

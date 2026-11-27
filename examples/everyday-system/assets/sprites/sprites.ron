@@ -1,0 +1,13 @@
+// Anchors: the pixel of each image that sits on the center of its tile. A
+// sprite's name is its file name. Creatures are strips: 4 frames side by
+// side, 4 direction rows (S, W, N, E), played while walking.
+(
+    folders: {
+        "creatures": (anchor: (32, 58), frames: 4, fps: 8, directions: 4, play: Moving),
+        "equipment": (anchor: (32, 58), directions: 4),
+        "tiles": (anchor: (32, 16)),
+        "walls": (anchor: (32, 56)),
+    },
+    sprites: {},
+    lights: {},
+)

@@ -1,1 +1,1 @@
-(proficiency: "dagger", unlock_at: 12, cooldown_ticks: 100, vigor: 15, damage_permille: 2200, growth_permille: 90, icon: "")
+(proficiency: "dagger", unlock_at: 12, cooldown_ticks: 100, vigor: 15, damage_permille: 2200, growth_permille: 90, icon: "", status: Some((kind: Poison, duration_ticks: 100, power: 3)))

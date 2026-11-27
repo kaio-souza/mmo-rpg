@@ -424,6 +424,17 @@ impl fmt::Display for RepoError {
 
 impl std::error::Error for RepoError {}
 
+/// Who holds a unique title or class (`unique_holders`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UniqueHolder {
+    /// `title:<id>` or `class:<id>`.
+    pub key: String,
+    pub character: CharacterId,
+    pub name: CharacterName,
+    /// Unix second of the holder's last save; 0 for a deleted character.
+    pub last_seen: u64,
+}
+
 pub enum Repository {
     Sqlite(SqliteRepo),
 }
@@ -717,6 +728,86 @@ impl Repository {
     pub async fn save_login_blocks(&self, blocks: Vec<LoginBlock>) -> Result<(), RepoError> {
         match self {
             Repository::Sqlite(r) => r.save_login_blocks(blocks).await,
+        }
+    }
+
+    /// `true` when `character` is the first of the server to reach `key`.
+    pub async fn record_first(&self, key: &str, character: CharacterId, now: u64) -> Result<bool, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.record_first(key, character, now).await,
+        }
+    }
+
+    /// Every server first: key, character name, unix second, oldest first.
+    pub async fn server_firsts(&self) -> Result<Vec<(String, CharacterName, u64)>, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.server_firsts().await,
+        }
+    }
+
+    /// Takes a unique `key` for `character` if free; returns the holder.
+    pub async fn claim_unique(
+        &self,
+        key: &str,
+        character: CharacterId,
+        now: u64,
+    ) -> Result<CharacterId, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.claim_unique(key, character, now).await,
+        }
+    }
+
+    /// Every unique holder, by key.
+    pub async fn unique_holders(&self) -> Result<Vec<UniqueHolder>, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.unique_holders().await,
+        }
+    }
+
+    /// Frees a unique `key` whoever holds it.
+    pub async fn release_key(&self, key: &str) -> Result<(), RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.release_key(key).await,
+        }
+    }
+
+    /// Frees a unique `key` if `character` holds it.
+    pub async fn release_unique(&self, key: &str, character: CharacterId) -> Result<bool, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.release_unique(key, character).await,
+        }
+    }
+
+    /// Records a dungeon clear.
+    pub async fn add_clear(&self, dungeon: &str, party: &str, secs: u64, now: u64) -> Result<(), RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.add_clear(dungeon, party, secs, now).await,
+        }
+    }
+
+    /// The fastest clears of a dungeon: party and seconds.
+    pub async fn fastest_clears(&self, dungeon: &str, limit: u32) -> Result<Vec<(String, u64)>, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.fastest_clears(dungeon, limit).await,
+        }
+    }
+
+    /// `character` may not enter `dungeon` before `until`.
+    pub async fn set_lockout(
+        &self,
+        character: CharacterId,
+        dungeon: &str,
+        until: u64,
+    ) -> Result<(), RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.set_lockout(character, dungeon, until).await,
+        }
+    }
+
+    /// Lockouts still running at `now`.
+    pub async fn lockouts(&self, now: u64) -> Result<Vec<(CharacterId, String, u64)>, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.lockouts(now).await,
         }
     }
 

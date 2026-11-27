@@ -74,6 +74,63 @@ impl Zone {
                 escrow,
                 parcel,
             } => self.deliver(*player, *escrow, parcel, out),
+            Command::Evict { to } => crate::portal::evict(self, *to, out),
+            Command::TakenItems { keys } => {
+                let cat = &self.content.catalog;
+                self.taken_items = keys
+                    .iter()
+                    .filter_map(|k| cat.item_by_name(k.strip_prefix("item:")?).map(|(id, _)| id))
+                    .collect();
+            }
+            Command::Taken { player, keys } => {
+                let content = self.content.clone();
+                match self.by_player.get(player) {
+                    Some(&h) => {
+                        if let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h) {
+                            p.growth.set_taken(keys, &content.catalog);
+                            p.dirty_stats = true;
+                        }
+                    }
+                    None => {
+                        self.early_taken.insert(*player, keys.clone());
+                    }
+                }
+            }
+            Command::Revoke { player, key } => {
+                let content = self.content.clone();
+                let cat = &content.catalog;
+                let Some(&h) = self.by_player.get(player) else {
+                    return;
+                };
+                if let Some((item, def)) = key.strip_prefix("item:").and_then(|i| cat.item_by_name(i)) {
+                    // Another piece was made first: this one goes.
+                    if crate::fight::remove_piece(self, h, item) {
+                        let arg = base::Arg::Ref(Box::new(base::TextRef::new(def.name)));
+                        self.tell(out, *player, "system.unique_lost", smallvec::smallvec![arg]);
+                    }
+                    return;
+                }
+                let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h) else {
+                    return;
+                };
+                if !p.growth.revoke(key, cat) {
+                    return;
+                }
+                p.dirty_stats = true;
+                let name = if let Some((_, t)) = key.strip_prefix("title:").and_then(|t| cat.title_by_name(t))
+                {
+                    Some(t.name)
+                } else {
+                    key.strip_prefix("class:")
+                        .and_then(|c| cat.class_by_name(c))
+                        .map(|(_, c)| c.name)
+                };
+                fight::refresh_player(self, h);
+                if let Some(name) = name {
+                    let arg = base::Arg::Ref(Box::new(base::TextRef::new(name)));
+                    self.tell(out, *player, "system.unique_lost", smallvec::smallvec![arg]);
+                }
+            }
             Command::Leave { player } => {
                 if let Some((sheet, pos, _)) = self.take_player(*player) {
                     out.left.push((*player, sheet, pos));
@@ -271,6 +328,9 @@ impl Zone {
         let mut gear = Gear::import(&sheet.items, cat);
         place_bag(&mut data, &mut gear, cat);
         let mut growth = Growth::import(&sheet.progress, cat);
+        if let Some(keys) = self.early_taken.remove(&player) {
+            growth.set_taken(&keys, cat);
+        }
         // A title added to the content since the last visit is granted on
         // entering, from the saved counters. Before the fighter,
         // so its bonuses count in the maximums.

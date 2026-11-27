@@ -210,7 +210,12 @@ fn run(args: Args) -> Result<(), String> {
                 .find(|(_, z)| z.starting)
                 .map(|(_, z)| z.name.clone())
         })
-        .or_else(|| catalog.zones().next().map(|(_, z)| z.name.clone()))
+        .or_else(|| {
+            catalog
+                .zones()
+                .find(|(_, z)| z.instance.is_none())
+                .map(|(_, z)| z.name.clone())
+        })
         .ok_or("the content has no zone")?;
     let (start_zone, _) = catalog
         .zone_by_name(&start_name)
@@ -264,7 +269,25 @@ fn run(args: Args) -> Result<(), String> {
             zone_link::attach(*zone_id, gateway_end, &events_tx);
         }
         // Ticks run on the pool's threads, so the sim's `par_iter` uses this pool too.
-        let _clock = (!tasks.is_empty()).then(|| zone_loop::start(tasks, pool));
+        let clock = zone_loop::start(tasks, pool);
+        // Instance copies run here, on the same clock, linked in memory.
+        let spawn_instance: gateway::InstanceSpawner = {
+            let (slot, events, replay_dir) = (slot.clone(), events_tx.clone(), args.replay_dir.clone());
+            Arc::new(move |template, runtime, seed| {
+                let (gateway_end, zone_end) = zone_link::memory();
+                let name = content::slot_get(&slot)
+                    .catalog
+                    .zone(template)
+                    .map(|z| format!("{}#{}", z.name, runtime.get()))
+                    .unwrap_or_default();
+                let task = zone_loop::ZoneTask::new(slot.clone(), template, seed, zone_end, replay_dir.clone(), None)
+                    .map_err(|e| e.to_string())?
+                    .named(name);
+                clock.add(task);
+                zone_link::attach(runtime, gateway_end, &events);
+                Ok(())
+            })
+        };
         if let Some(addr) = link_listen {
             let listener = tokio::net::TcpListener::bind(addr)
                 .await
@@ -305,6 +328,7 @@ fn run(args: Args) -> Result<(), String> {
             slot,
             backup,
             shield_per_min: args.shield_per_min,
+            spawn_instance: Some(spawn_instance),
         };
         gateway::Gateway::new(cfg, net, events_rx, repo, passwords)
             .run(events, reload_rx)
@@ -444,6 +468,8 @@ fn local_zones(args: &Args, catalog: &defs::ValidatedCatalog) -> Result<Vec<base
                 .map(|(id, _)| id)
                 .ok_or_else(|| format!("zone `{n}` not found in {}", args.content.display()))
         })
+        // Instances never run as one shared zone: the gateway makes copies.
+        .filter(|id| !matches!(id, Ok(id) if catalog.zone(*id).is_some_and(|z| z.instance.is_some())))
         .collect()
 }
 

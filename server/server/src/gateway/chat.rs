@@ -146,6 +146,8 @@ impl Gateway {
             ClientMsg::Chat { channel, text } => self.on_chat(c, channel, text),
             ClientMsg::ReportChat { name } => self.on_report(c, name),
             ClientMsg::Admin(cmd) => self.on_admin(c, cmd),
+            ClientMsg::Ranking { id } => self.on_ranking(c, id),
+            ClientMsg::ServerFirsts => self.on_firsts(c),
             _ => self.fail(c, ErrorCode::InvalidMessage),
         }
     }

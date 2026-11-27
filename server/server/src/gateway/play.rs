@@ -25,6 +25,8 @@ impl Gateway {
                         load: LoadLevel::N0,
                     },
                 );
+                self.send_taken_items(Some(zone));
+                self.on_instance_up(zone);
                 self.pump_queue();
             }
             ZoneEvent::Msg(zone, fz) => self.on_zone(zone, fz),
@@ -208,6 +210,10 @@ impl Gateway {
             FromZone::Escrow(e) => self.on_escrow(zone, *e),
             FromZone::EscrowLost { from, parcel, .. } => self.on_escrow_lost(from, &parcel),
             FromZone::Delivered(d) => self.on_delivered(zone, *d),
+            FromZone::Feats(feats) => self.on_feats(feats),
+            FromZone::Claims(claims) => self.on_claims(claims),
+            FromZone::Clears(clears) => self.on_clears(clears),
+            FromZone::Released(keys) => self.on_released(keys),
             FromZone::Failure { players } => {
                 for player in players {
                     // The zone already forgot this player: no Leave, no save.
@@ -229,6 +235,12 @@ impl Gateway {
     /// A player crossed the seam (phase 10): the next zone gets it. With
     /// that zone down the player is saved where it stands and dropped.
     fn on_handoff(&mut self, from: ZoneId, player: PlayerId, to: ZoneId, arrival: Box<sim::Arrival>) {
+        // A dungeon the character is locked out of: back where it was.
+        let (to, arrival) = self.turn_back_if_locked(player, from, to, arrival);
+        // An instance: the party's own copy, maybe still on its way.
+        let Some((to, arrival)) = self.route_arrival(player, to, arrival) else {
+            return;
+        };
         if !self.zones.contains_key(&to) {
             warn!(from = %self.zone_name(from), to = %self.zone_name(to), "handoff to a zone that is down: player saved and dropped");
             if let Some(&c) = self.players.get(&player) {
@@ -237,13 +249,17 @@ impl Gateway {
                     conn.phase = Phase::AwaitLogin;
                 }
             }
-            let (sheet, pos) = (arrival.sheet, arrival.pos);
+            let pos = arrival.left_from.unwrap_or(arrival.pos);
+            let sheet = arrival.sheet;
             // Saved under the zone it left: that zone's map has the tile.
             return self.on_left(player, Box::new(sheet), pos, Vec::new());
         }
         if let Some(w) = self.in_game.get_mut(&player) {
             w.zone = to;
             w.crossing = Some(Instant::now());
+        }
+        if let Some(character) = self.in_game.get(&player).map(|w| w.character) {
+            self.send_taken(player, character);
         }
         self.to_zone(to, ToZone::Command(Command::Arrive { player, arrival }));
     }

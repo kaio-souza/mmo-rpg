@@ -13,6 +13,11 @@ fn row(n: usize) -> String {
 
 /// Zones `a` (x 0..40) and `b` (x 40..80), ten rows each, all open.
 fn content() -> Arc<Content> {
+    content_with("")
+}
+
+/// The same, with `extra` added to zone `a`'s `zone.ron` (portals).
+fn content_with(extra: &str) -> Arc<Content> {
     let text = r#"{ "system.ok": "x" }"#;
     let mut files: Vec<(String, String)> = [i18n::Locale::EN]
         .iter()
@@ -24,7 +29,7 @@ fn content() -> Arc<Content> {
     );
     files.push((
         "zones/a/zone.ron".into(),
-        "(origin: (x: 0, y: 0), view_radius: 20, spawn: (x: 5, y: 5), starting: true)".into(),
+        format!("(origin: (x: 0, y: 0), view_radius: 20, spawn: (x: 5, y: 5), starting: true{extra})"),
     ));
     files.push(("zones/a/map.ron".into(), map.clone()));
     files.push((
@@ -51,7 +56,10 @@ const B: ZoneId = ZoneId::new(1);
 
 impl World {
     fn new() -> World {
-        let c = content();
+        World::with(content())
+    }
+
+    fn with(c: Arc<Content>) -> World {
         World {
             a: Zone::new(c.clone(), A, 1).unwrap(),
             b: Zone::new(c, B, 2).unwrap(),
@@ -482,6 +490,8 @@ fn an_arrival_on_a_crowded_edge_stays_on_this_side() {
         step_wait: 0,
         vigor: 0,
         mp: 0,
+        left_from: None,
+        party: None,
     };
     w.tick(
         vec![],
@@ -628,4 +638,49 @@ fn an_attack_from_safe_ground_walks_out_first() {
         }
     }
     assert!(fought, "the player walked out and fought");
+}
+
+#[test]
+fn portals_jump_in_the_zone_and_hand_off_to_the_other() {
+    let c = content_with(
+        ", portals: [(min: (x: 10, y: 9), max: (x: 10, y: 9), to: (x: 70, y: 9)), (min: (x: 12, y: 9), max: (x: 12, y: 9), to: (x: 20, y: 2))]",
+    );
+    let mut w = World::with(c);
+    w.tick(
+        vec![
+            enter(1, "alice", TilePos::new(11, 9)),
+            enter(2, "bruno", TilePos::new(11, 8)),
+        ],
+        vec![],
+        true,
+    );
+    // Alice steps on the portal to zone b; Bruno on the jump in zone a.
+    w.tick(vec![walk(1, 10, 9), walk(2, 12, 9)], vec![], true);
+    for _ in 0..20 {
+        w.tick(vec![], vec![], true);
+    }
+    let pos = |z: &Zone, p: u32| z.position_of(PlayerId::new(p));
+    assert_eq!(pos(&w.b, 1), Some(TilePos::new(70, 9)), "handed to zone b");
+    assert_eq!(pos(&w.a, 1), None);
+    assert_eq!(pos(&w.a, 2), Some(TilePos::new(20, 2)), "a jump inside zone a");
+}
+
+#[test]
+fn a_portal_must_land_on_ground() {
+    let refs = [
+        (
+            "zones/a/zone.ron",
+            "(origin: (x: 0, y: 0), view_radius: 20, spawn: (x: 1, y: 1), portals: [(min: (x: 0, y: 0), max: (x: 0, y: 0), to: (x: 900, y: 9))])",
+        ),
+        (
+            "zones/a/map.ron",
+            "(legend: { '.': (floor: 1) }, rows: [\"...\", \"...\"])",
+        ),
+        ("text/en/a.ron", "{}"),
+    ];
+    let err = defs::from_text(&refs).unwrap().validate().unwrap_err();
+    assert!(
+        err.iter().any(|p| p.to_string().contains("`to` is in no zone")),
+        "{err:?}"
+    );
 }

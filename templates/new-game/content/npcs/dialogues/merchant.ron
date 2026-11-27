@@ -1,0 +1,27 @@
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.merchant.greeting",
+            options: [
+                (
+                    text: "npc.merchant.option.smelting",
+                    next: "taught",
+                    when: Not(RecipeKnown("iron_ingot")),
+                    effects: [TakeCoins(100), LearnRecipe("iron_ingot"), LearnRecipe("silver_ingot")],
+                ),
+                (
+                    text: "npc.merchant.option.swords",
+                    next: "taught",
+                    when: All([RecipeKnown("iron_ingot"), Not(RecipeKnown("iron_sword"))]),
+                    effects: [TakeCoins(300), LearnRecipe("iron_sword"), LearnRecipe("steel_sword")],
+                ),
+                (text: "npc.merchant.option.bye"),
+            ],
+        ),
+        "taught": (
+            text: "npc.merchant.taught",
+            options: [(text: "npc.merchant.option.bye")],
+        ),
+    },
+)

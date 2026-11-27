@@ -1,0 +1,2 @@
+// The first monster defeated: a little more XP while still new.
+(trigger: Counter(family: "kills", key: "", at: 1), bonuses: [PercentUntilLevel(Xp, 5, 10)])

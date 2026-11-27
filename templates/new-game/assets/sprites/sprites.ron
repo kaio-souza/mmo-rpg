@@ -8,6 +8,11 @@
         "tiles": (anchor: (32, 16)),
         "walls": (anchor: (32, 56)),
     },
-    sprites: {},
+    sprites: {
+        // Resource nodes: one still picture each.
+        "herb_patch": (frames: 1, directions: 1, play: Always),
+        "iron_vein": (frames: 1, directions: 1, play: Always),
+        "silver_vein": (frames: 1, directions: 1, play: Always),
+    },
     lights: {},
 )

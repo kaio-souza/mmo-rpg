@@ -355,15 +355,16 @@ impl Zone {
             let Ok((p, gear)) = self.world.query_one_mut::<(&mut PlayerComp, &mut Gear)>(handle) else {
                 return Err(Refusal::NoShop);
             };
-            if gear.take_bag(slot).is_none() {
+            let Some(sold) = gear.take_bag(slot) else {
                 return Err(Refusal::InvalidSlot);
-            }
+            };
             if let Some(s) = p.data.slots.get_mut(usize::from(slot)) {
                 *s = Slot::Empty;
             }
             p.data.gain_coins(CoinFlow::ShopSale, total);
             p.dirty_bag = true;
             p.dirty_stats = true;
+            crate::fight::released(self, sold.item, out);
         } else {
             let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(handle) else {
                 return Err(Refusal::NoShop);

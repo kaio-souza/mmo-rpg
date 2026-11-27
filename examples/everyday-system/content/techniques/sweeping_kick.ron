@@ -1,0 +1,2 @@
+// A kick that also hits every monster next to the target.
+(proficiency: "unarmed", unlock_at: 15, cooldown_ticks: 140, vigor: 14, damage_permille: 1100, growth_permille: 50, area: 1)

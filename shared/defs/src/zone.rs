@@ -65,6 +65,10 @@ pub struct ZoneDef {
     /// Phase 10: new characters (and characters whose zone is gone) start
     /// here. With more than one zone, exactly one has it.
     pub starting: bool,
+    /// Tiles that take a player to another tile of the world.
+    pub portals: Vec<PortalDef>,
+    /// A copy per party instead of one shared zone.
+    pub instance: Option<InstanceRule>,
 }
 
 /// A rectangle of tiles, corners inclusive, in global coordinates.
@@ -150,6 +154,46 @@ impl RegionDef {
     }
 }
 
+/// A zone that is never part of the open world: each party that walks
+/// into it (a portal or a `Teleport` aimed at it) gets its own copy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct InstanceRule {
+    /// A tile of the open world where players go when the copy closes on
+    /// them, and where a character that leaves the game inside is saved.
+    pub exit: TilePos,
+    /// An empty copy closes after this long.
+    #[serde(default = "sixty")]
+    pub close_after_secs: u32,
+    /// Everyone inside goes to `exit` after this long (0: no limit).
+    #[serde(default)]
+    pub time_limit_secs: u32,
+}
+
+fn sixty() -> u32 {
+    60
+}
+
+/// A portal: stepping on any tile of `min..=max` takes the player to `to`,
+/// a tile of any zone (global coordinates, like the whole world).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct PortalDef {
+    /// Corners, inclusive, global coordinates.
+    pub min: TilePos,
+    pub max: TilePos,
+    /// Where the player lands (the nearest free tile if taken).
+    pub to: TilePos,
+}
+
+impl PortalDef {
+    pub fn holds(&self, p: TilePos) -> bool {
+        (self.min.x..=self.max.x).contains(&p.x) && (self.min.y..=self.max.y).contains(&p.y)
+    }
+}
+
 /// `count` monsters placed up to `radius` tiles from `pos`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
@@ -229,6 +273,12 @@ pub(crate) struct ZoneFile {
     spawn_radius: u16,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     regions: Vec<RegionDef>,
+    /// Tiles that take a player elsewhere, in this zone or another.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    portals: Vec<PortalDef>,
+    /// A dungeon: every party gets its own copy of this zone.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    instance: Option<InstanceRule>,
     /// Phase 10: new characters start in this zone.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     starting: bool,
@@ -400,6 +450,13 @@ pub(crate) fn parse_zone(
             errors.push(format!("zone.ron: region {i}: min must be <= max"));
         }
     }
+    for (i, p) in zone.portals.iter().enumerate() {
+        if p.min.x > p.max.x || p.min.y > p.max.y {
+            errors.push(format!("zone.ron: portal {i}: min must be <= max"));
+        } else if local(p.min).is_none() || local(p.max).is_none() {
+            errors.push(format!("zone.ron: portal {i}: outside the map"));
+        }
+    }
     if !errors.is_empty() {
         return Err(errors);
     }
@@ -417,6 +474,8 @@ pub(crate) fn parse_zone(
         monsters: monster_spawns,
         nodes: node_spawns,
         starting: zone.starting,
+        portals: zone.portals,
+        instance: zone.instance,
     })
 }
 
@@ -432,8 +491,58 @@ pub fn neighbors<'a>(zone: &ZoneDef, all: impl IntoIterator<Item = &'a ZoneDef>)
 /// Rules of the world as a whole (phase 10):
 /// zones never overlap, one zone is the start, and the spawn, regions, NPCs
 /// and dense spawners stay out of the seam band. `(zone, message)` pairs.
+/// The zone whose map holds `p`, if any.
+pub fn zone_at<'a>(zones: impl IntoIterator<Item = &'a ZoneDef>, p: TilePos) -> Option<&'a ZoneDef> {
+    zones.into_iter().find(|z| z.tile_at(p).is_some())
+}
+
 pub(crate) fn world_problems(zones: &[ZoneDef]) -> Vec<(String, String)> {
     let mut problems = Vec::new();
+    // A portal lands on walkable ground of some zone, and never on another
+    // portal (no ping-pong).
+    for zone in zones {
+        for (i, p) in zone.portals.iter().enumerate() {
+            let msg = match zone_at(zones, p.to) {
+                None => Some(format!("portal {i}: `to` is in no zone")),
+                Some(z) if z.tile_at(p.to).is_some_and(|t| t.blocks_movement) => {
+                    Some(format!("portal {i}: `to` is a blocking tile of `{}`", z.name))
+                }
+                Some(z) if z.portals.iter().any(|q| q.holds(p.to)) => {
+                    Some(format!("portal {i}: `to` is on a portal of `{}`", z.name))
+                }
+                _ => None,
+            };
+            if let Some(m) = msg {
+                problems.push((zone.name.clone(), m));
+            }
+        }
+        // An instance stands apart: no seam, never the start, an exit on
+        // the open world's walkable ground.
+        if let Some(rule) = &zone.instance {
+            if zone.starting {
+                problems.push((
+                    zone.name.clone(),
+                    "an instance cannot be the starting zone".into(),
+                ));
+            }
+            if !neighbors(zone, zones).is_empty() {
+                problems.push((zone.name.clone(), "an instance cannot touch another zone".into()));
+            }
+            let exit_ok = zone_at(zones, rule.exit)
+                .filter(|z| z.instance.is_none())
+                .and_then(|z| z.tile_at(rule.exit))
+                .is_some_and(|t| !t.blocks_movement);
+            if !exit_ok {
+                problems.push((
+                    zone.name.clone(),
+                    "instance exit: not walkable ground of an open-world zone".into(),
+                ));
+            }
+            if rule.close_after_secs == 0 {
+                problems.push((zone.name.clone(), "instance close_after_secs must be >= 1".into()));
+            }
+        }
+    }
     for (i, a) in zones.iter().enumerate() {
         for b in zones.iter().skip(i + 1) {
             if a.rect().distance(&b.rect()) == 0 {
@@ -446,7 +555,9 @@ pub(crate) fn world_problems(zones: &[ZoneDef]) -> Vec<(String, String)> {
         .filter(|z| z.starting)
         .map(|z| z.name.as_str())
         .collect();
-    if zones.len() > 1 && starts.len() != 1 {
+    // Instances are not part of the open world: they never count here.
+    let open = zones.iter().filter(|z| z.instance.is_none()).count();
+    if open > 1 && starts.len() != 1 {
         problems.push((
             starts.first().copied().unwrap_or("").to_owned(),
             format!("exactly one zone needs `starting: true`, found {}", starts.len()),

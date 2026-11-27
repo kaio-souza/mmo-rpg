@@ -149,6 +149,14 @@ pub struct Zone {
     pub(crate) next_id: u32,
     pub(crate) by_id: BTreeMap<EntityId, hecs::Entity>,
     pub(crate) by_player: BTreeMap<PlayerId, hecs::Entity>,
+    /// `Command::Taken` for players not in the zone yet: applied when they
+    /// enter or arrive, before their titles are checked.
+    pub(crate) early_taken: BTreeMap<PlayerId, Vec<String>>,
+    /// Unique items that exist somewhere on the server (`Command::TakenItems`
+    /// plus those made here since): never made again.
+    pub(crate) taken_items: std::collections::BTreeSet<base::ItemId>,
+    /// Teleports asked this tick (a dialogue), done after movement.
+    pub(crate) teleports: Vec<(PlayerId, TilePos)>,
     replay: ReplayLog,
     /// The zone's random numbers (combat, loot, spawns): saved in snapshots.
     pub(crate) rng: Rng64,
@@ -192,6 +200,9 @@ impl Zone {
             next_id: crate::seam::first_entity_id(zone),
             by_id: BTreeMap::new(),
             by_player: BTreeMap::new(),
+            early_taken: BTreeMap::new(),
+            teleports: Vec::new(),
+            taken_items: std::collections::BTreeSet::new(),
             replay: ReplayLog::new(def.name.clone(), catalog.content_hash(), seed),
             rng: Rng64::new(seed),
             item_ids: None,
@@ -284,8 +295,10 @@ impl Zone {
             self.apply(cmd, out);
         }
         movement::run(self);
+        crate::portal::run(self, out);
         fight::ai(self, out);
         fight::attacks(self, out);
+        crate::status::run(self, out);
         fight::regen(self);
         fight::burn(self, out);
         fight::fallen(self, out);

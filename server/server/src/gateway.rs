@@ -14,13 +14,20 @@ mod account;
 mod admin;
 mod chat;
 mod chunks;
+mod dungeon;
 mod escrow;
+mod feats;
+mod instance;
 mod maintenance;
 mod play;
 mod session;
+mod unique;
 
 use chunks::{encode_chunks, world_words};
+pub use instance::InstanceSpawner;
+pub(crate) use instance::instance_rules;
 pub use maintenance::{BackupPlan, MAINTENANCE_ACTION};
+pub(crate) use unique::unique_keys;
 
 use crate::content::{ContentFrames, ContentSlot, Reloaded};
 use crate::login::{self, Attempts, CHARACTERS_PER_ACCOUNT, PasswordPool, Registrations, Shield};
@@ -78,6 +85,8 @@ pub struct GatewayConfig {
     /// Wrong passwords per minute, server wide, that turn on the proof of
     /// work; 0: always on.
     pub shield_per_min: usize,
+    /// Makes instance copies in this process (`None`: no instances).
+    pub spawn_instance: Option<InstanceSpawner>,
 }
 
 enum Phase {
@@ -218,6 +227,26 @@ pub enum Done {
         escrow: u64,
         parcel: persistence::EscrowParcel,
     },
+    /// A character is the first of the server to earn this title.
+    FirstFeat { name: CharacterName, title: String },
+    /// Every ranking, built from the saved sheets at `at`.
+    Ranked { lists: feats::RankingLists, at: u64 },
+    /// A unique title or class claimed: `holder` has it now.
+    Claimed {
+        player: PlayerId,
+        character: CharacterId,
+        key: String,
+        holder: CharacterId,
+    },
+    /// A party is the first of the server to clear a dungeon.
+    DungeonFirst { party: String, name: base::TextId },
+    /// Unique holders after the heir check.
+    Holders(BTreeMap<String, CharacterId>),
+    /// `/firsts`: the server firsts for one connection.
+    Firsts {
+        c: ConnectionId,
+        rows: Vec<(String, CharacterName, u64)>,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -265,6 +294,16 @@ pub struct Gateway {
     registrations: Registrations,
     next_player: u32,
     chat_history: chat::History,
+    /// Public rankings, built on demand from the saved sheets.
+    rankings: feats::RankingCache,
+    /// Who holds each unique title and class (`title:<id>`, `class:<id>`).
+    holders: BTreeMap<String, CharacterId>,
+    /// Instance copies in use.
+    instances: instance::Instances,
+    /// Dungeon lockouts running: `(character, dungeon)` → unix second.
+    lockouts: BTreeMap<(CharacterId, String), u64>,
+    /// Unix second of the next heir check.
+    next_heir_check: u64,
     /// An announced restart.
     maintenance: Option<maintenance::Scheduled>,
     backup: Option<BackupPlan>,
@@ -317,6 +356,11 @@ impl Gateway {
             registrations: Registrations::default(),
             next_player: 1,
             chat_history: chat::History::default(),
+            rankings: feats::RankingCache::default(),
+            holders: BTreeMap::new(),
+            instances: instance::Instances::default(),
+            lockouts: BTreeMap::new(),
+            next_heir_check: 0,
             maintenance: None,
             backup,
             delivering: BTreeMap::new(),
@@ -333,6 +377,8 @@ impl Gateway {
             Ok(blocks) => self.attempts = Attempts::load(blocks),
             Err(e) => warn!(error = %e, "cannot read the saved login waits"),
         }
+        self.load_holders().await;
+        self.load_lockouts().await;
         let mut second = tokio::time::interval(Duration::from_secs(1));
         loop {
             tokio::select! {
@@ -450,6 +496,13 @@ impl Gateway {
 
     /// The zone name for saves and logs.
     fn zone_name(&self, zone: ZoneId) -> String {
+        if let Some(t) = self.template_of(zone) {
+            return format!(
+                "{}#{}",
+                self.zone_name(t),
+                zone.get().saturating_sub(instance::INSTANCE_IDS)
+            );
+        }
         crate::content::slot_get(&self.cfg.slot)
             .catalog
             .zone(zone)
@@ -566,9 +619,11 @@ impl Gateway {
             | ClientMsg::Enter { .. }
             | ClientMsg::SetPreferences(_)
             | ClientMsg::ChangePassword { .. } => self.on_account_msg(c, msg),
-            ClientMsg::Chat { .. } | ClientMsg::ReportChat { .. } | ClientMsg::Admin(_) => {
-                self.on_chat_msg(c, msg)
-            }
+            ClientMsg::Chat { .. }
+            | ClientMsg::ReportChat { .. }
+            | ClientMsg::Admin(_)
+            | ClientMsg::Ranking { .. }
+            | ClientMsg::ServerFirsts => self.on_chat_msg(c, msg),
             ClientMsg::RequestTextPack { locale } => {
                 if matches!(conn.phase, Phase::Authenticated | Phase::InZone(_)) {
                     self.send_text_pack(c, locale);

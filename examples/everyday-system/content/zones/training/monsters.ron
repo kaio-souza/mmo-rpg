@@ -1,0 +1,5 @@
+// Young wolves and the alpha at the back: kill the alpha to clear the run.
+[
+    (monster: "wolf", pos: (x: 106, y: 3), count: 3, radius: 2),
+    (monster: "alpha_wolf", pos: (x: 108, y: 7)),
+]

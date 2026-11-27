@@ -1,0 +1,2 @@
+// Keeps the store (right click) and teaches smithing (talk).
+(sprite: "merchant", dialogue: "merchant", shop: "meadow_store")

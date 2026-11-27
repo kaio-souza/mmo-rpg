@@ -56,6 +56,9 @@ pub struct ZoneTask {
     /// Phase 10: the band picture last sent to each neighbor (ghosts go as
     /// differences from it).
     ghosts_sent: BTreeMap<ZoneId, Vec<sim::EntityState>>,
+    /// The gateway dropped the link (an instance closed): the clock lets
+    /// this zone go.
+    closed: bool,
 }
 
 #[derive(Default)]
@@ -71,6 +74,30 @@ pub struct ZoneSlot {
     task: Mutex<ZoneTask>,
     due: Mutex<Instant>,
     running: AtomicBool,
+    /// The task's link closed: removed from the clock.
+    finished: AtomicBool,
+}
+
+/// The zones the clock ticks; instances join and leave while it runs.
+#[derive(Clone)]
+pub struct ZoneClock {
+    slots: Arc<Mutex<Vec<Arc<ZoneSlot>>>>,
+}
+
+impl ZoneClock {
+    /// Ticks `task` from now on.
+    pub fn add(&self, task: ZoneTask) {
+        let slot = Arc::new(ZoneSlot {
+            task: Mutex::new(task),
+            due: Mutex::new(Instant::now()),
+            running: AtomicBool::new(false),
+            finished: AtomicBool::new(false),
+        });
+        self.slots
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push(slot);
+    }
 }
 
 impl ZoneTask {
@@ -109,13 +136,31 @@ impl ZoneTask {
             stats: Stats::default(),
             coins: BTreeMap::new(),
             ghosts_sent: BTreeMap::new(),
+            closed: false,
         })
+    }
+
+    /// Name in logs (an instance: its map's name and its number).
+    pub fn named(mut self, name: String) -> ZoneTask {
+        self.name = name;
+        self
     }
 
     fn run_tick(&mut self) {
         let started = Instant::now();
         self.commands.clear();
-        while let Ok(msg) = self.link.rx.try_recv() {
+        loop {
+            let msg = match self.link.rx.try_recv() {
+                Ok(m) => m,
+                Err(tokio::sync::mpsc::error::TryRecvError::Empty) => break,
+                Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
+                    if !self.closed {
+                        info!(zone = %self.name, "link closed: zone stopped");
+                    }
+                    self.closed = true;
+                    return;
+                }
+            };
             let cmd = match msg {
                 ToZone::Command(cmd) => cmd,
                 ToZone::SaveReplay => {
@@ -202,6 +247,25 @@ impl ZoneTask {
         }
         for d in std::mem::take(&mut self.out.delivered) {
             let _ = tx.send(FromZone::Delivered(Box::new(d)));
+        }
+        if !self.out.feats.is_empty() {
+            let cat = &self.zone.content().catalog;
+            let feats = self
+                .out
+                .feats
+                .iter()
+                .filter_map(|(p, t)| cat.title(*t).map(|d| (*p, d.id.clone(), d.announce)))
+                .collect();
+            let _ = tx.send(FromZone::Feats(feats));
+        }
+        if !self.out.released.is_empty() {
+            let _ = tx.send(FromZone::Released(std::mem::take(&mut self.out.released)));
+        }
+        if !self.out.clears.is_empty() {
+            let _ = tx.send(FromZone::Clears(std::mem::take(&mut self.out.clears)));
+        }
+        if !self.out.claims.is_empty() {
+            let _ = tx.send(FromZone::Claims(std::mem::take(&mut self.out.claims)));
         }
         // Who stays goes with the first leaver: one transaction.
         let mut staying = if self.out.left.is_empty() {
@@ -395,7 +459,7 @@ impl ZoneTask {
 }
 
 /// Starts the clock thread. Zone `i` of `n` is offset by `i * TICK / n`.
-pub fn start(zones: Vec<ZoneTask>, pool: Arc<rayon::ThreadPool>) -> std::thread::JoinHandle<()> {
+pub fn start(zones: Vec<ZoneTask>, pool: Arc<rayon::ThreadPool>) -> ZoneClock {
     let now = Instant::now();
     let n = zones.len().max(1) as u32;
     let slots: Vec<Arc<ZoneSlot>> = zones
@@ -406,19 +470,30 @@ pub fn start(zones: Vec<ZoneTask>, pool: Arc<rayon::ThreadPool>) -> std::thread:
                 task: Mutex::new(task),
                 due: Mutex::new(now + TICK * i as u32 / n),
                 running: AtomicBool::new(false),
+                finished: AtomicBool::new(false),
             })
         })
         .collect();
+    let clock_handle = ZoneClock {
+        slots: Arc::new(Mutex::new(slots)),
+    };
+    let shared = clock_handle.slots.clone();
     std::thread::Builder::new()
         .name("zone-clock".into())
-        .spawn(move || clock(slots, pool))
-        .unwrap_or_else(|e| panic!("cannot start the zone clock thread: {e}"))
+        .spawn(move || clock(&shared, pool))
+        .unwrap_or_else(|e| panic!("cannot start the zone clock thread: {e}"));
+    clock_handle
 }
 
-fn clock(slots: Vec<Arc<ZoneSlot>>, pool: Arc<rayon::ThreadPool>) {
+fn clock(shared: &Mutex<Vec<Arc<ZoneSlot>>>, pool: Arc<rayon::ThreadPool>) {
     loop {
         let now = Instant::now();
         let mut next_wake = now + TICK;
+        let slots: Vec<Arc<ZoneSlot>> = {
+            let mut list = shared.lock().unwrap_or_else(PoisonError::into_inner);
+            list.retain(|s| !s.finished.load(Ordering::Acquire));
+            list.clone()
+        };
         for slot in &slots {
             let due = *slot.due.lock().unwrap_or_else(PoisonError::into_inner);
             if due <= now {
@@ -429,10 +504,12 @@ fn clock(slots: Vec<Arc<ZoneSlot>>, pool: Arc<rayon::ThreadPool>) {
                 {
                     let slot = slot.clone();
                     pool.spawn(move || {
-                        slot.task
-                            .lock()
-                            .unwrap_or_else(PoisonError::into_inner)
-                            .run_tick();
+                        let mut task = slot.task.lock().unwrap_or_else(PoisonError::into_inner);
+                        task.run_tick();
+                        if task.closed {
+                            slot.finished.store(true, Ordering::Release);
+                        }
+                        drop(task);
                         let mut due = slot.due.lock().unwrap_or_else(PoisonError::into_inner);
                         *due = (*due + TICK).max(Instant::now());
                         slot.running.store(false, Ordering::Release);

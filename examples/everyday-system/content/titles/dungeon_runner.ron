@@ -1,0 +1,2 @@
+// The instant dungeon cleared once; the whole world hears of it.
+(trigger: Counter(family: "clears", key: "instant_dungeon", at: 1), bonuses: [MaxVigor(10)], announce: Everyone)

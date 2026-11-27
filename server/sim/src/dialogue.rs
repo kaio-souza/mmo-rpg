@@ -159,9 +159,11 @@ impl Zone {
         let mut data = current.clone();
         // Techniques live in the sheet: taught once the rest succeeded.
         let mut taught = Vec::new();
+        let mut teleport = None;
         for effect in &chosen.effects {
             match effect {
                 Effect::LearnTechnique(t) => taught.push(*t),
+                Effect::Teleport(p) => teleport = Some(*p),
                 Effect::CompleteQuest(q) => {
                     data = self.apply_effect(&content, npc, data, effect)?;
                     taught.extend(cat.quest(*q).into_iter().flat_map(|d| d.techniques()));
@@ -189,6 +191,12 @@ impl Zone {
             if progression::learn_technique(&mut p.growth.sheet, t).is_some() {
                 p.dirty_stats = true;
             }
+        }
+        // A teleport ends the talk: the player is somewhere else now.
+        if let Some(to) = teleport {
+            self.teleports.push((player, to));
+            let _ = self.world.remove_one::<DialogueComp>(handle);
+            return Ok(DialogueOut::End { player, npc: target });
         }
         let Some((next, next_node)) = next else {
             let _ = self.world.remove_one::<DialogueComp>(handle);
@@ -236,7 +244,7 @@ impl Zone {
                 data.learn(*r);
             }
             // Applied by `choose` on the sheet.
-            Effect::LearnTechnique(_) => {}
+            Effect::LearnTechnique(_) | Effect::Teleport(_) => {}
             Effect::StartQuest(q) => data.start(cat, *q, self.now_unix).map_err(fail)?,
             Effect::CompleteQuest(q) => data.complete(cat, *q, self.now_unix).map_err(fail)?,
             Effect::Affinity(d) => data.change_affinity(npc, *d),

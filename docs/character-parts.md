@@ -63,4 +63,4 @@ There is no fixed rule for armour or any other item. Every layer drawn on a char
 
 ## Open points
 
-- ⚠ Open: colours free (a colour picker for the player) or only from the game's palettes.
+- Decided ([D44](decisions.md)): colours **only from the game's palettes**; a designer may make a palette as large as they like.

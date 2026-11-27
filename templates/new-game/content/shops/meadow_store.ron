@@ -1,0 +1,12 @@
+// The merchant's store on the plaza: starting gear and light.
+(
+    repairs: true,
+    purse: Some((coins: 3000, refill_secs: 3600)),
+    stock: [
+        (item: "rusty_sword", qty: 2, restock_ticks: 2400),
+        (item: "leather_armor", qty: 1, restock_ticks: 6000),
+        (item: "wooden_shield", qty: 1, restock_ticks: 6000),
+        (item: "torch", qty: 5, restock_ticks: 1200),
+        (item: "health_potion", qty: 5, restock_ticks: 1200),
+    ],
+)

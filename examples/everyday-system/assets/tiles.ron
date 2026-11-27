@@ -1,0 +1,10 @@
+// How each floor number of the zone maps is drawn. What blocks walking is a
+// game rule and stays in the zone map; this file is only the look.
+{
+    1: (sprite: "grass"),
+    2: (sprite: "dirt_path"),
+    3: (sprite: "stone_floor"),
+    4: (sprite: "water"),
+    5: (sprite: "mud"),
+    6: (sprite: "portal_floor"),
+}

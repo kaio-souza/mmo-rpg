@@ -145,6 +145,16 @@ pub const KINDS: &[Kind] = &[
         texts: &["emote.{id}.name"],
     },
     Kind {
+        name: "dungeon",
+        path: "dungeons/{id}.ron",
+        texts: &["dungeon.{id}.name"],
+    },
+    Kind {
+        name: "ranking",
+        path: "rankings/{id}.ron",
+        texts: &["ranking.{id}.name"],
+    },
+    Kind {
         name: "zone",
         path: "zones/{id}/zone.ron",
         texts: &[],
@@ -266,6 +276,8 @@ macro_rules! by_kind {
             "recipe" => Some($f::<RecipeFile>($($arg),*)),
             "gather_node" => Some($f::<NodeFile>($($arg),*)),
             "emote" => Some($f::<EmoteFile>($($arg),*)),
+            "ranking" => Some($f::<crate::rank::RankingFile>($($arg),*)),
+            "dungeon" => Some($f::<crate::dungeon::DungeonFile>($($arg),*)),
             "appearance" => Some($f::<AppearanceFile>($($arg),*)),
             "progression_formulas" => Some($f::<ProgressionFormulas>($($arg),*)),
             "combat_formulas" => Some($f::<CombatFormulas>($($arg),*)),
@@ -410,6 +422,8 @@ refs! {
     IconRef => "icon",
     CounterFamilyRef => "counter_family",
     CounterKeyRef => "counter_key",
+    ZoneRef => "zone",
+    DungeonRef => "dungeon",
 }
 
 #[cfg(test)]

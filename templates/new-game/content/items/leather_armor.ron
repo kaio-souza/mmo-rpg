@@ -1,0 +1,2 @@
+(kind: Armor, weight: 4000, value: 500, durability: 100,
+ equip: Some(Armor(defense: 5)), icon: "leather_armor")

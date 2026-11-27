@@ -1,0 +1,2 @@
+// Smelting: two ores into one ingot. Taught by the merchant.
+(proficiency: "smithing", materials: [(item: "iron_ore", qty: 2)], result: "iron_ingot", xp: 10)

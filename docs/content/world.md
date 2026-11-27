@@ -20,6 +20,9 @@ A zone is a folder `content/zones/<zone>/`. Example to copy: [`templates/new-gam
 - **`regions`** are rectangles in global coordinates, corners included: `Safe` (no combat), `Pvp` (players may attack players), `Workshop` (crafting without a production class). Where rectangles overlap, the last one wins; a workshop may sit inside another region.
 - With more than one zone, exactly one has `starting: true`: new characters, and characters whose zone is gone, start there.
 
+- **`portals`**: `[(min: (x: 10, y: 4), max: (x: 10, y: 4), to: (x: 300, y: 12))]`. Stepping on a tile of the rectangle takes the player to `to`, a tile of any zone (global coordinates): a jump in the same zone, or a hand-off to the zone whose map holds it, like crossing the seam. `to` must be walkable and never on another portal. An NPC does the same with the dialogue effect `Teleport((x, y))`.
+- **`instance`**: `Some((exit: (x: 18, y: 15), close_after_secs: 60, time_limit_secs: 0))` makes the zone a dungeon ([dungeons](../dungeons-and-raids.md)). It is never one shared zone: a portal or `Teleport` aimed at it opens a **copy** for the player's group (its leader at that moment), with its own monsters and seed; the rest of the group lands in the same copy. An empty copy closes after `close_after_secs`; with `time_limit_secs`, everyone inside goes to `exit` when it runs out; a character who leaves the game inside, or falls there, comes back at `exit`. An instance touches no other zone, is never the starting zone, and its `exit` is walkable ground of the open world. Inside, portals lead back out.
+
 ## `map.ron`
 
 ```ron
@@ -72,7 +75,29 @@ Positions are global tiles. All three files are optional.
 )
 ```
 
-Optional: `range` (attacks from a distance and keeps it), `weapon_prof`, `loot_table` (a shared [loot table](items-and-economy.md#loot)). The name is the text key `monster.<id>.name`. Threat decides who a monster attacks; XP is shared by everyone who did at least 10% of the threat.
+Optional: `range` (attacks from a distance and keeps it), `weapon_prof`, `loot_table` (a shared [loot table](items-and-economy.md#loot)), `phases` (a boss, below). The name is the text key `monster.<id>.name`. Threat decides who a monster attacks; XP is shared by everyone who did at least 10% of the threat.
+
+### Boss phases
+
+```ron
+phases: [
+    (below_hp_permille: 600, damage_permille: 1200, area: 1),
+    (below_hp_permille: 250, damage_permille: 1500, attack_ticks: Some(45),
+     status: Some((kind: Stun, duration_ticks: 20))),
+],
+```
+
+From a share of HP down (thousandths, each phase lower than the one before) the monster hits as the phase says: damage, pace, `area` (every player within that many tiles of its target) and a [status](characters.md#techniques). The deepest phase reached holds until the monster resets; the players fighting it hear `system.boss_phase`.
+
+## Dungeons
+
+`dungeons/<id>.ron` gives an [instance](#zoneron) zone its rules; the name is `dungeon.<id>.name`.
+
+```ron
+(zone: "crypt", party: (1, 6), level: (5, 30), boss: "crypt_lord", lockout: Daily)
+```
+
+The door (a portal or `Teleport` into the zone) asks for the level range and a group of `party` size (alone is 1) and says why when it refuses. Killing `boss` clears the run: everyone inside counts a `clears` with the dungeon as key (titles can use it), the time goes to the fastest clears (`RankBy::FastestClear("crypt")` in a [ranking](characters.md#rankings)), the first party of the server is told to everyone, and with `lockout: Daily` or `Weekly` they cannot enter again until the next midnight or Monday (UTC).
 
 ## Day and night
 

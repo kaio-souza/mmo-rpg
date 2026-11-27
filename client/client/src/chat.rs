@@ -2,7 +2,7 @@
 //! The server checks everything again: this only builds typed messages.
 
 use base::{CharacterName, ChatText};
-use protocol::{AdminCommand, ChatChannel, ClientMsg, ReasonId};
+use protocol::{AdminCommand, ChatChannel, ClientMsg, RankingId, ReasonId};
 
 /// What a typed line becomes.
 #[derive(Debug, PartialEq, Eq)]
@@ -45,6 +45,7 @@ const USAGE_BAN: &str = "/ban NAME REASON";
 const USAGE_WHO: &str = "/who NAME";
 const USAGE_MAINTENANCE: &str = "/maintenance 10m | cancel";
 const USAGE_REPORT: &str = "/report NAME";
+const USAGE_RANKING: &str = "/ranking [ID]";
 const USAGE_INVITE: &str = "/invite NAME";
 const USAGE_PARTY_KICK: &str = "/partykick NAME";
 const USAGE_PARTY_LEAD: &str = "/lead NAME";
@@ -126,6 +127,15 @@ pub fn parse(line: &str) -> Typed {
             (Some(name), 1) => Typed::Send(ClientMsg::ReportChat { name }),
             _ => Typed::Usage(USAGE_REPORT),
         },
+        "ranking" | "rank" => match args.as_slice() {
+            [] => Typed::Send(ClientMsg::Ranking { id: None }),
+            [id] => match RankingId::try_from(id.to_ascii_lowercase().as_str()) {
+                Ok(id) => Typed::Send(ClientMsg::Ranking { id: Some(id) }),
+                Err(_) => Typed::Usage(USAGE_RANKING),
+            },
+            _ => Typed::Usage(USAGE_RANKING),
+        },
+        "firsts" if args.is_empty() => Typed::Send(ClientMsg::ServerFirsts),
         "kick" => match (name(0), args.len()) {
             (Some(name), 1) => admin(AdminCommand::Kick { name }),
             _ => Typed::Usage(USAGE_KICK),
@@ -296,6 +306,15 @@ mod tests {
             parse("/report Kai"),
             Typed::Send(ClientMsg::ReportChat { name: n("Kai") })
         );
+        assert_eq!(parse("/ranking"), Typed::Send(ClientMsg::Ranking { id: None }));
+        assert_eq!(
+            parse("/ranking Hunters"),
+            Typed::Send(ClientMsg::Ranking {
+                id: Some(RankingId::try_from("hunters").unwrap())
+            })
+        );
+        assert_eq!(parse("/firsts"), Typed::Send(ClientMsg::ServerFirsts));
+        assert_eq!(parse("/ranking a b"), Typed::Usage(USAGE_RANKING));
         assert_eq!(parse("/dance"), Typed::Unknown("/dance".into()));
     }
 }

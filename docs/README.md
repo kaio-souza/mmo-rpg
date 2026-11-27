@@ -15,6 +15,18 @@ Start here, then read only the page you need.
 | [Browser client](web.md) | Build the client for the browser, serve it, and the server's WebSocket port |
 | [Character parts](character-parts.md) | Planned: a look built from parts and colours, and its editor screen |
 | [Mechanics](mechanics.md) | What the engine does today, and the mechanics a game could add later |
+| [World quests](world-quests.md) | Planned: quests the world switches on and off, funded and withdrawn by signals |
+| [Towns and politics](towns-and-politics.md) | Planned: town treasury, taxes, guards, legitimacy, laws, factions, councils |
+| [Crafting with skill](crafting-minigames.md) | Planned: optional crafting minigames judged by the server, masterworks |
+| [Server projects](server-projects.md) | Planned: collective works; delivered items live on in armouries, buildings and the chronicle |
+| [Living NPCs](living-npcs.md) | Sketch: NPC memory, ambitions and roles |
+| [Mounts and companions](mounts-and-companions.md) | Planned: mounts, pets, mercenaries, workers |
+| [Dungeons and raids](dungeons-and-raids.md) | Planned: instanced zones, bosses with phases, lockouts, records |
+| [Player homes](player-homes.md) | Planned: homes as persistent instances, farming, breeding, carpentry, visits |
+| [Guilds](guilds.md) | Planned: members, ranks, bank, hall, guild wars, alliances |
+| [Kingdoms and nations](kingdoms-and-nations.md) | Planned: towns held by guilds, sieges, kingdoms, vassals, diplomacy |
+| [Genre references](genre-references.md) | Stories about game worlds, and what the engine lacks to make an example of each |
+| [Creator tools](creator-tools.md) | Ideas: sprites baked from voxel and 3D, sound generator, one-click translation, wizards and helpers |
 | [Translation](translation.md) | How texts are translated: rules, glossary, tone per language |
 | [Tools](tools.md) | Editor, `validate`, `admin`, `bots`, `replay`, `pack` |
 | [Architecture](architecture.md) | Crates, who may depend on whom, and where new code goes |
@@ -33,6 +45,7 @@ Start here, then read only the page you need.
 server/  client/  shared/  tools/   the kit (Rust crates)
 templates/new-game/                  the game you copy to start
 examples/riftara/                    a complete example game (not part of the kit)
+examples/everyday-system/            a small example in the style of The Gamer
 docs/                                this documentation
 ops/                                 systemd units and scripts for a public server
 arch.ron                             allowed crate dependencies, checked by `validate arch`

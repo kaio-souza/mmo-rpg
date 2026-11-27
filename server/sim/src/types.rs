@@ -385,6 +385,28 @@ pub enum Command {
         escrow: u64,
         parcel: Box<EscrowParcel>,
     },
+    /// Unique titles and classes other characters of the server hold
+    /// (`title:<id>`, `class:<id>`): out of reach for this player.
+    Taken {
+        player: PlayerId,
+        keys: Vec<String>,
+    },
+    /// Another character holds this unique title or class: the player
+    /// loses it.
+    Revoke {
+        player: PlayerId,
+        key: String,
+    },
+    /// Unique items that exist on the server (`item:<id>`): this zone never
+    /// makes them while they do.
+    TakenItems {
+        keys: Vec<String>,
+    },
+    /// Every player of the zone goes to this tile (an instance whose time
+    /// ran out).
+    Evict {
+        to: TilePos,
+    },
 }
 
 /// What custody holds, in saved form (rule 4). Each piece keeps
@@ -594,6 +616,29 @@ pub struct TickOutput {
     pub escrow_lost: Vec<(u64, base::CharacterId, EscrowParcel)>,
     /// Results of `Deliver`, in command order.
     pub delivered: Vec<DeliveredOut>,
+    /// Titles earned this tick that the whole server may hear of
+    /// (`Announce::First` or `Everyone`), in order: the gateway records
+    /// server firsts and tells everyone.
+    pub feats: Vec<(PlayerId, base::TitleId)>,
+    /// Unique titles and classes a player just got (`title:<id>`,
+    /// `class:<id>`), in order: the gateway claims them for the server.
+    pub claims: Vec<(PlayerId, String)>,
+    /// Unique items gone this tick (broken or sold): `item:<id>`, free to
+    /// exist again.
+    pub released: Vec<String>,
+    /// Dungeon runs cleared this tick (its boss died), in order.
+    pub clears: Vec<ClearOut>,
+}
+
+/// A dungeon run cleared: who was inside and how long the run took.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClearOut {
+    /// Dungeon id.
+    pub dungeon: String,
+    /// Every player in the zone, sorted.
+    pub players: Vec<PlayerId>,
+    /// Seconds since the copy opened.
+    pub secs: u64,
 }
 
 /// A group invite or trade request for `to`, from the entity `from`.
@@ -696,6 +741,10 @@ impl TickOutput {
         self.escrows.clear();
         self.escrow_lost.clear();
         self.delivered.clear();
+        self.feats.clear();
+        self.claims.clear();
+        self.clears.clear();
+        self.released.clear();
     }
 }
 

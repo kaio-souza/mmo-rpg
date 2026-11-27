@@ -224,7 +224,17 @@ pub enum ClientMsg {
     UseTile {
         pos: TilePos,
     },
+    /// Protocol 28: `/ranking [id]`. Without an id, the list of the
+    /// game's rankings; with one, its lines. Answered with System lines.
+    Ranking {
+        id: Option<RankingId>,
+    },
+    /// Protocol 28: `/firsts`, the server firsts so far (System lines).
+    ServerFirsts,
 }
+
+/// Id of a ranking of `content/rankings/` (`hunters`).
+pub type RankingId = BoundedString<32>;
 
 /// Where a chat line goes (phase 5). Party, clan, trade and global channels
 /// arrive with their systems (append only).

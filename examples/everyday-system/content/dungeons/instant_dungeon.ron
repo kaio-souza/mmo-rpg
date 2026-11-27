@@ -1,0 +1,2 @@
+// Alone or with a group, any level; no lockout: train as often as you like.
+(zone: "training", party: (1, 6), level: (1, 99), boss: "alpha_wolf", lockout: None)

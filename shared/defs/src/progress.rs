@@ -10,12 +10,13 @@ use serde::{Deserialize, Serialize};
 
 /// Counter families the engine knows how to count. Content
 /// declares which are on in `counters.ron`; only those are counted.
-pub const COUNTER_FAMILIES: [&str; 3] = ["kills", "deaths", "quests"];
+pub const COUNTER_FAMILIES: [&str; 4] = ["kills", "deaths", "quests", "clears"];
 
 /// What the key of each family names: `kills` counts per monster id and
 /// `quests` per quest id. A family not listed has no key (only its total,
 /// key `""`). The editor offers these ids instead of free typing.
-pub const COUNTER_KEYS: [(&str, &str); 2] = [("kills", "monster"), ("quests", "quest")];
+pub const COUNTER_KEYS: [(&str, &str); 3] =
+    [("kills", "monster"), ("quests", "quest"), ("clears", "dungeon")];
 
 /// The content kind the key of `family` names, if it has keys.
 pub fn counter_key_kind(family: &str) -> Option<&'static str> {
@@ -28,6 +29,76 @@ pub struct LootDef {
     /// Chance in thousandths per kill.
     pub chance: u16,
     pub qty: (u16, u16),
+}
+
+/// A timed effect a blow leaves on its target. New kinds are appended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+pub enum StatusKind {
+    /// Loses `power` HP every second.
+    Poison,
+    /// Cannot attack, use techniques or walk.
+    Stun,
+    /// Blows come `power` thousandths slower (500: half as often again).
+    Slow,
+}
+
+/// A status a technique or a monster's blow leaves on whoever it hits.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Status {
+    pub kind: StatusKind,
+    /// How long it lasts (20 ticks = 1 s).
+    pub duration_ticks: u32,
+    /// Poison: HP per second. Slow: thousandths added to the wait between
+    /// blows. Stun: unused.
+    #[serde(default)]
+    pub power: u32,
+}
+
+/// Longest status (5 minutes).
+pub const MAX_STATUS_TICKS: u32 = 6000;
+
+fn check_status(s: &Status) -> Result<(), String> {
+    if s.duration_ticks == 0 || s.duration_ticks > MAX_STATUS_TICKS {
+        return Err(format!("status duration_ticks must be 1 to {MAX_STATUS_TICKS}"));
+    }
+    if matches!(s.kind, StatusKind::Poison | StatusKind::Slow) && s.power == 0 {
+        return Err("a Poison or Slow status needs power >= 1".into());
+    }
+    Ok(())
+}
+
+/// Largest area of a technique or a phase, in tiles around the target.
+pub const MAX_AREA: u16 = 8;
+
+/// A stage of a monster's fight (a boss), from when its HP drops to
+/// `below_hp_permille` thousandths of the maximum. Later phases have lower
+/// thresholds; the deepest reached holds until the monster resets.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct MonsterPhase {
+    /// HP left, in thousandths of the maximum (500: half), that starts it.
+    pub below_hp_permille: u16,
+    /// Damage of its blows, in thousandths (1000: as usual).
+    #[serde(default = "thousand")]
+    pub damage_permille: u32,
+    /// Ticks between blows in this phase (`None`: the monster's own).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attack_ticks: Option<u32>,
+    /// Its blows also hit every player within this many tiles of the
+    /// target (0: only the target).
+    #[serde(default)]
+    pub area: u16,
+    /// What its blows leave on whoever they hit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<Status>,
+}
+
+fn thousand() -> u32 {
+    1000
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,6 +126,8 @@ pub struct MonsterDef {
     pub loot: Vec<LootDef>,
     /// Shared table rolled on top of `loot` (phase 7).
     pub loot_table: Option<LootTableId>,
+    /// Stages of the fight, highest threshold first.
+    pub phases: Vec<MonsterPhase>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -114,6 +187,10 @@ pub(crate) struct MonsterFile {
     #[serde(default)]
     #[cfg_attr(feature = "editor", schemars(with = "crate::editor::LootTableRef"))]
     pub loot_table: String,
+    /// Stages of the fight (a boss): from a share of HP down, harder blows,
+    /// another pace, an area and a status. Highest threshold first.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub phases: Vec<MonsterPhase>,
 }
 
 fn thirty() -> u32 {
@@ -141,6 +218,19 @@ pub(crate) fn parse_monster(id: &str, text: &str) -> Result<MonsterFile, String>
         return Err("leash must be >= aggro_radius; respawn_ticks >= 1".into());
     }
     check_loot(&f.loot)?;
+    let mut last = 1001;
+    for p in &f.phases {
+        if p.below_hp_permille == 0 || p.below_hp_permille >= last {
+            return Err("phases: below_hp_permille 1 to 1000, each lower than the one before".into());
+        }
+        last = p.below_hp_permille;
+        if p.area > MAX_AREA || p.attack_ticks == Some(0) {
+            return Err(format!("phases: area at most {MAX_AREA}, attack_ticks >= 1"));
+        }
+        if let Some(s) = &p.status {
+            check_status(s)?;
+        }
+    }
     Ok(f)
 }
 
@@ -216,6 +306,8 @@ pub struct ClassDef {
     /// Techniques learned for good, at level 1, when the class
     /// is chosen (or later, once their requirement holds).
     pub techniques: Vec<TechniqueId>,
+    /// Only one character of the server may have it at a time.
+    pub unique: Option<Unique>,
 }
 
 /// A special attribute a class grows: `base` points when it is
@@ -274,6 +366,10 @@ pub(crate) struct ClassFile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "editor", schemars(with = "Vec<crate::editor::TechniqueRef>"))]
     pub techniques: Vec<String>,
+    /// Only one character of the server may have this class at a time (a
+    /// legendary class); it passes to an heir when the holder stops playing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unique: Option<Unique>,
 }
 
 pub(crate) fn parse_class(id: &str, text: &str) -> Result<ClassFile, String> {
@@ -356,6 +452,11 @@ pub struct TechniqueDef {
     /// Never unlocked by proficiency points, only taught (class,
     /// title, NPC).
     pub taught_only: bool,
+    /// A blow that also hits every foe within this many tiles of the
+    /// target (0: only the target).
+    pub area: u16,
+    /// What the blow leaves on whoever it hits.
+    pub status: Option<Status>,
 }
 
 /// What a buff raises. New stats are appended.
@@ -419,6 +520,17 @@ pub(crate) struct TechniqueFile {
     /// Only taught (class, title, NPC), never unlocked by points.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub taught_only: bool,
+    /// A blow that also hits every foe within this many tiles of the
+    /// target (0: only the target).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub area: u16,
+    /// What the blow leaves on whoever it hits (poison, stun, slow).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<Status>,
+}
+
+fn is_zero(v: &u16) -> bool {
+    *v == 0
 }
 
 fn one_tile() -> u16 {
@@ -450,6 +562,16 @@ pub(crate) fn parse_technique(id: &str, text: &str) -> Result<TechniqueFile, Str
     }
     if f.revive_permille > 1000 || f.heal_permille > 1000 {
         return Err("heal_permille and revive_permille are at most 1000".into());
+    }
+    // Area and status ride on a blow.
+    if (f.area > 0 || f.status.is_some()) && f.damage_permille == 0 {
+        return Err("area and status need damage_permille above 0".into());
+    }
+    if f.area > MAX_AREA {
+        return Err(format!("area is at most {MAX_AREA}"));
+    }
+    if let Some(s) = &f.status {
+        check_status(s)?;
     }
     Ok(f)
 }
@@ -528,6 +650,41 @@ pub enum PercentBonus {
     MaxMp,
 }
 
+/// Only one character of the server holds this at a time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Unique {
+    /// Days without playing after which the holder loses it and another
+    /// character may earn it (an heir). 0: kept for good.
+    #[serde(default = "default_heir_days")]
+    pub heir_after_days: u16,
+}
+
+fn default_heir_days() -> u16 {
+    30
+}
+
+/// Who hears that a title was earned. New variants are appended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+pub enum Announce {
+    /// Only the character (a System message).
+    #[default]
+    Quiet,
+    /// The whole server, once: when the first character of the server
+    /// earns it (a "server first", kept for good).
+    First,
+    /// The whole server, every time a character earns it.
+    Everyone,
+}
+
+impl Announce {
+    pub fn is_quiet(&self) -> bool {
+        *self == Announce::Quiet
+    }
+}
+
 /// Highest value of a special attribute (atributos.md).
 pub const SPECIAL_MAX: u8 = 100;
 
@@ -546,6 +703,10 @@ pub struct TitleDef {
     /// (closed at validation), sorted. Earning it takes them away, and they
     /// are never earned again while it is owned.
     pub replaces: Vec<TitleId>,
+    /// Who hears that it was earned.
+    pub announce: Announce,
+    /// Only one character of the server holds it at a time.
+    pub unique: Option<Unique>,
 }
 
 /// An attribute earned by deeds (titles) or grown by a class.
@@ -605,6 +766,15 @@ pub(crate) struct TitleFile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "editor", schemars(with = "Vec<crate::editor::TechniqueRef>"))]
     pub techniques: Vec<String>,
+    /// Who hears that it was earned: only the character (`Quiet`), the
+    /// whole server the first time on the server (`First`), or every time
+    /// (`Everyone`).
+    #[serde(default, skip_serializing_if = "Announce::is_quiet")]
+    pub announce: Announce,
+    /// Only one character of the server holds it at a time; it passes to
+    /// an heir when the holder stops playing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unique: Option<Unique>,
 }
 
 pub(crate) fn parse_title(id: &str, text: &str) -> Result<TitleFile, String> {

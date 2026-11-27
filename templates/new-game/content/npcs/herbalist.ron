@@ -1,0 +1,2 @@
+// Asks for herbs and teaches the health potion.
+(sprite: "herbalist", dialogue: "herbalist")

@@ -1,0 +1,8 @@
+// The first to reach level 10 holds it; one holder on the server, passed on
+// when the holder is away for 30 days.
+(
+    trigger: Level(10),
+    bonuses: [Percent(Xp, 5)],
+    announce: First,
+    unique: Some((heir_after_days: 30)),
+)

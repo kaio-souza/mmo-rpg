@@ -1,0 +1,4 @@
+// Forged from iron ingots at the plaza.
+(kind: Weapon, weight: 3000, value: 900, durability: 150,
+ equip: Some(Weapon(damage: (5, 10), attack_ticks: 28, attribute: Str, proficiency: "sword", vigor: 3)),
+ hidden: [(attribute: Str, min: 0, max: 3)], icon: "iron_sword")

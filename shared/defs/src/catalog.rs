@@ -57,6 +57,10 @@ pub struct Catalog {
     pub(crate) nodes: BTreeMap<String, String>,
     /// Phase 9: `emotes/`.
     pub(crate) emotes: BTreeMap<String, String>,
+    /// `rankings/`.
+    pub(crate) rankings: BTreeMap<String, String>,
+    /// `dungeons/`.
+    pub(crate) dungeons: BTreeMap<String, String>,
     /// `counters.ron` and the three formula files.
     pub(crate) counters: Option<String>,
     pub(crate) progression_formulas: Option<String>,
@@ -114,6 +118,10 @@ pub struct ValidatedCatalog {
     nodes: Vec<NodeDef>,
     /// Phase 9, sorted by id.
     emotes: Vec<EmoteDef>,
+    /// Sorted by id.
+    rankings: Vec<crate::RankingDef>,
+    /// Sorted by id.
+    dungeons: Vec<crate::DungeonDef>,
     /// Sprite names used by NPCs, monsters and equipment, sorted; entity
     /// `appearance` and equipment visuals are the position + 1 (0: none).
     sprites: Vec<String>,
@@ -529,6 +537,7 @@ impl Catalog {
                         icon: f.icon,
                         light: f.light,
                         burn: f.burn,
+                        unique: f.unique,
                         powers: f
                             .powers
                             .iter()
@@ -634,6 +643,26 @@ impl Catalog {
         }
 
         // Every spawn must name an NPC that exists.
+        // A teleport lands on walkable ground of some zone.
+        for d in &dialogues {
+            let effects = d.nodes.iter().flat_map(|n| &n.options).flat_map(|o| &o.effects);
+            for e in effects {
+                if let crate::Effect::Teleport(to) = e {
+                    let ok = crate::zone::zone_at(&zones, *to)
+                        .and_then(|z| z.tile_at(*to))
+                        .is_some_and(|t| !t.blocks_movement);
+                    if !ok {
+                        problems.push(ContentProblem::File {
+                            path: format!("npcs/dialogues/{}.ron", d.id),
+                            message: format!(
+                                "Teleport to ({}, {}): not walkable ground of any zone",
+                                to.x, to.y
+                            ),
+                        });
+                    }
+                }
+            }
+        }
         for zone in &zones {
             for (i, spawn) in zone.npcs.iter().enumerate() {
                 if !npc_ids.contains_key(&spawn.npc) {
@@ -675,6 +704,17 @@ impl Catalog {
                 p.push(ContentProblem::File { path, message });
             })
         };
+        // A relic is found or made, never bought.
+        for shop in &shops {
+            for st in &shop.stock {
+                if items.get(st.item.index()).is_some_and(|d| d.unique) {
+                    problems.push(ContentProblem::File {
+                        path: format!("shops/{}.ron", shop.id),
+                        message: "a shop cannot sell a unique item".into(),
+                    });
+                }
+            }
+        }
         let recipes = {
             let p = &mut problems;
             crate::craft::validate_recipes(&self.recipes, &keys, &item_ids, &prof_ids, |path, message| {
@@ -692,6 +732,86 @@ impl Catalog {
             crate::emote::validate_emotes(&self.emotes, &keys, |path, message| {
                 p.push(ContentProblem::File { path, message });
             })
+        };
+        let dungeons = {
+            let mut out: Vec<crate::DungeonDef> = Vec::new();
+            for (id, text) in &self.dungeons {
+                let path = format!("dungeons/{id}.ron");
+                let mut err = |m: String| {
+                    problems.push(ContentProblem::File {
+                        path: path.clone(),
+                        message: m,
+                    })
+                };
+                let f = match crate::dungeon::parse_dungeon(id, text) {
+                    Ok(f) => f,
+                    Err(m) => {
+                        err(m);
+                        continue;
+                    }
+                };
+                let Some(zi) = zones.iter().position(|z| z.name == f.zone) else {
+                    err(format!("zone `{}` not found", f.zone));
+                    continue;
+                };
+                let zone_def = zones.get(zi);
+                if zone_def.is_some_and(|z| z.instance.is_none()) {
+                    err(format!("zone `{}` is not an instance", f.zone));
+                }
+                if out
+                    .iter()
+                    .any(|d| zones.get(d.zone.index()).is_some_and(|z| z.name == f.zone))
+                {
+                    err(format!("zone `{}` already has a dungeon", f.zone));
+                }
+                let boss = if f.boss.is_empty() {
+                    None
+                } else {
+                    match phase4.monsters.iter().position(|m| m.id == f.boss) {
+                        Some(i) => {
+                            if zone_def.is_some_and(|z| !z.monsters.iter().any(|s| s.monster == f.boss)) {
+                                err(format!("boss `{}` does not spawn in zone `{}`", f.boss, f.zone));
+                            }
+                            u32::try_from(i).ok().map(base::MonsterId::new)
+                        }
+                        None => {
+                            err(format!("monster `{}` not found", f.boss));
+                            None
+                        }
+                    }
+                };
+                let Some(name) = keys.id(&crate::dungeon::dungeon_name_key(id)) else {
+                    err(format!("text `{}` missing", crate::dungeon::dungeon_name_key(id)));
+                    continue;
+                };
+                out.push(crate::DungeonDef {
+                    id: id.clone(),
+                    name,
+                    zone: base::ZoneId::new(u32::try_from(zi).unwrap_or(u32::MAX)),
+                    party: f.party,
+                    level: f.level,
+                    boss,
+                    lockout: f.lockout,
+                });
+            }
+            out
+        };
+        let rankings = {
+            let p = &mut problems;
+            let (monsters, quests, dungeon_files) = (&self.monsters, &self.quests, &self.dungeons);
+            crate::rank::validate_rankings(
+                &self.rankings,
+                &keys,
+                &phase4.counters,
+                &prof_ids,
+                |family, key| match progress::counter_key_kind(family) {
+                    Some("monster") => monsters.contains_key(key),
+                    Some("quest") => quests.contains_key(key),
+                    Some("dungeon") => dungeon_files.contains_key(key),
+                    _ => false,
+                },
+                |path, message| p.push(ContentProblem::File { path, message }),
+            )
         };
         for zone in &zones {
             for (i, spawn) in zone.nodes.iter().enumerate() {
@@ -868,6 +988,8 @@ impl Catalog {
             recipes,
             nodes,
             emotes,
+            rankings,
+            dungeons,
             sprites: sprites.into_iter().collect(),
             icons: icons.into_iter().collect(),
             hash: hash.finish(),
@@ -1757,6 +1879,21 @@ impl ValidatedCatalog {
         Some((EmoteId::new(u32::try_from(i).ok()?), self.emotes.get(i)?))
     }
 
+    /// Dungeons, sorted by id.
+    pub fn dungeons(&self) -> &[crate::DungeonDef] {
+        &self.dungeons
+    }
+
+    /// The dungeon that runs in `zone`, if any.
+    pub fn dungeon_of_zone(&self, zone: ZoneId) -> Option<&crate::DungeonDef> {
+        self.dungeons.iter().find(|d| d.zone == zone)
+    }
+
+    /// Rankings, sorted by id.
+    pub fn rankings(&self) -> &[crate::RankingDef] {
+        &self.rankings
+    }
+
     pub fn emotes(&self) -> impl Iterator<Item = (EmoteId, &EmoteDef)> {
         self.emotes
             .iter()
@@ -1861,6 +1998,7 @@ impl Catalog {
                 coins: f.coins,
                 loot,
                 loot_table,
+                phases: f.phases,
             });
         }
         // Class techniques resolve once the techniques have ids.
@@ -1928,6 +2066,7 @@ impl Catalog {
                 icon: f.icon,
                 specials: f.specials,
                 techniques: Vec::new(),
+                unique: f.unique,
             });
         }
         for (id, text) in &self.techniques {
@@ -1966,6 +2105,8 @@ impl Catalog {
                 buff: f.buff,
                 requires_special: f.requires_special,
                 taught_only: f.taught_only,
+                area: f.area,
+                status: f.status,
             });
         }
         if let Some(text) = &self.counters {
@@ -2033,6 +2174,7 @@ impl Catalog {
                     _ if key.is_empty() => true,
                     Some("monster") => self.monsters.contains_key(key),
                     Some("quest") => self.quests.contains_key(key),
+                    Some("dungeon") => self.dungeons.contains_key(key),
                     _ => false,
                 };
                 if !exists {
@@ -2074,6 +2216,8 @@ impl Catalog {
                 bonuses: f.bonuses,
                 techniques,
                 replaces: Vec::new(),
+                announce: f.announce,
+                unique: f.unique,
             });
             direct_replaces.push((path, f.replaces));
         }

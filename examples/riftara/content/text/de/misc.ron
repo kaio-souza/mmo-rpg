@@ -266,4 +266,7 @@
     "emote.bow.name": "verbeugen",
     "emote.cheer.name": "jubeln",
     "emote.laugh.name": "lachen",
+    "ranking.level.name": "Höchste Stufe",
+    "ranking.hunters.name": "Große Jäger",
+    "ranking.titled.name": "Meiste Titel",
 }

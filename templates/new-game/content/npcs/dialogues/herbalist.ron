@@ -1,0 +1,37 @@
+(
+    start: "greeting",
+    nodes: {
+        "greeting": (
+            text: "npc.herbalist.greeting",
+            options: [
+                (
+                    text: "npc.herbalist.option.help",
+                    next: "asked",
+                    when: Quest(quest: "herbs_for_the_healer", state: NotStarted),
+                    effects: [StartQuest("herbs_for_the_healer")],
+                ),
+                (
+                    text: "npc.herbalist.option.deliver",
+                    next: "thanks",
+                    when: QuestReady("herbs_for_the_healer"),
+                    effects: [CompleteQuest("herbs_for_the_healer"), Affinity(10)],
+                ),
+                (
+                    text: "npc.herbalist.option.learn",
+                    next: "thanks",
+                    when: All([Quest(quest: "herbs_for_the_healer", state: Completed), Not(RecipeKnown("health_potion"))]),
+                    effects: [TakeCoins(100), LearnRecipe("health_potion")],
+                ),
+                (text: "npc.herbalist.option.bye"),
+            ],
+        ),
+        "asked": (
+            text: "npc.herbalist.asked",
+            options: [(text: "npc.herbalist.option.bye")],
+        ),
+        "thanks": (
+            text: "npc.herbalist.thanks",
+            options: [(text: "npc.herbalist.option.bye")],
+        ),
+    },
+)

@@ -71,6 +71,9 @@ pub enum Effect {
     /// Teaches a technique at level 1 (the first magic comes
     /// from an NPC); already known is not an error.
     LearnTechnique(TechniqueId),
+    /// Takes the player to this tile of the world (any zone) and ends the
+    /// dialogue: a ferryman, a gate keeper.
+    Teleport(base::TilePos),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -121,6 +124,8 @@ pub(crate) enum EffectFile {
     },
     LearnRecipe(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::RecipeRef"))] String),
     LearnTechnique(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::TechniqueRef"))] String),
+    /// Takes the player to this tile of the world and ends the dialogue.
+    Teleport(base::TilePos),
 }
 
 fn item(names: &Names<'_>, problems: &mut Vec<String>, id: &str, qty: u32) -> Option<ItemId> {
@@ -229,6 +234,7 @@ pub(crate) fn effect(names: &Names<'_>, problems: &mut Vec<String>, file: &Effec
                 return None;
             }
         },
+        EffectFile::Teleport(p) => Effect::Teleport(*p),
         EffectFile::LearnTechnique(name) => match names.techniques.get(name) {
             Some(t) => Effect::LearnTechnique(*t),
             None => {

@@ -63,6 +63,8 @@ pub struct ItemDef {
     /// Phase 11: durability lost per minute equipped (a torch
     /// burns down); 0: none.
     pub burn: u32,
+    /// Only one piece of it exists on the server at a time (a relic).
+    pub unique: bool,
 }
 
 /// A power as written in the item file: a technique by id, or an
@@ -232,6 +234,11 @@ pub(crate) struct ItemFile {
     /// zero it is gone). 0: never. Needs durability.
     #[serde(default)]
     pub burn: u32,
+    /// Only one piece exists on the server at a time (a relic): it does not
+    /// drop or get crafted again while it exists; it may again once it
+    /// breaks or is sold. Equipment only.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unique: bool,
 }
 
 fn one() -> u16 {
@@ -247,6 +254,9 @@ pub(crate) fn parse_item(id: &str, text: &str) -> Result<ItemFile, String> {
         return Err(format!("max_stack {} must be 1 to {MAX_STACK}", file.max_stack));
     }
     let equipment = matches!(file.kind, ItemKind::Weapon | ItemKind::Armor | ItemKind::Offhand);
+    if file.unique && file.equip.is_none() {
+        return Err("unique needs equipment (a piece with identity)".into());
+    }
     match &file.equip {
         Some(EquipFile::Weapon {
             damage,

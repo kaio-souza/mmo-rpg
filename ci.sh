@@ -13,5 +13,6 @@ else echo "wasm32-unknown-unknown not installed: browser client not checked (rus
 cargo run --locked -q -p validate -- arch
 cargo run --locked -q -p validate -- examples/riftara/content/ --assets examples/riftara/assets/
 cargo run --locked -q -p validate -- templates/new-game/content/ --assets templates/new-game/assets/
+cargo run --locked -q -p validate -- examples/everyday-system/content/ --assets examples/everyday-system/assets/
 if command -v cargo-deny >/dev/null; then cargo deny check; else echo "cargo-deny not installed: skipped (cargo install cargo-deny)"; fi
 echo "all checks passed"

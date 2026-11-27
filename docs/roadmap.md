@@ -36,18 +36,53 @@ A designer who does not program manages the live game from the editor: content (
 
 After these, mechanics from the [possible list](mechanics.md#possible-mechanics-not-in-the-engine) enter one at a time, each as a generic engine type plus its editor form.
 
+### A living world
+
+Quests and money that answer the state of the world, all edited in the editor ([world quests](world-quests.md), [towns and politics](towns-and-politics.md)).
+
+| # | Deliverable | Done when |
+|---|---|---|
+| W1 | **Towns, treasury and taxes** in the gateway, with coin telemetry per flow | taxes reach a treasury the designer sees live |
+| W2 | **Signals and world quests** (`Kill`, `Reach`, `Patrol` objectives; offer, escrow, withdraw) | the wolf quest appears when wolves crowd the trail and leaves when they are gone |
+| W3 | **Guards and legitimacy** with tax evasion | an empty treasury pulls the town into the spiral and players can pull it out |
+| W4 | **Laws, factions and events** | a designer turns a law or an event on live |
+| W5 | **Policy table (P2)**, then **council (P3)**, then **between towns (P4)** | towns react on their own, then players govern within limits |
+| W6 | **Crafting minigames** and masterworks ([crafting](crafting-minigames.md)) | a skilled player makes better pieces than a click, and the server proves it |
+| W7 | **Server projects**, armouries and the chronicle ([projects](server-projects.md)) | guards wear swords players made, with their names |
+| W8 | **Guilds** with ranks, bank and wars ([guilds](guilds.md)) | two guilds can fight a war with a score and a stake |
+| W9 | **Instances, dungeons and raids** ([dungeons](dungeons-and-raids.md)) | a party clears its own copy of a dungeon and the record is kept |
+| W10 | **Mounts and companions** ([mounts](mounts-and-companions.md)) | a player rides and keeps a named pet that grows |
+| W11 | **NPC memory, ambition and roles** ([living NPCs](living-npcs.md)) | an NPC remembers what a player did and chases its own goal |
+| W12 | **Claimable towns, sieges, kingdoms** ([kingdoms](kingdoms-and-nations.md)) | a guild takes a town in a siege and rules it within limits |
+| W13 | **Player homes** with farming, breeding and carpentry ([homes](player-homes.md)); after G6 and W10 | a player plants, breeds and furnishes a home friends can visit |
+
+### Genre mechanics
+
+The engine work that opens the most [genre references](genre-references.md) at once.
+
+| # | Deliverable | Done when |
+|---|---|---|
+Order by how many references each opens ([genre references](genre-references.md#what-repeats)): G2, G3, G4, then instances.
+
+| # | Deliverable | Done when |
+|---|---|---|
+| G2 | ✅ **Done: announcements, server firsts, rankings** (`announce` on titles, `rankings/`, `/ranking`, `/firsts`) | the whole server sees "first to earn X" once |
+| G3 | ✅ **Done: titles and classes unique per server**, with an heir ([D60](decisions.md)); items in G8 | only one player can hold it |
+| G4 | ✅ **Done: statuses, area techniques, boss phases** ([D62](decisions.md)) | a boss changes pattern at half HP |
+| G5 | ✅ **Done: instances, step 1: moving between zones without a seam** ([portals](content/world.md#zoneron)) (a portal tile or an NPC sends a player to a tile of another zone: leave, save, enter, client reset) | a portal in one zone takes a player to another and back |
+| G6 | ✅ **Done: instances, step 2: zones made at runtime** ([instance](content/world.md#zoneron), [D63](decisions.md)) from a map marked `instance: true`, own seed, closed when empty; death and timeout send players back outside | a party enters its own copy of a crypt |
+| G7 | ✅ **Done: instances, step 3: `dungeons/` content and its editor form** ([dungeons](content/world.md#dungeons), [D64](decisions.md)). *Next for dungeons: stages, raids, the finder ([dungeons](dungeons-and-raids.md))* (party size, level, time limit, entrance, rewards), lockouts per character, fastest clears as a ranking | a designer makes a dungeon in the editor and a party clears it |
+| G8 | ✅ **Done: items unique per server** ([items](content/items-and-economy.md#items), [D65](decisions.md)) | a relic exists once |
+| G9 | ✅ **Done: example in the style of The Gamer** (`examples/everyday-system/`), content only, with an instant dungeon | a player grows every attribute and skill by use and earns titles for it |
+| G10 | Then W10 companions (Taming Master, Solo Leveling), W6 crafting minigames and W8/W12 guilds and kingdoms (Overgeared, Moonlight Sculptor) | |
+
+### Ideas (not scheduled)
+
+Ideas to make a creator's life easier: sprites baked from voxel and 3D models, a sound generator, one-click translation with review, wizards, balance and map helpers ([creator tools](creator-tools.md)). Each becomes a numbered item when picked.
+
 ## Open questions
 
 | Question | Blocks |
 |---|---|
-| ⚠ Open: character colours free for the player or only from the game's palettes | [character parts](character-parts.md) |
-| ⚠ Open: how players' clients receive new art and sound from a live server (download on login, by content hash, like the text pack) | E6 |
-| ⚠ Open: where the live content lives on the server (outside the release folder, e.g. `/var/lib/game/content`) and how a developer's local copy syncs with it | E3 |
-| ⚠ Open: WebAudio through an `AudioWorklet` instead of the deprecated script node | [web](web.md) |
-| ⚠ Open: which of the engine's fixed choices become configuration (tile size, tick, directions, number of bodies) | step 5 |
-| ⚠ Open: interface sounds in the template | nothing (the client plays nothing without them) |
-| ⚠ Open: Postgres next to SQLite | servers that outgrow one machine's database |
-| ⚠ Open: acting across seams, a gate queue between two sides, groups and trades across zones | dense borders between zones |
-| ⚠ Open: queue players when a zone is overloaded instead of refusing them | crowded zones |
-| ⚠ Open: second factor (TOTP) at login | nothing |
-| ⚠ Open: bot telemetry for repeated routes and reaction time without tick cost | nothing (kills per hour already used) |
+| ⚠ Open: one home per character or per account; visits while the owner is offline ([homes](player-homes.md#open)) | W13 |
+| ⚠ Open: check that overload levels N1 and N2 thin AI and far updates as designed ([runtime](runtime.md)) | crowded zones |

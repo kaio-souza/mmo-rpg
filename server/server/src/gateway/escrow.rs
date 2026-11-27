@@ -22,8 +22,8 @@ impl Gateway {
         };
         let save = CharacterSave {
             id: e.from,
-            zone: self.zone_name(zone),
-            pos: e.pos,
+            zone: self.place(zone, e.pos).0,
+            pos: self.place(zone, e.pos).1,
             sheet: translation::sheet_to_saved(&e.sheet),
         };
         self.save(SaveJob {
@@ -57,8 +57,8 @@ impl Gateway {
             Ok((sheet, pos)) => self.save(SaveJob {
                 saves: vec![CharacterSave {
                     id: character,
-                    zone: self.zone_name(zone),
-                    pos,
+                    zone: self.place(zone, pos).0,
+                    pos: self.place(zone, pos).1,
                     sheet: translation::sheet_to_saved(&sheet),
                 }],
                 release: Vec::new(),

@@ -3,7 +3,7 @@
 //! cooldowns. Text ids at the edges, like `PlayerData`.
 
 use crate::types::SavedProgress;
-use base::TechniqueId;
+use base::{ClassId, TechniqueId, TitleId};
 use defs::{Attributes, ValidatedCatalog};
 use progression::{Proficiency, ProgressionSheet, Technique};
 use serde::{Deserialize, Serialize};
@@ -17,6 +17,12 @@ pub(crate) struct Growth {
     pub cooldowns: Vec<(TechniqueId, u64)>,
     /// Saved entries the running content does not have.
     pub kept: SavedProgress,
+    /// Unique titles and classes another character of the server holds
+    /// (`Command::Taken`), sorted: out of reach.
+    #[serde(default)]
+    pub taken_titles: Vec<TitleId>,
+    #[serde(default)]
+    pub taken_classes: Vec<ClassId>,
 }
 
 impl Growth {
@@ -89,6 +95,8 @@ impl Growth {
             counters,
             cooldowns: Vec::new(),
             kept,
+            taken_titles: Vec::new(),
+            taken_classes: Vec::new(),
         }
     }
 
@@ -157,7 +165,45 @@ impl Growth {
     /// proficiency going up.
     pub fn check_titles(&mut self, cat: &ValidatedCatalog) -> Vec<progression::Change> {
         let counters = &self.counters;
-        progression::check_titles(&mut self.sheet, |f, k| counter_of(counters, f, k), cat)
+        progression::check_titles_except(
+            &mut self.sheet,
+            |f, k| counter_of(counters, f, k),
+            cat,
+            &self.taken_titles,
+        )
+    }
+
+    /// Sets what other characters hold from `title:<id>` and `class:<id>`
+    /// keys (unknown ids are ignored).
+    pub fn set_taken(&mut self, keys: &[String], cat: &ValidatedCatalog) {
+        self.taken_titles = keys
+            .iter()
+            .filter_map(|k| cat.title_by_name(k.strip_prefix("title:")?).map(|(id, _)| id))
+            .collect();
+        self.taken_titles.sort();
+        self.taken_classes = keys
+            .iter()
+            .filter_map(|k| cat.class_by_name(k.strip_prefix("class:")?).map(|(id, _)| id))
+            .collect();
+        self.taken_classes.sort();
+    }
+
+    /// Takes away a unique title or class another character holds;
+    /// `true` when the sheet had it.
+    pub fn revoke(&mut self, key: &str, cat: &ValidatedCatalog) -> bool {
+        if let Some((id, _)) = key.strip_prefix("title:").and_then(|t| cat.title_by_name(t)) {
+            let had = self.sheet.titles.contains(&id);
+            self.sheet.titles.retain(|t| *t != id);
+            return had;
+        }
+        if let Some((id, _)) = key.strip_prefix("class:").and_then(|c| cat.class_by_name(c))
+            && self.sheet.class == Some(id)
+        {
+            // Back to the class it specialized, or to none.
+            self.sheet.class = cat.class(id).and_then(|c| c.parent);
+            return true;
+        }
+        false
     }
 
     pub fn ready_at(&self, t: TechniqueId) -> u64 {

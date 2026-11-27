@@ -33,6 +33,8 @@ Optional: `specials` (special attributes the class grows per level: `(special: "
 
 Unlocked when the proficiency reaches `unlock_at`; levels 1 to 10 by use; usable only with a weapon of that proficiency in hand (support magic such as healing needs no weapon). Optional: `mp` (cost), `range`, `heal_permille`, `revive_permille`, `buff: Some((stat: Defense, permille: 250, flat: 3, duration_ticks: 600))`, `requires_special: [("faith", 5)]`, `taught_only: true` (only an NPC, a quest or a class teaches it).
 
+A blow (`damage_permille` above 0) may also carry `area: 2` (every monster within 2 tiles of the target takes the same blow, up to 8) and `status: Some((kind: Poison, duration_ticks: 100, power: 3))`, left on whoever it hits: `Poison` (`power` HP a second), `Stun` (no blows, techniques or steps) or `Slow` (blows wait `power` thousandths longer). A status of the same kind replaces the old one; the player hears of it in the log.
+
 ## Titles
 
 ```ron
@@ -42,6 +44,8 @@ Unlocked when the proficiency reaches `unlock_at`; levels 1 to 10 by use; usable
     techniques: [],                            // taught when earned
     replaces: [],                              // titles it takes away
     icon: "",
+    announce: First,                           // optional: Quiet, First, Everyone
+    unique: Some((heir_after_days: 30)),       // optional: one holder on the server
 )
 ```
 
@@ -55,13 +59,27 @@ Unlocked when the proficiency reaches `unlock_at`; levels 1 to 10 by use; usable
 
 A title that `replaces` others removes them when earned, and they are never earned again while it is owned. Titles also serve as class requirements and show identity.
 
+`announce` says who hears of it: only the character (`Quiet`, the default), the whole server the first time anyone earns it, kept as a **server first** (`First`, listed by `/firsts`), or the whole server every time (`Everyone`).
+
+`unique` makes it **one per server** ([D60](../decisions.md)): the first character to earn it holds it and nobody else can earn it. When the holder has not played for `heir_after_days` days (0: never), it passes on: the next character to earn it is the **heir**, and the old holder loses it on their next visit. A class takes the same `unique` field (a legendary class); a holder who loses it goes back to the class it specialized.
+
+## Rankings
+
+`rankings/<id>.ron` is a public ranking players read with `/ranking <id>` (`/ranking` lists them); its name is `ranking.<id>.name`.
+
+```ron
+(by: Counter(family: "kills", key: ""), size: 10)   // or Level, Proficiency("sword"), Titles, FastestClear("crypt")
+```
+
+The gateway builds them from the saved characters at most every 5 minutes; characters at zero are left out.
+
 ## Special attributes
 
 `special_attributes/<id>.ron` declares an attribute from 0 to 100 earned by titles or grown by a class (faith, light). What it does is engine work, added the first time a game needs it; today it can gate techniques and add to a proficiency in use.
 
 ## Counters
 
-`counters.ron` lists the event families counted per character, for titles: `["kills", "deaths"]`. `kills` and `quests` are keyed by monster and quest id.
+`counters.ron` lists the event families counted per character, for titles: `["kills", "deaths"]`. `kills`, `quests` and `clears` are keyed by monster, quest and dungeon id.
 
 ## Appearance
 

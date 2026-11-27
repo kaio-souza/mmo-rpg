@@ -1,0 +1,4 @@
+// The first sword: sold by the merchant.
+(kind: Weapon, weight: 2500, value: 300, durability: 80,
+ equip: Some(Weapon(damage: (3, 7), attack_ticks: 30, attribute: Str, proficiency: "sword", vigor: 3)),
+ icon: "rusty_sword")

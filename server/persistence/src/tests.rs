@@ -1046,3 +1046,64 @@ async fn escrow_refuses_a_piece_the_sender_does_not_own() {
     assert!(r.escrows_for(b).await.unwrap().is_empty());
     assert_eq!(r.item_owner(9).await.unwrap(), Some(b));
 }
+
+#[tokio::test]
+async fn server_firsts_and_unique_holders() {
+    let r = repo();
+    let a = r.create_account(&account("kai"), None, 1).await.unwrap();
+    let kai = r
+        .create_character(a, &name("Kai"), 2, &sheet(0), 1)
+        .await
+        .unwrap();
+    let mio = r
+        .create_character(a, &name("Mio"), 2, &sheet(0), 1)
+        .await
+        .unwrap();
+    // Only the first is recorded, for good.
+    assert!(r.record_first("title:legend", kai, 10).await.unwrap());
+    assert!(!r.record_first("title:legend", mio, 11).await.unwrap());
+    assert_eq!(
+        r.server_firsts().await.unwrap(),
+        vec![("title:legend".to_owned(), name("Kai"), 10)]
+    );
+    // A unique key has one holder until it is released.
+    assert_eq!(r.claim_unique("class:smith", kai, 5).await.unwrap(), kai);
+    assert_eq!(r.claim_unique("class:smith", mio, 6).await.unwrap(), kai);
+    assert!(
+        !r.release_unique("class:smith", mio).await.unwrap(),
+        "not the holder"
+    );
+    let held = r.unique_holders().await.unwrap();
+    assert_eq!((held.len(), held[0].character, held[0].last_seen), (1, kai, 1));
+    assert!(r.release_unique("class:smith", kai).await.unwrap());
+    assert_eq!(
+        r.claim_unique("class:smith", mio, 7).await.unwrap(),
+        mio,
+        "the heir"
+    );
+}
+
+#[tokio::test]
+async fn dungeon_clears_and_lockouts() {
+    let r = repo();
+    let a = r.create_account(&account("kai"), None, 1).await.unwrap();
+    let kai = r
+        .create_character(a, &name("Kai"), 2, &sheet(0), 1)
+        .await
+        .unwrap();
+    r.add_clear("crypt", "Kai, Mio", 300, 10).await.unwrap();
+    r.add_clear("crypt", "Ana", 200, 11).await.unwrap();
+    r.add_clear("crypt", "Bea", 300, 9).await.unwrap();
+    r.add_clear("tower", "Zed", 1, 9).await.unwrap();
+    assert_eq!(
+        r.fastest_clears("crypt", 2).await.unwrap(),
+        vec![("Ana".to_owned(), 200), ("Bea".to_owned(), 300)]
+    );
+    r.set_lockout(kai, "crypt", 100).await.unwrap();
+    r.set_lockout(kai, "crypt", 150).await.unwrap();
+    assert_eq!(
+        r.lockouts(50).await.unwrap(),
+        vec![(kai, "crypt".to_owned(), 150)]
+    );
+    assert!(r.lockouts(150).await.unwrap().is_empty(), "over");
+}

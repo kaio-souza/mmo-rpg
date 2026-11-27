@@ -1,0 +1,2 @@
+// Earned by falling for good once: the next life is a little sturdier.
+(trigger: Counter(family: "deaths", key: "", at: 1), bonuses: [MaxHp(10)])

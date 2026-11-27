@@ -1,0 +1,15 @@
+// The boss of the instant dungeon: below half its health it bites faster
+// and harder.
+(
+    level: 5, hp: 220, attributes: (str: 10, vit: 9, agi: 8, dex: 8),
+    damage: (4, 7), defense: 3, attack_ticks: 32,
+    aggro_radius: 4, leash: 12, respawn_ticks: 600, xp: 300, sprite: "wolf", icon: "wolf",
+    coins: (20, 40),
+    loot: [
+        (item: "wolf_pelt", chance: 1000, qty: (2, 3)),
+        (item: "health_potion", chance: 500),
+    ],
+    phases: [
+        (below_hp_permille: 500, damage_permille: 1300, attack_ticks: Some(22)),
+    ],
+)

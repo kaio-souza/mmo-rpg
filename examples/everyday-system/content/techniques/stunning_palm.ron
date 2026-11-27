@@ -1,0 +1,2 @@
+// A palm strike that leaves the target stunned for a moment.
+(proficiency: "unarmed", unlock_at: 30, cooldown_ticks: 200, vigor: 18, damage_permille: 1300, growth_permille: 50, status: Some((kind: Stun, duration_ticks: 30)))

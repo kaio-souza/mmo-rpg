@@ -152,6 +152,15 @@ pub struct Arrival {
     pub step_wait: u64,
     pub vigor: u32,
     pub mp: u32,
+    /// A teleport: the tile it left from, where it is saved if the next
+    /// zone is down (`pos` may be far from the zone it left).
+    #[serde(default)]
+    pub left_from: Option<TilePos>,
+    /// A teleport: the leader of the player's group then (the player
+    /// itself when alone). The gateway puts a party in one copy of an
+    /// instance.
+    #[serde(default)]
+    pub party: Option<PlayerId>,
 }
 
 /// The tile map a zone runs on: its own tiles and, with neighbors, a band
@@ -320,6 +329,8 @@ impl Zone {
                     step_wait,
                     vigor,
                     mp,
+                    left_from: None,
+                    party: None,
                 }),
             ));
         }

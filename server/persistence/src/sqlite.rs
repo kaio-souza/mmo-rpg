@@ -7,7 +7,7 @@ use crate::{
     AccountRow, AdminLogRow, CHAT_REPORT_KEEP_SECS, CharacterRow, CharacterSave, ChatLine, ChatReport,
     CoinFlowRow, DEV_ACCOUNT, DeletedCharacterRow, EscrowParcel, EscrowRow, FailedLoginRow, LoadedCharacter,
     LoginBlock, LoginRow, NewSanction, RepoError, Role, Sanction, SanctionId, SanctionKind, SavedSheet,
-    TokenHash,
+    TokenHash, UniqueHolder,
 };
 use base::{AccountId, AccountName, CharacterId, CharacterName, Locale, TilePos};
 use rusqlite::{Connection, ErrorCode, OptionalExtension, params, params_from_iter};
@@ -156,6 +156,34 @@ const MIGRATIONS: &[&str] = &[
         count INTEGER NOT NULL,
         last_at INTEGER NOT NULL,
         blocked_until INTEGER NOT NULL
+    );",
+    // Server firsts (a title first earned on the server, kept for good)
+    // and unique holders (a title or class only one character holds; the
+    // row goes when the holder stops playing and an heir may take it).
+    "CREATE TABLE server_firsts (
+        key TEXT PRIMARY KEY,
+        character_id INTEGER NOT NULL REFERENCES characters(id),
+        at INTEGER NOT NULL
+    );
+    CREATE TABLE unique_holders (
+        key TEXT PRIMARY KEY,
+        character_id INTEGER NOT NULL REFERENCES characters(id),
+        since INTEGER NOT NULL
+    );",
+    // Dungeons: every clear (party names, seconds) for the fastest-clear
+    // rankings, and who may not enter a dungeon until when.
+    "CREATE TABLE dungeon_clears (
+        dungeon TEXT NOT NULL,
+        party TEXT NOT NULL,
+        secs INTEGER NOT NULL,
+        at INTEGER NOT NULL
+    );
+    CREATE INDEX dungeon_clears_time ON dungeon_clears(dungeon, secs);
+    CREATE TABLE lockouts (
+        character_id INTEGER NOT NULL REFERENCES characters(id),
+        dungeon TEXT NOT NULL,
+        until INTEGER NOT NULL,
+        PRIMARY KEY (character_id, dungeon)
     );",
 ];
 
@@ -1152,6 +1180,226 @@ impl SqliteRepo {
                 }
             }
             tx.commit().map_err(db)
+        })
+        .await
+    }
+
+    /// `true` when `character` is the first to reach `key` (a new row).
+    pub async fn record_first(&self, key: &str, character: CharacterId, now: u64) -> Result<bool, RepoError> {
+        let key = key.to_owned();
+        self.run(move |c| {
+            let n = c
+                .execute(
+                    "INSERT OR IGNORE INTO server_firsts (key, character_id, at) VALUES (?1, ?2, ?3)",
+                    params![key, character.get(), now as i64],
+                )
+                .map_err(db)?;
+            Ok(n == 1)
+        })
+        .await
+    }
+
+    /// Every server first: key, character name, unix second, oldest first.
+    pub async fn server_firsts(&self) -> Result<Vec<(String, CharacterName, u64)>, RepoError> {
+        self.run(move |c| {
+            let mut st = c
+                .prepare(
+                    "SELECT f.key, ch.name, f.at FROM server_firsts f
+                     JOIN characters ch ON ch.id = f.character_id ORDER BY f.at, f.key",
+                )
+                .map_err(db)?;
+            let rows = st
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, i64>(2)?,
+                    ))
+                })
+                .map_err(db)?;
+            let mut out = Vec::new();
+            for row in rows {
+                let (key, name, at) = row.map_err(db)?;
+                let name = CharacterName::try_from(name).map_err(|e| RepoError::Corrupt(e.to_string()))?;
+                out.push((key, name, u64::try_from(at).unwrap_or(0)));
+            }
+            Ok(out)
+        })
+        .await
+    }
+
+    /// Takes `key` for `character` if nobody holds it; returns the holder
+    /// (`character` itself when it took it or already held it).
+    pub async fn claim_unique(
+        &self,
+        key: &str,
+        character: CharacterId,
+        now: u64,
+    ) -> Result<CharacterId, RepoError> {
+        let key = key.to_owned();
+        self.run(move |c| {
+            let tx = c.transaction().map_err(db)?;
+            tx.execute(
+                "INSERT OR IGNORE INTO unique_holders (key, character_id, since) VALUES (?1, ?2, ?3)",
+                params![key, character.get(), now as i64],
+            )
+            .map_err(db)?;
+            let holder: i64 = tx
+                .query_row(
+                    "SELECT character_id FROM unique_holders WHERE key = ?1",
+                    params![key],
+                    |r| r.get(0),
+                )
+                .map_err(db)?;
+            tx.commit().map_err(db)?;
+            Ok(CharacterId::new(id_u32(holder)?))
+        })
+        .await
+    }
+
+    /// Every unique holder: key, character, name and the unix second of the
+    /// character's last save (deleted characters count as never seen).
+    pub async fn unique_holders(&self) -> Result<Vec<UniqueHolder>, RepoError> {
+        self.run(move |c| {
+            let mut st = c
+                .prepare(
+                    "SELECT u.key, u.character_id, ch.name, CASE WHEN ch.deleted_at IS NULL THEN ch.saved_at ELSE 0 END
+                     FROM unique_holders u JOIN characters ch ON ch.id = u.character_id ORDER BY u.key",
+                )
+                .map_err(db)?;
+            let rows = st
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, i64>(1)?,
+                        r.get::<_, String>(2)?,
+                        r.get::<_, i64>(3)?,
+                    ))
+                })
+                .map_err(db)?;
+            let mut out = Vec::new();
+            for row in rows {
+                let (key, id, name, seen) = row.map_err(db)?;
+                out.push(UniqueHolder {
+                    key,
+                    character: CharacterId::new(id_u32(id)?),
+                    name: CharacterName::try_from(name).map_err(|e| RepoError::Corrupt(e.to_string()))?,
+                    last_seen: u64::try_from(seen).unwrap_or(0),
+                });
+            }
+            Ok(out)
+        })
+        .await
+    }
+
+    /// Frees `key` whoever holds it (a unique item that left the game).
+    pub async fn release_key(&self, key: &str) -> Result<(), RepoError> {
+        let key = key.to_owned();
+        self.run(move |c| {
+            c.execute("DELETE FROM unique_holders WHERE key = ?1", params![key])
+                .map_err(db)?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Frees `key` if `character` still holds it; `true` when it did.
+    pub async fn release_unique(&self, key: &str, character: CharacterId) -> Result<bool, RepoError> {
+        let key = key.to_owned();
+        self.run(move |c| {
+            let n = c
+                .execute(
+                    "DELETE FROM unique_holders WHERE key = ?1 AND character_id = ?2",
+                    params![key, character.get()],
+                )
+                .map_err(db)?;
+            Ok(n == 1)
+        })
+        .await
+    }
+
+    /// Records a dungeon clear: the party's names and its time.
+    pub async fn add_clear(&self, dungeon: &str, party: &str, secs: u64, now: u64) -> Result<(), RepoError> {
+        let (dungeon, party) = (dungeon.to_owned(), party.to_owned());
+        self.run(move |c| {
+            c.execute(
+                "INSERT INTO dungeon_clears (dungeon, party, secs, at) VALUES (?1, ?2, ?3, ?4)",
+                params![dungeon, party, secs as i64, now as i64],
+            )
+            .map_err(db)?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// The `limit` fastest clears of a dungeon: party and seconds, the
+    /// oldest first on a tie.
+    pub async fn fastest_clears(&self, dungeon: &str, limit: u32) -> Result<Vec<(String, u64)>, RepoError> {
+        let dungeon = dungeon.to_owned();
+        self.run(move |c| {
+            let mut st = c
+                .prepare(
+                    "SELECT party, secs FROM dungeon_clears WHERE dungeon = ?1 ORDER BY secs, at LIMIT ?2",
+                )
+                .map_err(db)?;
+            let rows = st
+                .query_map(params![dungeon, limit], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+                })
+                .map_err(db)?;
+            let mut out = Vec::new();
+            for row in rows {
+                let (party, secs) = row.map_err(db)?;
+                out.push((party, u64::try_from(secs).unwrap_or(0)));
+            }
+            Ok(out)
+        })
+        .await
+    }
+
+    /// `character` may not enter `dungeon` before `until`.
+    pub async fn set_lockout(
+        &self,
+        character: CharacterId,
+        dungeon: &str,
+        until: u64,
+    ) -> Result<(), RepoError> {
+        let dungeon = dungeon.to_owned();
+        self.run(move |c| {
+            c.execute(
+                "INSERT INTO lockouts (character_id, dungeon, until) VALUES (?1, ?2, ?3)
+                 ON CONFLICT (character_id, dungeon) DO UPDATE SET until = excluded.until",
+                params![character.get(), dungeon, until as i64],
+            )
+            .map_err(db)?;
+            Ok(())
+        })
+        .await
+    }
+
+    /// Lockouts still running at `now` (older rows are deleted).
+    pub async fn lockouts(&self, now: u64) -> Result<Vec<(CharacterId, String, u64)>, RepoError> {
+        self.run(move |c| {
+            c.execute("DELETE FROM lockouts WHERE until <= ?1", params![now as i64])
+                .map_err(db)?;
+            let mut st = c
+                .prepare("SELECT character_id, dungeon, until FROM lockouts ORDER BY character_id, dungeon")
+                .map_err(db)?;
+            let rows = st
+                .query_map([], |r| {
+                    Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?))
+                })
+                .map_err(db)?;
+            let mut out = Vec::new();
+            for row in rows {
+                let (id, dungeon, until) = row.map_err(db)?;
+                out.push((
+                    CharacterId::new(id_u32(id)?),
+                    dungeon,
+                    u64::try_from(until).unwrap_or(0),
+                ));
+            }
+            Ok(out)
         })
         .await
     }

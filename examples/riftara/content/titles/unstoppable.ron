@@ -5,4 +5,5 @@
         Attribute(Str, 80),
     ],
     techniques: [],
+    announce: Everyone,
 )

@@ -185,6 +185,12 @@ impl Zone {
                 return Err(Refusal::CannotCraft);
             }
         }
+        // A relic that exists somewhere cannot be made again.
+        if idef.unique && self.taken_items.contains(&def.result) {
+            let arg = base::Arg::Ref(Box::new(base::TextRef::new(idef.name)));
+            self.tell(out, player, "system.unique_item_exists", smallvec::smallvec![arg]);
+            return Err(Refusal::CannotCraft);
+        }
         // Equipment is a piece with identity: it needs a free slot and an id.
         if equipment && self.item_ids.as_ref().is_none_or(|b| b.remaining() == 0) {
             out.need_item_ids = true;

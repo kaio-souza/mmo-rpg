@@ -1,0 +1,14 @@
+// The meadow: players appear on the plaza, which is safe.
+(
+    origin: (x: 0, y: 0),
+    view_radius: 20,
+    spawn: (x: 20, y: 15),
+    spawn_radius: 2,
+    // The door of the instant dungeon, on the corner of the plaza.
+    portals: [
+        (min: (x: 24, y: 18), max: (x: 24, y: 18), to: (x: 102, y: 2)),
+    ],
+    regions: [
+        (kind: Safe, min: (x: 16, y: 12), max: (x: 24, y: 18)),
+    ],
+)

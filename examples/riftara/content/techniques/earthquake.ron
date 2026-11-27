@@ -1,1 +1,1 @@
-(proficiency: "hammer", unlock_at: 16, cooldown_ticks: 150, vigor: 22, damage_permille: 2400, growth_permille: 100, icon: "")
+(proficiency: "hammer", unlock_at: 16, cooldown_ticks: 150, vigor: 22, damage_permille: 2400, growth_permille: 100, icon: "", area: 2, status: Some((kind: Stun, duration_ticks: 20)))

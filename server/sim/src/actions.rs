@@ -176,7 +176,8 @@ impl Zone {
                 if !magic && fight::wielded(self, h) != Some(def.proficiency) {
                     return fail(Refusal::RequirementsNotMet);
                 }
-                if now < ready || now < gcd || vigor < def.vigor || mp < def.mp {
+                let stunned = self.world.get::<&Fighter>(h).is_ok_and(|f| f.stunned(now));
+                if now < ready || now < gcd || vigor < def.vigor || mp < def.mp || stunned {
                     return fail(Refusal::NotReady);
                 }
                 if def.damage_permille == 0 {
@@ -202,8 +203,18 @@ impl Zone {
                     def.growth_permille
                         .saturating_mul(u32::from(level.saturating_sub(1))),
                 );
-                if fight::strike(self, me, *target, mult, Some(*technique), out)
-                    && known
+                if crate::status::blow(
+                    self,
+                    me,
+                    *target,
+                    &crate::status::Hit {
+                        mult,
+                        technique: Some(*technique),
+                        area: def.area,
+                        status: def.status.as_ref(),
+                    },
+                    out,
+                ) && known
                     && let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h)
                 {
                     let changes = progression::use_technique(&mut p.growth.sheet, *technique, cat);
@@ -227,8 +238,10 @@ impl Zone {
                     .world
                     .query_one_mut::<&mut PlayerComp>(h)
                     .map_err(|_| (player, Refusal::InvalidSlot))?;
-                let changes = progression::choose_class_and_learn(&mut p.growth.sheet, *class, cat)
-                    .map_err(|_| (player, Refusal::RequirementsNotMet))?;
+                let taken = p.growth.taken_classes.clone();
+                let changes =
+                    progression::choose_class_and_learn_except(&mut p.growth.sheet, *class, cat, &taken)
+                        .map_err(|_| (player, Refusal::RequirementsNotMet))?;
                 p.dirty_stats = true;
                 fight::announce(self, player, &changes, out);
             }
@@ -723,7 +736,7 @@ impl Zone {
             appraises: crate::craft::is_production(s, cat),
             free_points: s.free_points,
             class: s.class,
-            classes_available: progression::available_classes(s, cat),
+            classes_available: progression::available_classes_except(s, cat, &p.growth.taken_classes),
             proficiencies: s.proficiencies.iter().map(|x| (x.id, x.points)).collect(),
             techniques: {
                 let mut t: Vec<_> = s.techniques.iter().map(|x| (x.id, x.level)).collect();

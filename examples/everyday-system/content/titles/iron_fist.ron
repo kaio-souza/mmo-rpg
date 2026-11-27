@@ -1,0 +1,1 @@
+(trigger: Proficiency("unarmed", 25), bonuses: [Percent(Damage, 5)])

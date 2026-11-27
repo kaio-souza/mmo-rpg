@@ -319,7 +319,18 @@ fn holds(r: &ClassReq, s: &ProgressionSheet) -> bool {
 /// Classes the sheet may choose now: the next tier of its tree (tier 1 with
 /// no class), with every requirement met at the current level.
 pub fn available_classes(s: &ProgressionSheet, cat: &ValidatedCatalog) -> Vec<ClassId> {
+    available_classes_except(s, cat, &[])
+}
+
+/// [`available_classes`] without `taken`: unique classes another character
+/// of the server holds.
+pub fn available_classes_except(
+    s: &ProgressionSheet,
+    cat: &ValidatedCatalog,
+    taken: &[ClassId],
+) -> Vec<ClassId> {
     cat.classes()
+        .filter(|(id, _)| !taken.contains(id))
         .filter(|(_, c)| c.parent == s.class)
         .filter(|(_, c)| s.level >= c.level && c.requires.iter().all(|r| holds(r, s)))
         .map(|(id, _)| id)
@@ -332,7 +343,17 @@ pub fn choose_class(
     class: ClassId,
     cat: &ValidatedCatalog,
 ) -> Result<Change, ProgressError> {
-    if !available_classes(s, cat).contains(&class) {
+    choose_class_except(s, class, cat, &[])
+}
+
+/// [`choose_class`] refusing the unique classes in `taken`.
+pub fn choose_class_except(
+    s: &mut ProgressionSheet,
+    class: ClassId,
+    cat: &ValidatedCatalog,
+    taken: &[ClassId],
+) -> Result<Change, ProgressError> {
+    if !available_classes_except(s, cat, taken).contains(&class) {
         return Err(ProgressError::ClassNotAvailable);
     }
     s.class = Some(class);
@@ -345,7 +366,17 @@ pub fn choose_class_and_learn(
     class: ClassId,
     cat: &ValidatedCatalog,
 ) -> Result<Vec<Change>, ProgressError> {
-    let mut changes = vec![choose_class(s, class, cat)?];
+    choose_class_and_learn_except(s, class, cat, &[])
+}
+
+/// [`choose_class_and_learn`] refusing the unique classes in `taken`.
+pub fn choose_class_and_learn_except(
+    s: &mut ProgressionSheet,
+    class: ClassId,
+    cat: &ValidatedCatalog,
+    taken: &[ClassId],
+) -> Result<Vec<Change>, ProgressError> {
+    let mut changes = vec![choose_class_except(s, class, cat, taken)?];
     changes.extend(teach_class_techniques(s, cat));
     Ok(changes)
 }
@@ -357,6 +388,17 @@ pub fn check_titles(
     counter: impl Fn(&str, &str) -> u64,
     cat: &ValidatedCatalog,
 ) -> Vec<Change> {
+    check_titles_except(s, counter, cat, &[])
+}
+
+/// [`check_titles`] leaving out `taken`: unique titles another character of
+/// the server holds.
+pub fn check_titles_except(
+    s: &mut ProgressionSheet,
+    counter: impl Fn(&str, &str) -> u64,
+    cat: &ValidatedCatalog,
+    taken: &[TitleId],
+) -> Vec<Change> {
     let mut changes = Vec::new();
     // A title is out of reach while an owned title replaces it.
     let replaced = |owned: &[TitleId], id: TitleId| {
@@ -367,7 +409,7 @@ pub fn check_titles(
     };
     let mut earned: Vec<TitleId> = Vec::new();
     for (id, t) in cat.titles() {
-        if s.titles.binary_search(&id).is_ok() || replaced(&s.titles, id) {
+        if s.titles.binary_search(&id).is_ok() || replaced(&s.titles, id) || taken.contains(&id) {
             continue;
         }
         let ok = match &t.trigger {

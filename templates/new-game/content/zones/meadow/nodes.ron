@@ -1,0 +1,8 @@
+// Iron in the north east, silver in the south west, herbs here and there.
+[
+    (node: "iron_vein", pos: (x: 35, y: 4)),
+    (node: "iron_vein", pos: (x: 36, y: 10)),
+    (node: "silver_vein", pos: (x: 5, y: 25)),
+    (node: "herb_patch", pos: (x: 12, y: 4)),
+    (node: "herb_patch", pos: (x: 30, y: 26)),
+]

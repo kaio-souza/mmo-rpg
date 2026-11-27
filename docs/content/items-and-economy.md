@@ -27,6 +27,7 @@ Examples to copy: [`templates/new-game/content/items/`](../../templates/new-game
 | `equip` | `Weapon(damage, attack_ticks, attribute, proficiency, range, visual, vigor)`, `Armor(defense, visual)`, `Offhand(defense, visual)` |
 | `hidden` | attribute bonuses rolled on each piece, revealed by appraisal |
 | `light` | `Some((radius: 4))`: equipped, it lights the wearer (picture only); `burn` wears it per minute equipped |
+| `unique` | `true`: a relic, one piece on the whole server ([D65](../decisions.md)). While it exists it never drops and cannot be crafted (the player is told why); once it breaks or is sold it may appear again. Equipment only; never in a shop |
 | `icon` | icon name; `visual` names the layer drawn over the body |
 
 Every non-stackable item has its own identity, stored with exactly one owner; items can never be copied ([security](../security.md)).

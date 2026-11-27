@@ -5,4 +5,7 @@
     aggro_radius: 6, leash: 12, respawn_ticks: 6000, xp: 2600, sprite: "swamp_hag", icon: "swamp_hag",
     coins: (120, 300),
     loot: [(item: "hag_charm", chance: 1000), (item: "oak_staff", chance: 200), (item: "iron_staff", chance: 100), (item: "greater_health_potion", chance: 300, qty: (1, 2)), (item: "dragon_scale", chance: 20)],
+    phases: [
+        (below_hp_permille: 500, status: Some((kind: Poison, duration_ticks: 100, power: 4))),
+    ],
 )

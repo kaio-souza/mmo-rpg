@@ -1,0 +1,4 @@
+// Iron and silver: the best blade the meadow can forge.
+(kind: Weapon, weight: 3200, rarity: Rare, value: 2400, durability: 220,
+ equip: Some(Weapon(damage: (8, 14), attack_ticks: 27, attribute: Str, proficiency: "sword", vigor: 4)),
+ hidden: [(attribute: Str, min: 1, max: 4)], icon: "steel_sword")

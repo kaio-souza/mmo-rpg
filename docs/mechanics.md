@@ -11,6 +11,8 @@ What the engine does today, configured by [content](content/README.md), and the 
 - Counter-attack: an idle player hit by a monster fights back on their own.
 - Falling and death: a character falls first and can be revived (by a technique or an item); death costs a level and locks the character for a while (both content numbers; none below `newbie_level`).
 - PvP only inside `Pvp` regions; no combat in `Safe` regions.
+- Statuses left by blows: poison, stun, slow; techniques that hit an area around the target.
+- Bosses with phases: below a share of HP a monster hits harder, faster, in an area or with a status.
 
 **Progression**
 - Levels, XP and attribute points; six attributes; HP, vigor and MP.
@@ -19,6 +21,8 @@ What the engine does today, configured by [content](content/README.md), and the 
 - Classes in tiers 1 to 4 with requirements, attribute points per level and faster proficiencies; production classes with a quality cap.
 - Titles earned by level, counters, proficiencies or attributes; passive bonuses from every owned title; titles that teach techniques or replace others.
 - Special attributes earned by titles or grown by a class (used to gate techniques and add to a proficiency).
+- Titles and classes unique per server, passed to an heir when the holder stops playing; relics (items) that exist once.
+- Titles announced to the whole server; server firsts kept for good (`/firsts`); public rankings (`/ranking`).
 
 **Items and economy**
 - Items with identity that can never be duplicated; stacks for materials and consumables; binding.
@@ -34,6 +38,7 @@ What the engine does today, configured by [content](content/README.md), and the 
 - NPCs with dialogue graphs built from conditions and effects; affinity per NPC.
 - Quests: talk and deliver objectives, item, coin and technique rewards, repeatable quests with a cooldown, quest log, markers and a pointer to the goal.
 - Zones joined by seams into one open world, in one process or many; a starting zone; safe respawn.
+- Portals and NPC teleports; instance zones (a copy per party) and dungeons with level and group checks, a boss that clears the run, lockouts and fastest-clear rankings.
 - Day and night (picture only), light per tile, sprite and item; fog outside sight; tiles players toggle for everyone (braziers).
 - Sound per event and technique, music per zone and screen.
 
@@ -53,11 +58,11 @@ Designed for the example game but not built. Each needs engine work before conte
 
 | Area | Mechanic |
 |---|---|
-| Combat | damage types and status effects; surviving a fatal blow; area and ranged spells, meditation; a murderer mark for player killers |
-| Progression | class change after level 30 within the tree; rare (hidden) classes and legendary classes unique per server, passed on when the heir stops playing; titles that give a penalty instead of a bonus; attributes earned by deeds; "first on the server" records; adventurer rank; bestiary, collections, public rankings |
+| Combat | damage types; surviving a fatal blow; meditation; a murderer mark for player killers |
+| Progression | class change after level 30 within the tree; rare (hidden) classes; titles that give a penalty instead of a bonus; attributes earned by deeds; adventurer rank; bestiary, collections |
 | Items | enhancement +1 to +15 with protection stones; dismantling equipment; carry weight limits; dimensional storage; exclusive items created by legendary classes |
 | Economy | regional markets plus a global auction; buy orders; mail |
 | World | kill, travel and craft quests; ranked and hidden quests; karma (hidden morality that opens or closes titles and quests); NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
-| Social | group loot rules and shared quests; clans with ranks, storage and alliances; territory war with scheduled sieges; marriage with a shared vault; fame, bounties, mentoring, housing; a human check for players who repeat one action for hours |
+| Social | group loot rules and shared quests; clans with ranks, storage and alliances; territory war with scheduled sieges; marriage with a shared vault; fame, bounties, mentoring, housing ([homes](player-homes.md): farming, breeding, carpentry); a human check for players who repeat one action for hours |
 | Accounts | second factor (TOTP) at login; a barber to change hair |
 | Presentation | layered character art (body, hair, clothes) recoloured by palette keys; ambient sound layers |
