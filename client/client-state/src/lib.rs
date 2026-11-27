@@ -238,6 +238,9 @@ pub struct WorldState {
     /// Protocol 20: icon number of each emote (0: none).
     emote_icons: Vec<u16>,
     emote_events: Vec<(EntityId, base::EmoteId)>,
+    /// Items that came into the backpack since the last call (gathered,
+    /// crafted, bought, looted): what the player sees rise over the head.
+    gains: Vec<(ItemId, u32)>,
     /// Protocol 23: the zones of the world, for zone music.
     zones: Vec<protocol::ZoneInfo>,
     /// Protocol 23: support techniques used and not yet heard.
@@ -304,6 +307,55 @@ pub fn quest_news(old: &[QuestEntry], new: &[QuestEntry]) -> Vec<QuestNews> {
 pub struct Inventory {
     pub coins: u64,
     pub slots: Vec<Option<ItemSlot>>,
+}
+
+/// What the player holds: stacks counted by item, pieces with identity by
+/// their instance id (so moving a piece between the backpack and the hands
+/// is no gain).
+struct Holdings {
+    stacks: BTreeMap<ItemId, u64>,
+    pieces: BTreeMap<u64, Option<ItemId>>,
+}
+
+fn holdings(
+    slots: &[Option<ItemSlot>],
+    instances: &[protocol::InstanceInfo],
+    worn: &[protocol::InstanceInfo],
+) -> Holdings {
+    let piece_slots: BTreeMap<u16, u64> = instances.iter().map(|i| (i.slot, i.id)).collect();
+    let mut stacks = BTreeMap::new();
+    let mut pieces = BTreeMap::new();
+    for (i, s) in slots.iter().enumerate() {
+        let Some(s) = s else { continue };
+        match u16::try_from(i).ok().and_then(|i| piece_slots.get(&i)) {
+            Some(id) => {
+                pieces.insert(*id, Some(s.item));
+            }
+            None => *stacks.entry(s.item).or_insert(0) += u64::from(s.qty),
+        }
+    }
+    for w in worn {
+        pieces.entry(w.id).or_insert(None);
+    }
+    Holdings { stacks, pieces }
+}
+
+/// Stacks that grew and pieces that are new.
+fn gained(before: &Holdings, after: &Holdings) -> Vec<(ItemId, u32)> {
+    let mut out: Vec<(ItemId, u32)> = after
+        .stacks
+        .iter()
+        .filter_map(|(item, n)| {
+            let was = before.stacks.get(item).copied().unwrap_or(0);
+            (*n > was).then(|| (*item, u32::try_from(n - was).unwrap_or(u32::MAX)))
+        })
+        .collect();
+    for (id, item) in &after.pieces {
+        if let (false, Some(item)) = (before.pieces.contains_key(id), item) {
+            out.push((*item, 1));
+        }
+    }
+    out
 }
 
 impl WorldState {
@@ -450,6 +502,13 @@ impl WorldState {
                 instances,
                 equipped,
             } => {
+                if let Some(old) = &self.inventory {
+                    let before = holdings(&old.slots, &self.instances, &self.worn);
+                    let after = holdings(&slots, &instances, &equipped);
+                    self.gains.extend(gained(&before, &after));
+                    let excess = self.gains.len().saturating_sub(32);
+                    self.gains.drain(..excess);
+                }
                 self.inventory = Some(Inventory { coins, slots });
                 self.instances = instances;
                 self.worn = equipped;
@@ -702,6 +761,11 @@ impl WorldState {
     pub fn emote_icon(&self, id: base::EmoteId) -> Option<&str> {
         let n = *self.emote_icons.get(id.index())?;
         self.icon_name(n)
+    }
+
+    /// Items gained since the last call: `(item, quantity)`.
+    pub fn take_gains(&mut self) -> Vec<(ItemId, u32)> {
+        std::mem::take(&mut self.gains)
     }
 
     /// Gestures that arrived since the last call.
@@ -1158,6 +1222,57 @@ mod dialogue_tests {
         w.apply(part(0, vec![1]), 0.0);
         w.apply(part(2, vec![3]), 0.0);
         assert!(w.take_text_pack().is_none());
+    }
+
+    #[test]
+    fn gains_count_new_stacks_and_new_pieces_only() {
+        let slot = |item: u32, qty: u32| {
+            Some(ItemSlot {
+                item: ItemId::new(item),
+                qty,
+            })
+        };
+        let piece = |slot: u16, id: u64| protocol::InstanceInfo {
+            slot,
+            id,
+            hidden: None,
+            durability: (0, 0),
+            crafter: None,
+            rarity: base::Rarity::Common,
+            power_permille: 0,
+            mastery: 0,
+            power: None,
+        };
+        let inv = |slots, instances, equipped| ServerMsg::Inventory {
+            coins: 0,
+            slots,
+            instances,
+            equipped,
+        };
+        let mut w = WorldState::new();
+        // The first inventory is what the player had: no gain.
+        w.apply(inv(vec![slot(0, 2), slot(5, 1)], vec![piece(1, 77)], vec![]), 0.0);
+        assert!(w.take_gains().is_empty());
+        // Two more ore and a new sword.
+        w.apply(
+            inv(
+                vec![slot(0, 4), slot(5, 1), slot(5, 1)],
+                vec![piece(1, 77), piece(2, 78)],
+                vec![],
+            ),
+            0.0,
+        );
+        assert_eq!(w.take_gains(), vec![(ItemId::new(0), 2), (ItemId::new(5), 1)]);
+        // Equipping the old sword is no gain.
+        w.apply(
+            inv(
+                vec![slot(0, 4), None, slot(5, 1)],
+                vec![piece(2, 78)],
+                vec![piece(0, 77)],
+            ),
+            0.0,
+        );
+        assert!(w.take_gains().is_empty());
     }
 
     #[test]

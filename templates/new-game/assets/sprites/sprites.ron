@@ -9,10 +9,11 @@
         "walls": (anchor: (32, 56)),
     },
     sprites: {
-        // Resource nodes: one still picture each.
-        "herb_patch": (frames: 1, directions: 1, play: Always),
-        "iron_vein": (frames: 1, directions: 1, play: Always),
-        "silver_vein": (frames: 1, directions: 1, play: Always),
+        // Resource nodes: one still picture each, anchored at the foot of
+        // the picture so it stands on its tile.
+        "herb_patch": (anchor: (32, 39), frames: 1, directions: 1, play: Always),
+        "iron_vein": (anchor: (32, 44), frames: 1, directions: 1, play: Always),
+        "silver_vein": (anchor: (32, 44), frames: 1, directions: 1, play: Always),
     },
     lights: {},
 )

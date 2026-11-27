@@ -193,6 +193,21 @@ impl App {
                 });
             }
         }
+        // What came into the backpack rises over the player, one after the
+        // other so several gains do not cover each other.
+        if let Some(on) = me {
+            for (i, (item, qty)) in self.state.take_gains().into_iter().enumerate() {
+                let icon = self.state.item(item).and_then(|d| self.state.icon_name(d.icon));
+                self.floats.push(interface::Float {
+                    on,
+                    text: format!("+{qty}"),
+                    kind: client_ui::FloatKind::Gained,
+                    crit: false,
+                    born_ms: now_ms + 250.0 * i as f64,
+                    icon: self.graphics.icon_uv(icon, "generic_item"),
+                });
+            }
+        }
         let radius = self.state.view_radius();
         let here = self.state.me().map(|e| e.pos);
         // Support techniques land no blow; their own message

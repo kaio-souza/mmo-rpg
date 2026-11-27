@@ -41,6 +41,9 @@ pub enum FloatKind {
     Miss,
     /// Phase 9: a gesture (an emote), over anyone.
     Emote,
+    /// An item that came into the backpack (gathered, crafted, bought,
+    /// looted): its icon and `+N` over the player.
+    Gained,
 }
 
 /// A number rising from a being; `age` goes from 0 (new) to 1 (gone).
@@ -101,6 +104,10 @@ pub(crate) fn floats(f: &mut Frame<'_>, list: &[FloatText]) {
     let c = f.theme.colors.clone();
     let rise = f.px(36.0);
     for t in list {
+        if let (FloatKind::Gained, Some(uv)) = (t.kind, t.icon) {
+            gained(f, t, uv);
+            continue;
+        }
         if let Some(uv) = t.icon {
             emote_bubble(f, t, uv);
             continue;
@@ -109,7 +116,7 @@ pub(crate) fn floats(f: &mut Frame<'_>, list: &[FloatText]) {
             FloatKind::Dealt => c.text,
             FloatKind::Taken => c.life,
             FloatKind::Miss => c.dim_text,
-            FloatKind::Emote => c.highlight,
+            FloatKind::Emote | FloatKind::Gained => c.highlight,
         };
         if t.crit && t.kind == FloatKind::Dealt {
             color = c.highlight;
@@ -122,6 +129,26 @@ pub(crate) fn floats(f: &mut Frame<'_>, list: &[FloatText]) {
         let y = t.at.1 - rise * t.age;
         f.label(role, size, (t.at.0 - w / 2.0, y), color, &t.text);
     }
+}
+
+/// An item gained: its icon and `+N` rising from the head, fading out.
+fn gained(f: &mut Frame<'_>, t: &FloatText, uv: [f32; 4]) {
+    let s = f.theme.sizes.clone();
+    let c = f.theme.colors.clone();
+    let age = t.age.clamp(0.0, 1.0);
+    let alpha = ((1.0 - age) / 0.35).min(1.0);
+    let side = f.px(22.0);
+    let px = f.px(s.text);
+    let w = f.fonts.measure(Role::Numbers, px, &t.text);
+    let gap = f.px(4.0);
+    let x = t.at.0 - (side + gap + w) / 2.0;
+    let y = t.at.1 - f.px(48.0) * age - side;
+    f.painter
+        .image(Rect::new(x, y, side, side), uv, [1.0, 1.0, 1.0, alpha]);
+    let mut color = c.highlight;
+    color[3] *= alpha;
+    let ty = y + (side - f.line_height(Role::Numbers, s.text)) / 2.0;
+    f.label(Role::Numbers, s.text, (x + side + gap, ty), color, &t.text);
 }
 
 /// An emote with a picture: the icon in a speech bubble over the head,

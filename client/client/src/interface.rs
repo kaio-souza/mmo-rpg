@@ -757,13 +757,16 @@ pub const FLOAT_MS: f64 = 1200.0;
 /// How long an emote bubble stays.
 pub const EMOTE_MS: f64 = 2600.0;
 
+/// How long an item gained stays.
+pub const GAINED_MS: f64 = 1800.0;
+
 impl Float {
     /// How long this float stays on screen.
     pub fn lasts_ms(&self) -> f64 {
-        if self.kind == FloatKind::Emote {
-            EMOTE_MS
-        } else {
-            FLOAT_MS
+        match self.kind {
+            FloatKind::Emote => EMOTE_MS,
+            FloatKind::Gained => GAINED_MS,
+            _ => FLOAT_MS,
         }
     }
 }
@@ -776,6 +779,8 @@ pub fn floats(
     now_ms: f64,
 ) -> Vec<FloatText> {
     list.iter()
+        // A gain queued behind another waits for its turn.
+        .filter(|f| now_ms >= f.born_ms)
         .filter_map(|f| {
             let e = state.entity(f.on)?;
             let (x, y) = e.visual_pos(now_ms);

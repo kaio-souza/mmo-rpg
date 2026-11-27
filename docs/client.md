@@ -43,6 +43,8 @@ Clicking a creature's body or its feet picks it: left click attacks a monster or
 | `/maintenance 10m` or `cancel` | admins | announced restart |
 | `/replay` | admins | every zone writes its recording to `replays/` |
 
+Whatever comes into the backpack (gathered, crafted, bought or looted) rises over the player as its icon and `+N`, besides the line in the chat; moving a piece between the backpack and the hands is not a gain.
+
 ## What the client keeps
 
 - `login.ron` (mode `0600`): servers, last account, and this device's token per server and account. Never a password.
