@@ -106,7 +106,7 @@ futures-util = { version = "0.3", default-features = false, features = ["sink", 
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["BinaryType", "WebSocket", "MessageEvent", "CloseEvent", "Event", "Window", "Location", "Storage", "Document", "Element", "HtmlCanvasElement", "Response", "AudioContext", "AudioContextState", "AudioDestinationNode", "AudioNode", "AudioBuffer", "AudioProcessingEvent", "ScriptProcessorNode", "BaseAudioContext", "AudioContextOptions", "EventTarget", "console", "UrlSearchParams"] }
+web-sys = { version = "0.3", features = ["BinaryType", "WebSocket", "MessageEvent", "CloseEvent", "Event", "Window", "Location", "Storage", "Document", "Element", "Node", "HtmlCanvasElement", "Response", "AudioContext", "AudioContextState", "AudioDestinationNode", "AudioNode", "AudioBuffer", "AudioProcessingEvent", "ScriptProcessorNode", "BaseAudioContext", "AudioContextOptions", "EventTarget", "console", "UrlSearchParams"] }
 web-time = "1"
 console_error_panic_hook = "0.1"
 

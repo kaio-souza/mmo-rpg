@@ -80,7 +80,7 @@ bodies: [(id: "body_a", color: "#5b6b8c", sprite: "body_a", clothes: "clothes_a"
 hair_styles: [(id: "short", sprite: "hair_short"), (id: "bald")],
 ```
 
-A tinted layer is drawn in light greys, so the colour shows true ([assets](../assets.md)). A body without `sprite` is drawn as the `player` sprite in the skin colour; a hair style without one draws no hair (bald). Skins and hair colours have no sprite. The creation screen previews exactly these layers and offers only the lists that change them: bodies when one has a sprite, hair styles and colours when a hair style has one.
+A tinted layer is drawn in light greys, so the colour shows true ([assets](../assets.md)). A body without `sprite` is drawn as the `player` sprite: in the skin colour when no body has a sprite (a placeholder figure), else as drawn, since a finished character tinted whole would recolour its clothes and hair; a hair style without one draws no hair (bald). Skins and hair colours have no sprite. The creation screen previews exactly these layers and offers only the lists that change them: bodies when one has a sprite, hair styles and colours when a hair style has one.
 
 ## Formulas
 

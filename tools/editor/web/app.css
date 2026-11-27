@@ -535,6 +535,9 @@ label.check { display: flex; align-items: center; gap: 8px; color: var(--dim); f
 }
 .quick:hover { color: var(--text); border-color: #313a47; }
 .quick span { flex: 1; text-align: left; }
+.launch { display: flex; gap: 6px; margin: 8px 0 4px; }
+.launch button { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; padding: 6px 8px; font-size: 12.5px; }
+.launch button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 kbd {
   font: 11px ui-monospace, monospace; color: var(--faint); border: 1px solid var(--line);
   border-radius: 5px; padding: 1px 5px; background: var(--field);
@@ -809,3 +812,6 @@ button.danger:hover:not(:disabled) { background: rgba(255, 107, 107, .2); }
 .tp-slot { position: relative; box-sizing: border-box; display: grid; place-items: center; font-weight: 700; overflow: hidden; }
 .tp-cd { position: absolute; left: 0; right: 0; bottom: 0; }
 .tp-msgs { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+
+.icon-preview { display: flex; align-items: flex-end; gap: 16px; padding: 12px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .03); }
+.icon-preview img { image-rendering: auto; }

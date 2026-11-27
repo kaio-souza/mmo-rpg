@@ -10,11 +10,34 @@ graph LR
     W -- draws --> C[canvas: WebGPU, else WebGL2]
 ```
 
+## Play locally (one command)
+
+```sh
+./client/client/web/play.sh                      # templates/new-game
+./client/client/web/play.sh examples/riftara     # the example game
+```
+
+It installs what is missing (the wasm target and `wasm-bindgen-cli`, the version from `Cargo.lock`), builds, starts a dev server and serves the page. It prints the link to open; Ctrl+C stops both. Files go to `dist/` (ignored by git).
+
+## Setup
+
+What each tool is, and where it comes from:
+
+| Need | Where it is declared | Installed by |
+|---|---|---|
+| `wasm-bindgen` (library) | `Cargo.toml` (workspace), locked in `Cargo.lock` | `cargo` |
+| `wasm32-unknown-unknown` (Rust target) | `rust-toolchain.toml` (`targets`) | `rustup`, on the first `cargo` run |
+| `wasm-bindgen-cli` (generates the JS glue) | the version in `Cargo.lock` | `cargo install wasm-bindgen-cli --version <that version>` (not a crate dependency, so the lock cannot install it) |
+
+`play.sh` installs the CLI if it is missing and checks the target. Installing the CLI by hand is the only manual step:
+
+```sh
+cargo install wasm-bindgen-cli --version "$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')"
+```
+
 ## Build
 
 ```sh
-rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli --version <the wasm-bindgen version in Cargo.lock>
 ./client/client/web/build.sh templates/new-game out/web
 ```
 

@@ -21,6 +21,8 @@ function drawGameSide() {
     el("div", { class: "thumb letter", style: `--s:36px;--h:${hue(anchor)}` }, icon(ic, 18)),
     el("div", { class: "entry-txt" }, el("div", { class: "entry-title" }, title), el("div", { class: "hint" }, sub))));
   entry("game-name", "flag", t("editor.game.name"), GM.names.en || "—");
+  const ic = GM.info?.icon;
+  entry("game-icon", "image", t("editor.game.icon"), ic ? `${ic.width}×${ic.height}` : t("editor.game.no_icon"));
   const bg = GM.info?.background;
   entry("game-bg", "image", t("editor.game.background"), bg ? `${bg.width}×${bg.height}` : t("editor.game.default_background"));
   side.append(list);
@@ -36,6 +38,20 @@ async function saveGame() {
   GM.names = { ...GM.info.names };
   GM.saved = JSON.stringify(GM.names);
   toast(t("editor.game.saved"));
+  draw();
+}
+
+async function uploadIcon(file) {
+  if (!file) return;
+  try {
+    await api("/api/game/icon", file, true);
+  } catch (e) {
+    await say(t("editor.game.icon"), e.message);
+    return;
+  }
+  GM.info = await api("/api/game");
+  GM.stamp = Date.now();
+  toast(t("editor.game.icon_saved"));
   draw();
 }
 
@@ -82,6 +98,20 @@ function drawGame() {
     el("div", { class: "card-head" }, el("h3", {}, t("editor.game.name")),
       max ? el("span", { class: "card-hint" }, fmt("editor.game.name_limit", { n: max })) : null),
     el("p", { class: "hint" }, t("editor.game.name_hint")), grid));
+
+  // The icon at the sizes a window bar and a browser tab show it.
+  const ic = GM.info.icon;
+  const icFile = el("input", { type: "file", accept: "image/png", hidden: true, onchange: (e) => uploadIcon(e.target.files[0]) });
+  const src = `/api/game/icon?v=${GM.stamp}`;
+  page.append(el("section", { class: "card", id: "game-icon" },
+    el("div", { class: "card-head" }, el("h3", {}, t("editor.game.icon")),
+      el("span", { class: "card-hint" }, ic ? `${ic.width}×${ic.height}` : t("editor.game.no_icon"))),
+    el("p", { class: "hint" }, t("editor.game.icon_hint")),
+    ic ? el("div", { class: "icon-preview" }, [128, 48, 32, 16].map((n) =>
+      el("img", { src, alt: "", width: n, height: n }))) : null,
+    el("div", { class: "toolbar", style: "margin-top:12px" },
+      el("button", { class: "primary", onclick: () => icFile.click() }, icon("upload", 16), t(ic ? "editor.game.replace_icon" : "editor.game.upload_icon")),
+      icFile)));
 
   // The background, with the name over it as the login shows it.
   const bg = GM.info.background;

@@ -880,6 +880,18 @@ impl ApplicationHandler for App {
         let attrs = Window::default_attributes().with_title(self.ui.text.t("ui.game.title"));
         #[cfg(not(target_arch = "wasm32"))]
         let attrs = attrs.with_inner_size(winit::dpi::LogicalSize::new(1280.0, 720.0));
+        // The game's icon on the window (X11 and Windows; Wayland takes it
+        // from the desktop file).
+        #[cfg(not(target_arch = "wasm32"))]
+        let attrs = attrs.with_window_icon(
+            self.graphics
+                .game_icon()
+                .and_then(|(w, h, px)| winit::window::Icon::from_rgba(px, w, h).ok()),
+        );
+        #[cfg(target_arch = "wasm32")]
+        if let Some(png) = self.graphics.game_icon_png() {
+            web::set_favicon(&png);
+        }
         // The page's canvas, sized by the page.
         #[cfg(target_arch = "wasm32")]
         let attrs = {

@@ -47,15 +47,20 @@ A character keeps, for each part, the option id and the colour index: `part id �
 A screen of its own, not the generic form under *Advanced*:
 
 - the preview built from the real layers, turning through the 4 directions and walking;
-- beside it, each part with its options (sprite picker) and its palette (colour swatches);
+- beside it, each layer (look part or equipment) with its options (sprite picker) and its palette (colour swatches);
 - **Random** to try combinations; drag to reorder parts (drawing order).
 
 ## 4. Art
 
 With parts apart, the tops, trousers and shoes already in `testes-arte/mvp/layers/` become choosable options. Art still goes to `testes-arte/` for review before any game's `assets/`.
 
+## 5. Layers are content, equipment included
+
+There is no fixed rule for armour or any other item. Every layer drawn on a character, a look part or an equipped item, is a **layer** the game defines in the editor: its id, its place in the drawing order and its sprites. An item names the layer it draws on; an item drawn over the clothes is just a layer placed after them ([decisions](decisions.md) D31).
+
+- The designer adds, splits and reorders layers on the "Character" screen and manages each layer's sprites there.
+- The template starts with the parts it already has (body, hair, top, legs); any other layer is added from the editor, not from code.
+
 ## Open points
 
-- ⚠ Open: which parts the template has (body, hair, top, legs, feet? beard, accessories?).
 - ⚠ Open: colours free (a colour picker for the player) or only from the game's palettes.
-- ⚠ Open: whether equipped armour hides the clothes parts under it, or is drawn over them.

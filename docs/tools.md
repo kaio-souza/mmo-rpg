@@ -27,7 +27,8 @@ A local web page (`http://127.0.0.1:7878`, local only; the version for a publish
 | Dialogue | a map of steps, conditions and effects written as sentences, a clickable preview |
 | Texts | key × language table with "missing" marks; **Languages** manages `locales.ron` |
 | Graphics, Floors and scenery | sprites and icons with previews, PNG upload, `tiles.ron` and `sprites.ron` |
-| Theme, Sounds, Game | interface theme; sound files and bindings; game name and login background |
+| Theme, Sounds, Game | interface theme; sound files and bindings; game name, icon and login background |
+| Play, New game | buttons at the top of the left bar: **Play** runs `mmo play` on this game (off while its window is open; a failed start shows its last lines); **New game** asks a folder name, runs `mmo new` beside this game's folder and opens an editor on the new game in a new tab |
 | Economy, Moderation, Replays | the `admin` reports and actions with buttons; a recorded zone seen from above with a timeline |
 
 Save in the editor with a `--dev` server running and the change is in the game within seconds.

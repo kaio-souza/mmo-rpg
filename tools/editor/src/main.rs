@@ -13,6 +13,7 @@
 mod art;
 mod game;
 mod langs;
+mod launch;
 mod looks;
 mod moderation;
 mod replays;
@@ -70,6 +71,9 @@ struct App {
     content: PathBuf,
     db: moderation::Db,
     replays: PathBuf,
+    /// The game's folder (the parent of `content/`), where Play runs.
+    game: PathBuf,
+    play: std::sync::Mutex<launch::Play>,
 }
 
 type Shared = Arc<App>;
@@ -90,6 +94,11 @@ fn main() -> std::process::ExitCode {
         content: args.content.clone(),
         db: moderation::Db::open(&args.db),
         replays: args.replays.clone(),
+        game: std::fs::canonicalize(&args.content)
+            .ok()
+            .and_then(|c| c.parent().map(PathBuf::from))
+            .unwrap_or_else(|| PathBuf::from(".")),
+        play: std::sync::Mutex::default(),
     });
     let rt = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
         Ok(rt) => rt,
@@ -248,6 +257,7 @@ fn router(app: Shared) -> Router {
             "/api/game/background",
             get(game_background).post(game_background_save),
         )
+        .route("/api/game/icon", get(game_icon).post(game_icon_save))
         .route("/api/themes", get(theme_overview))
         .route("/api/theme/{id}", get(theme_read).post(theme_save))
         .route("/api/theme/{id}/copy", post(theme_copy))
@@ -263,6 +273,8 @@ fn router(app: Shared) -> Router {
         .route("/api/admin/action", post(admin_action))
         .route("/api/replays", get(replay_list))
         .route("/api/replays/run", get(replay_run))
+        .route("/api/play", get(play_status).post(play_start))
+        .route("/api/new-game", post(new_game))
         // One PNG per request; the default limit is far below an image.
         .layer(DefaultBodyLimit::max(art::MAX_PNG_BYTES))
         .with_state(app)
@@ -933,6 +945,21 @@ async fn game_background_save(State(app): State<Shared>, body: Bytes) -> Respons
     }
 }
 
+async fn game_icon(State(app): State<Shared>) -> Response {
+    match std::fs::read(app.assets.join(game::ICON)) {
+        Ok(bytes) => ([(header::CONTENT_TYPE, "image/png")], bytes).into_response(),
+        Err(_) => fail(StatusCode::NOT_FOUND, game::ICON),
+    }
+}
+
+async fn game_icon_save(State(app): State<Shared>, body: Bytes) -> Response {
+    let _guard = app.lock.lock().await;
+    match game::save_icon(&app.assets, &body) {
+        Ok(v) => Json(v).into_response(),
+        Err(e) => fail(StatusCode::UNPROCESSABLE_ENTITY, e),
+    }
+}
+
 // ---------- Theme screen ----------
 
 async fn theme_overview(State(app): State<Shared>) -> Json<Value> {
@@ -1100,5 +1127,45 @@ async fn replay_run(State(app): State<Shared>, Query(q): Query<RunQuery>) -> Res
     match tokio::task::spawn_blocking(move || replays::run(&file, &content, q.every, &english)).await {
         Ok(r) => answer(r),
         Err(e) => fail(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+    }
+}
+
+async fn play_status(State(app): State<Shared>) -> Json<Value> {
+    let running = app.play.lock().is_ok_and(|mut p| p.running());
+    Json(json!({ "running": running, "folder": app.game.display().to_string() }))
+}
+
+/// Starts the server and the client on this game (`mmo play`).
+async fn play_start(State(app): State<Shared>) -> Response {
+    let result = tokio::task::spawn_blocking(move || match app.play.lock() {
+        Ok(mut p) => p.start(&app.game),
+        Err(_) => Err("the play state is broken: restart the editor".into()),
+    })
+    .await
+    .unwrap_or_else(|e| Err(e.to_string()));
+    match result {
+        Ok(()) => Json(json!({ "running": true })).into_response(),
+        Err(e) => fail(StatusCode::CONFLICT, e),
+    }
+}
+
+#[derive(Deserialize)]
+struct NewGame {
+    name: String,
+}
+
+/// Copies the template beside this game and opens an editor on it.
+async fn new_game(State(app): State<Shared>, Json(body): Json<NewGame>) -> Response {
+    let dir = match launch::new_game_dir(&app.game, body.name.trim()) {
+        Ok(d) => d,
+        Err(e) => return fail(StatusCode::UNPROCESSABLE_ENTITY, e),
+    };
+    let shown = dir.display().to_string();
+    match tokio::task::spawn_blocking(move || launch::new_game(&dir))
+        .await
+        .unwrap_or_else(|e| Err(e.to_string()))
+    {
+        Ok(url) => Json(json!({ "url": url, "folder": shown })).into_response(),
+        Err(e) => fail(StatusCode::UNPROCESSABLE_ENTITY, e),
     }
 }

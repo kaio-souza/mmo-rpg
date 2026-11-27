@@ -13,7 +13,7 @@ The engine runs a complete game (the Riftara example: seven zones, combat, class
 | 3 | **Prebuilt binaries** for Linux and Windows in releases, with the template | users need no Rust |
 | 4 | **Generic release workflow**: package any game folder (server with `content/`, client with `assets/`) | publishing a game is one command |
 | 5 | **Content format version** and a migration path between kit versions | updating the kit never silently breaks a game |
-| 6 | **Editor buttons** for "New game" and "Play" | a designer never opens a terminal |
+| 6 | ✅ **Done: editor buttons** for "New game" and "Play" (they run `mmo`; [tools](tools.md#editor)) | a designer never opens a terminal |
 | 7 | **Kit defaults as one package** (theme, fonts, interface icons, interface sounds, interface texts) that the template and the example share | defaults live in one place |
 | 8 | **Full world measured**: 2000 bots with combat spread over the example's zones | the targets in [performance](performance.md) are measured |
 | 9 | **`pack`**: grid and palette checks, cut CJK fonts, `assets.pak` | releases ship one checked file |
@@ -40,9 +40,7 @@ After these, mechanics from the [possible list](mechanics.md#possible-mechanics-
 
 | Question | Blocks |
 |---|---|
-| ⚠ Open: which parts the template's characters have (body, hair, top, legs, feet; beard, accessories?) | [character parts](character-parts.md) |
 | ⚠ Open: character colours free for the player or only from the game's palettes | [character parts](character-parts.md) |
-| ⚠ Open: whether equipped armour hides the clothes parts or is drawn over them | [character parts](character-parts.md) |
 | ⚠ Open: how players' clients receive new art and sound from a live server (download on login, by content hash, like the text pack) | E6 |
 | ⚠ Open: where the live content lives on the server (outside the release folder, e.g. `/var/lib/game/content`) and how a developer's local copy syncs with it | E3 |
 | ⚠ Open: WebAudio through an `AudioWorklet` instead of the deprecated script node | [web](web.md) |

@@ -13,6 +13,10 @@ use std::path::{Path, PathBuf};
 pub const NAME_KEY: &str = "ui.game.title";
 /// Where the login background lives, relative to `assets/`.
 pub const BACKGROUND: &str = "ui/login_background.png";
+/// The game's icon (window and browser tab), relative to `assets/`.
+pub const ICON: &str = "ui/game_icon.png";
+/// The icon's sides: square, from a tab's 32 to a desktop's 512.
+const ICON_SIDES: std::ops::RangeInclusive<u32> = 32..=512;
 /// Smaller than this is a blur on any screen.
 const MIN_SIZE: (u32, u32) = (640, 360);
 
@@ -55,12 +59,17 @@ pub fn read(assets: &Path) -> Value {
             }
         }
     }
+    let icon = std::fs::read(assets.join(ICON))
+        .ok()
+        .as_deref()
+        .and_then(art::png_size);
     let bg = std::fs::read(assets.join(BACKGROUND)).ok();
     let size = bg.as_deref().and_then(art::png_size);
     json!({
         "locales": order,
         "names": names,
         "max_chars": max_chars,
+        "icon": icon.map(|(w, h)| json!({ "width": w, "height": h })),
         "background": size.map(|(w, h)| json!({ "width": w, "height": h, "bytes": bg.map_or(0, |b| b.len()) })),
     })
 }
@@ -175,6 +184,39 @@ pub fn save_background(assets: &Path, bytes: &[u8]) -> Result<Value, String> {
     Ok(json!({ "width": w, "height": h }))
 }
 
+/// Puts a new game icon in place: a square PNG of 32 to 512 pixels.
+pub fn save_icon(assets: &Path, bytes: &[u8]) -> Result<Value, String> {
+    let (w, h) = check_icon(bytes)?;
+    let path = assets.join(ICON);
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    std::fs::write(&path, bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok(json!({ "width": w, "height": h }))
+}
+
+fn check_icon(bytes: &[u8]) -> Result<(u32, u32), String> {
+    if bytes.len() > art::MAX_PNG_BYTES {
+        return Err(format!(
+            "{} KiB: over the {} KiB an image may have",
+            bytes.len() / 1024,
+            art::MAX_PNG_BYTES / 1024
+        ));
+    }
+    let (w, h) = art::png_size(bytes).ok_or("not a PNG file")?;
+    if w != h {
+        return Err(format!("{w}x{h}: the icon must be square"));
+    }
+    if !ICON_SIDES.contains(&w) {
+        return Err(format!(
+            "{w}x{h}: the icon needs {}x{0} to {}x{1}",
+            ICON_SIDES.start(),
+            ICON_SIDES.end()
+        ));
+    }
+    Ok((w, h))
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
 mod tests {
@@ -187,6 +229,23 @@ mod tests {
         assert_eq!(out, text.replace("\"Old\"", "\"New\""));
         let missing = replace_line("{\n}\n", NAME_KEY, &quote("N")).unwrap();
         assert_eq!(missing, "{\n    \"ui.game.title\": \"N\",\n}\n");
+    }
+
+    /// The first 24 bytes of a PNG of `w` x `h`: what `png_size` reads.
+    fn png_head(w: u32, h: u32) -> Vec<u8> {
+        let mut b = b"\x89PNG\r\n\x1a\n\0\0\0\x0dIHDR".to_vec();
+        b.extend(w.to_be_bytes());
+        b.extend(h.to_be_bytes());
+        b
+    }
+
+    #[test]
+    fn the_icon_is_a_square_of_a_usable_size() {
+        assert_eq!(check_icon(&png_head(64, 64)).unwrap(), (64, 64));
+        assert!(check_icon(&png_head(64, 32)).is_err());
+        assert!(check_icon(&png_head(16, 16)).is_err());
+        assert!(check_icon(&png_head(1024, 1024)).is_err());
+        assert!(check_icon(b"not a png").is_err());
     }
 
     #[test]

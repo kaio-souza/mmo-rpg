@@ -220,6 +220,9 @@ fn row_of(d: Direction) -> u32 {
 
 /// The login background, under the assets folder (made in the editor).
 const BACKDROP: &str = "ui/login_background.png";
+/// The game's icon (window and browser tab), under the assets folder
+/// (made in the editor): a square PNG.
+const GAME_ICON: &str = "ui/game_icon.png";
 /// Wider than this only costs sheet space: the picture is drawn dimmed,
 /// behind the login box.
 const BACKDROP_WIDTH: u32 = 1280;
@@ -285,6 +288,20 @@ pub struct Graphics {
 
 impl Graphics {
     /// Nothing loaded (before `new`, in tests).
+    /// The game's icon (`ui/game_icon.png`) as RGBA8, if the game has one.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn game_icon(&self) -> Option<(u32, u32, Vec<u8>)> {
+        game_icon(&self.dir)
+    }
+
+    /// The icon file itself, for the browser tab.
+    #[cfg(target_arch = "wasm32")]
+    pub fn game_icon_png(&self) -> Option<Vec<u8>> {
+        client_files::read(self.dir.join(GAME_ICON))
+            .ok()
+            .filter(|b| !b.is_empty())
+    }
+
     pub fn empty() -> Graphics {
         Graphics {
             dir: PathBuf::new(),
@@ -608,6 +625,18 @@ fn newest(dir: &Path) -> Option<SystemTime> {
         }
     }
     best
+}
+
+/// The game's icon as RGBA8, when the game has one.
+#[cfg(not(target_arch = "wasm32"))]
+fn game_icon(assets: &Path) -> Option<(u32, u32, Vec<u8>)> {
+    let path = assets.join(GAME_ICON);
+    if !client_files::read(&path).is_ok_and(|b| !b.is_empty()) {
+        return None;
+    }
+    decode(&path)
+        .map_err(|e| warn!(path = %path.display(), "game icon not read: {e}"))
+        .ok()
 }
 
 /// PNG to RGBA8.

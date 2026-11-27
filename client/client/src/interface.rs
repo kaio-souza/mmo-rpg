@@ -290,12 +290,16 @@ pub fn look_lists(state: &WorldState, texts: &Texts) -> [LookList; 4] {
     })
 }
 
-/// Drawn for a player whose body has no sprite of its own, in the skin tone.
+/// Drawn for a player whose body has no sprite of its own (see `look_layers`).
 pub const PLAYER_SPRITE: &str = "player";
 
 /// The sprites of a look, bottom first, each with the tone that tints it
-/// (`None`: as drawn): the body in the skin tone (the game's `player`
-/// sprite when the body has none), the body's clothes, then the hairstyle
+/// (`None`: as drawn): the body in the skin tone, the body's clothes, then
+/// the hairstyle in the hair color. A body without a sprite draws the
+/// game's `player` sprite: in the skin tone only when no body has layer art
+/// (the whole figure is then a placeholder), else as drawn, since it is a
+/// finished character (clothes and hair) a tint would recolor whole. Then
+/// the hairstyle
 /// in the hair color. The world view, the creation preview and the
 /// character list all draw these, so the preview is the character.
 pub fn look_layers(state: &WorldState, look: Look) -> Vec<(&str, Option<u32>)> {
@@ -311,7 +315,14 @@ pub fn look_layers(state: &WorldState, look: Look) -> Vec<(&str, Option<u32>)> {
     fn named(s: &str) -> Option<&str> {
         (!s.is_empty()).then_some(s)
     }
-    let mut out = vec![(body.and_then(|b| named(&b.sprite)).unwrap_or(PLAYER_SPRITE), skin)];
+    let layered = lists
+        .first()
+        .is_some_and(|l| l.iter().any(|o| !o.sprite.is_empty()));
+    let mut out = vec![match body.and_then(|b| named(&b.sprite)) {
+        Some(sprite) => (sprite, skin),
+        None if layered => (PLAYER_SPRITE, None),
+        None => (PLAYER_SPRITE, skin),
+    }];
     if let Some(clothes) = body.and_then(|b| named(&b.clothes)) {
         out.push((clothes, None));
     }
@@ -1420,7 +1431,7 @@ mod layer_tests {
     #[test]
     fn a_look_is_body_clothes_and_hair_in_their_tones() {
         let w = world([
-            vec![option(0, "body_a", "clothes_a")],
+            vec![option(0, "body_a", "clothes_a"), option(0, "", "")],
             vec![option(0x112233, "", "")],
             vec![option(0, "hair_short", ""), option(0, "", "")],
             vec![option(0x445566, "", "")],
@@ -1440,6 +1451,10 @@ mod layer_tests {
             ..look
         };
         assert_eq!(look_layers(&w, bald).len(), 2);
+        // A body without art next to bodies with it: the finished `player`
+        // sprite, not tinted by the skin.
+        let bare = Look { body: 1, ..look };
+        assert_eq!(look_layers(&w, bare)[0], (PLAYER_SPRITE, None));
         assert_eq!(hidden_lists(&w), [false, false, false, false]);
     }
 

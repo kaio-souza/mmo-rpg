@@ -293,7 +293,10 @@ pub fn build(
             _ => Vec::new(),
         };
         let (name, tint) = match e.kind {
-            EntityKind::Player => (layers.first().map(|l| l.0), skin.unwrap_or(Rgba::WHITE)),
+            EntityKind::Player => (
+                layers.first().map(|l| l.0),
+                layers.first().and_then(|l| l.1).map_or(Rgba::WHITE, rgba),
+            ),
             _ => (state.sprite_name(e.appearance), Rgba::WHITE),
         };
         let tint = Rgba::new(tint.r * shade, tint.g * shade, tint.b * shade, tint.a);

@@ -415,6 +415,11 @@ function drawRail() {
   r.append(el("div", { class: "brand" }, el("div", { class: "logo" }, icon("cube", 18)), el("span", {}, t("editor.title"))));
   r.append(el("button", { class: "quick", onclick: quickOpen, title: "Ctrl+K" },
     icon("search", 15), el("span", {}, t("editor.quick_open")), el("kbd", {}, "Ctrl K")));
+  r.append(el("div", { class: "launch" },
+    el("button", { class: "primary", onclick: playGame, disabled: S.playing, title: t("editor.launch.play_hint") },
+      icon("play", 15), el("span", {}, t(S.playing ? "editor.launch.playing" : "editor.launch.play"))),
+    el("button", { class: "ghost", onclick: newGame, title: t("editor.launch.new_game") }, icon("plus", 15),
+      el("span", {}, t("editor.launch.new_game")))));
   const nav = el("nav", { class: "rail-nav" });
   const all = cats();
   for (const [sec, ids] of SECTIONS) {
@@ -2024,3 +2029,53 @@ function drawTexts() {
 
 window.addEventListener("beforeunload", (e) => { if (dirty()) e.preventDefault(); });
 boot().catch((e) => toast(e.message, "err"));
+
+// ---------- play and new game ----------
+
+// Runs the server and the client on this game (`mmo play`). The button
+// stays off while the game window is open.
+async function playGame() {
+  try {
+    await api("/api/play", {});
+  } catch (e) {
+    await say(t("editor.launch.play_failed"), e.message);
+    return;
+  }
+  S.playing = true;
+  toast(t("editor.launch.play_started"));
+  drawRail();
+  watchPlay();
+}
+
+function watchPlay() {
+  clearTimeout(S.playTimer);
+  S.playTimer = setTimeout(async () => {
+    const st = await api("/api/play").catch(() => ({ running: false }));
+    if (st.running) return watchPlay();
+    S.playing = false;
+    drawRail();
+  }, 2000);
+}
+
+// Copies the template beside this game and opens its editor in a new tab.
+async function newGame() {
+  const input = el("input", { class: "big mono", autofocus: true, placeholder: "my_game",
+    oninput: () => { input.value = input.value.toLowerCase().replace(/[^a-z0-9_-]+/g, "_").slice(0, 40); } });
+  const name = await dialog(t("editor.launch.new_game"), [
+    el("p", { class: "hint" }, t("editor.launch.new_game_hint")),
+    el("div", { class: "fld" }, el("label", {}, t("editor.launch.folder")), input),
+  ], [
+    { label: t("editor.cancel"), value: null },
+    { label: t("editor.create"), value: "go", primary: true },
+  ], { validate: () => !!input.value });
+  if (!name) return;
+  const tab = window.open("", "_blank");
+  try {
+    const r = await api("/api/new-game", { name: input.value });
+    toast(t("editor.launch.created").replace("{folder}", r.folder));
+    if (tab) tab.location = r.url; else window.location = r.url;
+  } catch (e) {
+    tab?.close();
+    await say(t("editor.launch.new_game"), e.message);
+  }
+}

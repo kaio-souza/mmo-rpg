@@ -21,6 +21,7 @@ assets/
 ├── text/<code>/ui.ron         interface texts (read when the client starts)
 ├── sounds/, music/            .ogg files; sounds/sounds.ron binds them to events
 ├── ui/login_background.png    optional login screen background (16:9, 640×360 or more)
+├── ui/game_icon.png          optional game icon: window and browser tab (square, 32 to 512)
 └── CREDITS.md                 author and licence of every file that needs one
 ```
 

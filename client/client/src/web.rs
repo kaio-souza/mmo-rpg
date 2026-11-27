@@ -101,6 +101,38 @@ pub fn query_args() -> Vec<String> {
     words
 }
 
+/// The page's tab icon: the game's icon as a `data:` link.
+pub fn set_favicon(png: &[u8]) {
+    let Some(doc) = web_sys::window().and_then(|w| w.document()) else {
+        return;
+    };
+    let Ok(link) = doc.create_element("link") else {
+        return;
+    };
+    let _ = link.set_attribute("rel", "icon");
+    let _ = link.set_attribute("href", &format!("data:image/png;base64,{}", base64(png)));
+    if let Some(root) = doc.document_element() {
+        let _ = root.append_child(&link);
+    }
+}
+
+fn base64(bytes: &[u8]) -> String {
+    const ABC: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
+        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(char::from(ABC[((n >> (18 - 6 * i)) & 63) as usize]));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
 pub fn canvas() -> Option<web_sys::HtmlCanvasElement> {
     web_sys::window()?
         .document()?
