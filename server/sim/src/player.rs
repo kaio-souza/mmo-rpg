@@ -34,6 +34,18 @@ pub(crate) struct QuestEntry {
     pub talked: u8,
     /// Unix second of the last completion (0: never).
     pub completed_at: u64,
+    /// Count of each objective that counts (kill, craft, reach), by index.
+    #[serde(default)]
+    pub progress: Vec<u32>,
+}
+
+/// Something a player did that quests may count.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Deed {
+    Killed(base::MonsterId),
+    Crafted(ItemId, u32),
+    /// Standing on this tile.
+    At(base::TilePos),
 }
 
 /// Everything effects may change. Cloned to apply an option's effects all
@@ -95,6 +107,7 @@ impl PlayerData {
                     completed: q.completed,
                     talked: q.talked,
                     completed_at: q.completed_at,
+                    progress: q.progress.clone(),
                 }),
                 None => kept_quests.push(q.clone()),
             }
@@ -206,6 +219,7 @@ impl PlayerData {
                     completed: q.completed,
                     talked: q.talked,
                     completed_at: q.completed_at,
+                    progress: q.progress.clone(),
                 })
             })
             .chain(self.kept_quests.iter().cloned())
@@ -377,7 +391,49 @@ impl PlayerData {
             && def.objectives.iter().enumerate().all(|(i, o)| match o {
                 Objective::Item { item, qty } => self.count(*item) >= u64::from(*qty),
                 Objective::Talk { .. } => q.talked & (1 << i) != 0,
+                Objective::Kill { .. } | Objective::Craft { .. } | Objective::Reach { .. } => {
+                    q.progress.get(i).copied().unwrap_or(0) >= o.needed()
+                }
             })
+    }
+
+    /// Counts a deed for every active quest that asks for it; true when
+    /// some count changed.
+    pub fn deed(&mut self, cat: &ValidatedCatalog, deed: Deed) -> bool {
+        let mut changed = false;
+        for q in self.quests.iter_mut().filter(|q| !q.completed) {
+            let Some(def) = cat.quest(q.quest) else { continue };
+            for (i, o) in def.objectives.iter().enumerate() {
+                let add = match (o, deed) {
+                    (Objective::Kill { monster, .. }, Deed::Killed(m)) if *monster == m => 1,
+                    (Objective::Craft { item, .. }, Deed::Crafted(it, n)) if *item == it => n,
+                    (Objective::Reach { pos, radius }, Deed::At(at))
+                        if pos.distance(at) <= u32::from(*radius) =>
+                    {
+                        1
+                    }
+                    _ => continue,
+                };
+                if q.progress.len() <= i {
+                    q.progress.resize(i.saturating_add(1), 0);
+                }
+                if let Some(c) = q.progress.get_mut(i)
+                    && *c < o.needed()
+                {
+                    *c = c.saturating_add(add).min(o.needed());
+                    changed = true;
+                }
+            }
+        }
+        changed
+    }
+
+    /// Some active quest has a place to reach.
+    pub fn travelling(&self, cat: &ValidatedCatalog) -> bool {
+        self.quests.iter().filter(|q| !q.completed).any(|q| {
+            cat.quest(q.quest)
+                .is_some_and(|d| d.objectives.iter().any(|o| matches!(o, Objective::Reach { .. })))
+        })
     }
 
     pub fn start(&mut self, cat: &ValidatedCatalog, quest: QuestId, now: u64) -> Result<(), Fail> {
@@ -390,6 +446,7 @@ impl PlayerData {
             completed: false,
             talked: 0,
             completed_at,
+            progress: Vec::new(),
         };
         match self.quests.binary_search_by_key(&quest, |q| q.quest) {
             Ok(i) => {
@@ -558,13 +615,41 @@ impl PlayerData {
                             npc: cat.npc(*npc).map_or(base::TextId::new(0), |n| n.name),
                             done: q.completed || q.talked & (1 << i) != 0,
                         },
+                        Objective::Kill { monster, qty } => ObjectiveView::Kill {
+                            monster: cat.monster(*monster).map_or(base::TextId::new(0), |m| m.name),
+                            have: if q.completed {
+                                *qty
+                            } else {
+                                q.progress.get(i).copied().unwrap_or(0)
+                            },
+                            need: *qty,
+                        },
+                        Objective::Craft { item, qty } => ObjectiveView::Craft {
+                            item: *item,
+                            have: if q.completed {
+                                *qty
+                            } else {
+                                q.progress.get(i).copied().unwrap_or(0)
+                            },
+                            need: *qty,
+                        },
+                        Objective::Reach { pos, .. } => ObjectiveView::Reach {
+                            pos: *pos,
+                            done: q.completed || q.progress.get(i).copied().unwrap_or(0) > 0,
+                        },
                     })
                     .collect();
                 let goal = match from {
                     Some(from) if !q.completed => crate::goal::quest_goal(
                         cat,
                         q.quest,
-                        |i| q.talked & (1 << i) != 0,
+                        |i| {
+                            q.talked & (1 << i) != 0
+                                || def
+                                    .objectives
+                                    .get(i)
+                                    .is_some_and(|o| q.progress.get(i).copied().unwrap_or(0) >= o.needed())
+                        },
                         |item| self.count(item),
                         from,
                     ),

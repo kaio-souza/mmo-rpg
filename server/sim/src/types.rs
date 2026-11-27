@@ -150,6 +150,8 @@ pub struct SavedQuest {
     /// Unix second of the last completion (0: never); a repeatable quest
     /// with a cooldown starts again only after it (alpha, sheet v7).
     pub completed_at: u64,
+    /// Count of each objective that counts (kill, craft, reach).
+    pub progress: Vec<u32>,
 }
 
 /// Everything that changes a zone arrives as a command, so the command
@@ -851,6 +853,8 @@ pub struct StatsView {
     /// resting) and until the global cooldown ends.
     pub cooldowns: Vec<(TechniqueId, u32)>,
     pub global_cooldown: u32,
+    /// Ticks until each resting consumable may be used again.
+    pub item_cooldowns: Vec<(ItemId, u32)>,
     /// Phase 8: recipes this character knows.
     pub recipes: Vec<RecipeId>,
     /// Special attributes above 0, by name.
@@ -908,6 +912,21 @@ pub enum ObjectiveView {
     /// `npc`: the NPC's name.
     Talk {
         npc: TextId,
+        done: bool,
+    },
+    /// `monster`: the monster's name.
+    Kill {
+        monster: TextId,
+        have: u32,
+        need: u32,
+    },
+    Craft {
+        item: ItemId,
+        have: u32,
+        need: u32,
+    },
+    Reach {
+        pos: base::TilePos,
         done: bool,
     },
 }

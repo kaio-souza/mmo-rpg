@@ -37,6 +37,25 @@ pub(crate) fn run(z: &mut Zone, out: &mut TickOutput) {
     }
 }
 
+/// Players who moved this tick and have a place to reach count where
+/// they stand.
+pub(crate) fn reached(z: &mut Zone) {
+    let now = z.tick.0;
+    let content = z.content.clone();
+    let cat = &content.catalog;
+    for h in z.by_player.values() {
+        let Ok((body, p)) = z.world.query_one_mut::<(&Body, &mut crate::zone::PlayerComp)>(*h) else {
+            continue;
+        };
+        if body.moved_tick == now
+            && p.data.travelling(cat)
+            && p.data.deed(cat, crate::player::Deed::At(body.pos))
+        {
+            p.dirty_quests = true;
+        }
+    }
+}
+
 /// Every player of the zone to `to` (an instance closing on them).
 pub(crate) fn evict(z: &mut Zone, to: TilePos, out: &mut TickOutput) {
     let players: Vec<PlayerId> = z.by_player.keys().copied().collect();

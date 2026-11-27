@@ -646,6 +646,8 @@ pub struct StatsInfo {
     /// the global cooldown ends, when this was sent.
     pub cooldowns: Vec<(TechniqueId, u32)>,
     pub global_cooldown: u32,
+    /// Protocol 30: ticks until each resting consumable may be used again.
+    pub item_cooldowns: Vec<(ItemId, u32)>,
     /// Protocol 9: recipes this character knows (phase 8).
     pub recipes: Vec<RecipeId>,
     /// Protocol 17: the attributes of the sheet alone, without equipment
@@ -766,6 +768,22 @@ pub struct ItemInfo {
     pub light: Option<LightInfo>,
     /// Protocol 22: durability lost per minute equipped (0: none).
     pub burn: u32,
+    /// Protocol 30: what the piece does when worn (equipment only).
+    pub equip: Option<EquipInfo>,
+}
+
+/// Protocol 30: an equipment piece's numbers, for its tooltip.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EquipInfo {
+    /// Weapons: damage range and ticks between blows; 0 for the rest.
+    pub damage: (u32, u32),
+    pub attack_ticks: u32,
+    /// Weapons: tiles a blow reaches.
+    pub range: u16,
+    /// Armor and off-hand: defense it adds.
+    pub defense: u32,
+    /// Weapons: attribute that adds to the damage (index in `Attribute::ALL`).
+    pub attribute: u8,
 }
 
 /// Protocol 22: an item's light; `radius` in tiles.
@@ -808,6 +826,23 @@ pub enum ObjectiveView {
     /// `npc`: the NPC's name.
     Talk {
         npc: TextId,
+        done: bool,
+    },
+    /// Protocol 29: defeat monsters; `monster`: its name.
+    Kill {
+        monster: TextId,
+        have: u32,
+        need: u32,
+    },
+    /// Protocol 29: craft items.
+    Craft {
+        item: ItemId,
+        have: u32,
+        need: u32,
+    },
+    /// Protocol 29: reach a place (global tile).
+    Reach {
+        pos: base::TilePos,
         done: bool,
     },
 }

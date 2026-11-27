@@ -1002,4 +1002,7 @@
     "editor.field.party": (text: "Group size (min, max)", note: "Label of the content editor (a tool for game designers): group size allowed to enter, min and max.", max_chars: 80),
     "editor.field.boss": (text: "Boss (clears the run)", note: "Label of the content editor (a tool for game designers): the monster whose death clears a dungeon.", max_chars: 80),
     "editor.field.lockout": (text: "Lockout", note: "Label of the content editor (a tool for game designers): when characters who cleared a dungeon may enter again.", max_chars: 80),
+    "editor.value.kill": (text: "Defeat monsters", note: "Label of the content editor (a tool for game designers): a kind of quest objective.", max_chars: 80),
+    "editor.value.reach": (text: "Travel to a place", note: "Label of the content editor (a tool for game designers): a kind of quest objective.", max_chars: 80),
+    "editor.value.craft": (text: "Craft items", note: "Label of the content editor (a tool for game designers): a kind of quest objective.", max_chars: 80),
 }

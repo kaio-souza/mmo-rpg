@@ -463,7 +463,7 @@ fn hotbar_item(
     now_ms: f64,
     gfx: &crate::graphics::Graphics,
 ) -> Option<HotbarSlot> {
-    let _ = (now_ms, slot);
+    let _ = slot;
     let def = state.item(item)?;
     let use_effect = def.use_effect?;
     let count = state
@@ -494,12 +494,23 @@ fn hotbar_item(
             &[Arg::Int(i64::from(use_effect.revive_permille / 10))],
         ));
     }
+    if use_effect.cooldown_ticks > 0 {
+        tooltip.push(ui.t_args(
+            "ui.tip.cooldown",
+            &[seconds(f64::from(use_effect.cooldown_ticks))],
+        ));
+    }
     tooltip.push(ui.t_args("ui.hotbar.count", &[Arg::Int(i64::from(count))]));
+    // The same sweep and countdown as a technique.
+    let left = state.item_cooldown_left_ms(item, now_ms);
+    let total = (f64::from(use_effect.cooldown_ticks) * TICK_MS)
+        .max(left)
+        .max(1.0);
     Some(HotbarSlot {
         name: texts.show(&TextRef::new(def.name)),
         tooltip,
-        cooldown: 0.0,
-        cooldown_text: None,
+        cooldown: (left / total) as f32,
+        cooldown_text: (left > 0.0).then(|| format!("{:.0}", (left / 1000.0).ceil())),
         usable: count > 0,
         icon: gfx.icon_uv(state.icon_name(def.icon), "generic_item"),
         count: Some(count.to_string()),
@@ -633,6 +644,74 @@ fn appraised_line(ui: &UiText, p: &protocol::InstanceInfo) -> Option<String> {
     })
 }
 
+/// What a piece does when worn, how long it lasts and what it weighs.
+fn equip_lines(state: &WorldState, texts: &Texts, ui: &UiText, d: &protocol::ItemInfo) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(e) = d.equip {
+        if e.damage.1 > 0 {
+            let attr = base::Attribute::ALL
+                .get(usize::from(e.attribute))
+                .map_or_else(String::new, |a| attribute_label(ui, *a));
+            out.push(ui.t_args(
+                "ui.item.damage",
+                &[
+                    Arg::Int(i64::from(e.damage.0)),
+                    Arg::Int(i64::from(e.damage.1)),
+                    Arg::Str(attr),
+                ],
+            ));
+            out.push(ui.t_args("ui.item.speed", &[seconds(f64::from(e.attack_ticks))]));
+            if e.range > 1 {
+                out.push(ui.t_args("ui.item.range", &[Arg::Int(i64::from(e.range))]));
+            }
+        }
+        if e.defense > 0 {
+            out.push(ui.t_args("ui.item.defense", &[Arg::Int(i64::from(e.defense))]));
+        }
+    }
+    if let Some(p) = d.weapon.and_then(|p| state.proficiency_info(p)) {
+        out.push(ui.t_args("ui.item.trains", &[Arg::Str(texts.show(&TextRef::new(p.name)))]));
+    }
+    if d.durability > 0 {
+        out.push(ui.t_args("ui.item.durability", &[Arg::Int(i64::from(d.durability))]));
+    }
+    if d.weight > 0 {
+        out.push(ui.t_args(
+            "ui.item.weight",
+            &[Arg::Fixed(Fixed::from_millis(
+                i32::try_from(d.weight).unwrap_or(i32::MAX),
+            ))],
+        ));
+    }
+    out
+}
+
+/// What using a consumable does, for tooltips.
+fn use_lines(d: &protocol::ItemInfo, ui: &UiText) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(u) = d.use_effect {
+        if u.hp > 0 {
+            out.push(ui.t_args("ui.item.use_hp", &[Arg::Int(i64::from(u.hp))]));
+        }
+        if u.vigor > 0 {
+            out.push(ui.t_args("ui.item.use_vigor", &[Arg::Int(i64::from(u.vigor))]));
+        }
+        if u.mp > 0 {
+            out.push(ui.t_args("ui.item.use_mp", &[Arg::Int(i64::from(u.mp))]));
+        }
+        if u.revive_permille > 0 {
+            out.push(ui.t_args(
+                "ui.item.use_revive",
+                &[Arg::Int(i64::from(u.revive_permille / 10))],
+            ));
+        }
+        if u.cooldown_ticks > 0 {
+            out.push(ui.t_args("ui.tip.cooldown", &[seconds(f64::from(u.cooldown_ticks))]));
+        }
+    }
+    out
+}
+
 /// Phase 11: the light an item gives and how fast it burns.
 fn light_lines(d: &protocol::ItemInfo, ui: &UiText) -> Vec<String> {
     let mut out = Vec::new();
@@ -681,6 +760,7 @@ fn item_details(
         }
         details.push(ui.t("ui.item.click_use"));
     }
+    details.extend(equip_lines(state, texts, ui, d));
     details.extend(light_lines(d, ui));
     if unique {
         details.push(ui.t("ui.item.click_equip"));
@@ -1137,6 +1217,10 @@ fn shop_model(
             let mut tooltip = Vec::new();
             if let Some(d) = def {
                 tooltip.push(texts.show(&TextRef::new(d.description)));
+                // Everything that helps decide: what it does, lasts, weighs.
+                tooltip.extend(use_lines(d, ui));
+                tooltip.extend(equip_lines(state, texts, ui, d));
+                tooltip.extend(light_lines(d, ui));
             }
             tooltip.push(ui.t("ui.shop.click_buy"));
             client_ui::ShopLineModel {
@@ -1278,6 +1362,29 @@ pub fn objective_text(state: &WorldState, texts: &Texts, ui: &UiText, o: &Object
             "ui.quests.talk",
             &[base::Arg::Str(texts.show(&TextRef::new(*npc)))],
         ),
+        ObjectiveView::Kill { monster, have, need } => ui.t_args(
+            "ui.quests.kill",
+            &[
+                base::Arg::Str(texts.show(&TextRef::new(*monster))),
+                base::Arg::Int(i64::from((*have).min(*need))),
+                base::Arg::Int(i64::from(*need)),
+            ],
+        ),
+        ObjectiveView::Craft { item, have, need } => {
+            let name = state.item(*item).map_or_else(
+                || format!("#{}", item.get()),
+                |d| texts.show(&TextRef::new(d.name)),
+            );
+            ui.t_args(
+                "ui.quests.craft",
+                &[
+                    base::Arg::Str(name),
+                    base::Arg::Int(i64::from((*have).min(*need))),
+                    base::Arg::Int(i64::from(*need)),
+                ],
+            )
+        }
+        ObjectiveView::Reach { .. } => ui.t_args("ui.quests.reach", &[]),
     }
 }
 
@@ -1295,8 +1402,10 @@ fn quests(state: &WorldState, texts: &Texts, ui: &UiText) -> Vec<QuestModel> {
                 .iter()
                 .map(|o| {
                     let done = match o {
-                        ObjectiveView::Item { have, need, .. } => have >= need,
-                        ObjectiveView::Talk { done, .. } => *done,
+                        ObjectiveView::Item { have, need, .. }
+                        | ObjectiveView::Kill { have, need, .. }
+                        | ObjectiveView::Craft { have, need, .. } => have >= need,
+                        ObjectiveView::Talk { done, .. } | ObjectiveView::Reach { done, .. } => *done,
                     };
                     (objective_text(state, texts, ui, o), done)
                 })

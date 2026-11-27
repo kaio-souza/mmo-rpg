@@ -1002,4 +1002,7 @@
     "editor.field.party": "파티 인원 (최소, 최대)",
     "editor.field.boss": "보스 (처치 시 클리어)",
     "editor.field.lockout": "클리어 후 잠금",
+    "editor.value.kill": "몬스터 처치",
+    "editor.value.reach": "장소로 이동",
+    "editor.value.craft": "아이템 제작",
 }

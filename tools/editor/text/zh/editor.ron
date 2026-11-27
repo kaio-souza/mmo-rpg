@@ -1002,4 +1002,7 @@
     "editor.field.party": "队伍人数（最少，最多）",
     "editor.field.boss": "首领（击败即通关）",
     "editor.field.lockout": "通关后锁定",
+    "editor.value.kill": "击败怪物",
+    "editor.value.reach": "前往地点",
+    "editor.value.craft": "制作物品",
 }

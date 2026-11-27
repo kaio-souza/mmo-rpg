@@ -8,7 +8,7 @@ use crate::RepoError;
 use serde::{Deserialize, Serialize};
 
 /// Version written by this build.
-pub const SHEET_VERSION: u16 = 8;
+pub const SHEET_VERSION: u16 = 9;
 
 /// The current sheet. Name and position live in columns, not here.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -102,6 +102,9 @@ pub struct SavedQuest {
     /// Unix second of the last completion (0: never); a repeatable quest
     /// with a cooldown starts again only after it (alpha, sheet v7).
     pub completed_at: u64,
+    /// Progress of each objective that counts (kills, crafts; 1 for a
+    /// place reached), by objective index; empty: none yet (sheet v9).
+    pub progress: Vec<u32>,
 }
 
 /// Version 1 as written to disk. Kept frozen: changes go to a new version.
@@ -186,6 +189,26 @@ struct SheetV7 {
 struct SheetV8 {
     v7: SheetV7,
     shop_sales: Vec<(String, u64, u64)>,
+}
+
+/// Version 9: progress of the objectives that count (kill, craft,
+/// reach), by quest id. Frozen.
+#[derive(Serialize, Deserialize)]
+struct SheetV9 {
+    v8: SheetV8,
+    progress: Vec<(String, Vec<u32>)>,
+}
+
+impl From<SheetV9> for SavedSheet {
+    fn from(v: SheetV9) -> Self {
+        let mut s = SavedSheet::from(v.v8);
+        for (quest, progress) in v.progress {
+            if let Some(q) = s.quests.iter_mut().find(|q| q.quest == quest) {
+                q.progress = progress;
+            }
+        }
+        s
+    }
 }
 
 impl From<SheetV8> for SavedSheet {
@@ -297,6 +320,7 @@ impl From<SheetV2> for SavedSheet {
                     completed,
                     talked,
                     completed_at: 0,
+                    progress: Vec::new(),
                 })
                 .collect(),
             affinity: v.affinity,
@@ -439,7 +463,16 @@ pub(crate) fn encode(sheet: &SavedSheet) -> Result<(u16, Vec<u8>), RepoError> {
         v7,
         shop_sales: sheet.shop_sales.clone(),
     };
-    postcard::to_stdvec(&v8)
+    let v9 = SheetV9 {
+        v8,
+        progress: sheet
+            .quests
+            .iter()
+            .filter(|q| q.progress.iter().any(|n| *n > 0))
+            .map(|q| (q.quest.clone(), q.progress.clone()))
+            .collect(),
+    };
+    postcard::to_stdvec(&v9)
         .map(|b| (SHEET_VERSION, b))
         .map_err(|e| RepoError::Corrupt(e.to_string()))
 }
@@ -470,6 +503,9 @@ pub(crate) fn decode(version: u16, bytes: &[u8]) -> Result<SavedSheet, RepoError
         8 => postcard::from_bytes::<SheetV8>(bytes)
             .map(SavedSheet::from)
             .map_err(|e| RepoError::Corrupt(format!("sheet v8: {e}"))),
+        9 => postcard::from_bytes::<SheetV9>(bytes)
+            .map(SavedSheet::from)
+            .map_err(|e| RepoError::Corrupt(format!("sheet v9: {e}"))),
         v => Err(RepoError::Corrupt(format!("unknown sheet version {v}"))),
     }
 }
@@ -502,6 +538,7 @@ mod tests {
                 completed: true,
                 talked: 1,
                 completed_at: 1_700_000_000,
+                progress: vec![3, 0, 1],
             }],
             affinity: vec![("herbalist".into(), 5)],
             progress: SavedProgress {
@@ -535,7 +572,7 @@ mod tests {
             shop_sales: vec![("village_store".into(), 1200, 1_700_000_100)],
         };
         let (v, bytes) = encode(&s).unwrap();
-        assert_eq!(v, 8);
+        assert_eq!(v, 9);
         assert_eq!(decode(v, &bytes).unwrap(), s);
     }
 

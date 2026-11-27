@@ -1,0 +1,2 @@
+// Thin out the wolves around the meadow.
+(rank: F, repeatable: true, cooldown_secs: 3600, objectives: [Kill(monster: "wolf", qty: 5)], rewards: [Coins(200)])

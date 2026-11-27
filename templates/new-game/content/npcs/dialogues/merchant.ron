@@ -16,8 +16,24 @@
                     when: All([RecipeKnown("iron_ingot"), Not(RecipeKnown("iron_sword"))]),
                     effects: [TakeCoins(300), LearnRecipe("iron_sword"), LearnRecipe("steel_sword")],
                 ),
+                (
+                    text: "npc.merchant.option.work",
+                    next: "work",
+                    when: All([RecipeKnown("iron_ingot"), Quest(quest: "first_forging", state: NotStarted)]),
+                    effects: [StartQuest("first_forging")],
+                ),
+                (
+                    text: "npc.merchant.option.done",
+                    next: "taught",
+                    when: QuestReady("first_forging"),
+                    effects: [CompleteQuest("first_forging")],
+                ),
                 (text: "npc.merchant.option.bye"),
             ],
+        ),
+        "work": (
+            text: "npc.merchant.work",
+            options: [(text: "npc.merchant.option.bye")],
         ),
         "taught": (
             text: "npc.merchant.taught",

@@ -681,6 +681,7 @@ fn unknown_saved_ids_are_kept() {
         completed: true,
         talked: 0,
         completed_at: 0,
+        progress: Vec::new(),
     }];
     sheet.affinity = vec![("ghost".into(), -5)];
     let me = PlayerId::new(1);

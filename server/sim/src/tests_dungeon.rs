@@ -24,6 +24,8 @@ fn content() -> Arc<Content> {
         "item.relic.name",
         "item.relic.desc",
         "system.unique_lost",
+        "quest.hunt.name",
+        "quest.hunt.desc",
     ];
     let text = format!(
         "{{ {} }}",
@@ -73,6 +75,10 @@ fn content() -> Arc<Content> {
         (
             "titles/delver.ron".into(),
             "(trigger: Counter(family: \"clears\", key: \"crypt\", at: 1))".into(),
+        ),
+        (
+            "quests/hunt.ron".into(),
+            "(rank: F, objectives: [Kill(monster: \"rat\", qty: 2), Reach(pos: (x: 2, y: 2), radius: 1), Craft(item: \"relic\", qty: 1)])".into(),
         ),
         (
             "dungeons/crypt.ron".into(),
@@ -199,4 +205,34 @@ fn the_door_checks_the_level_and_the_boss_clears_the_run() {
         (who, to, a.pos),
         (p2, c.catalog.zone_by_name("field").unwrap().0, TilePos::new(2, 2))
     );
+}
+
+#[test]
+fn kill_travel_and_craft_objectives_count_while_active() {
+    use crate::player::{Deed, PlayerData};
+    let c = content();
+    let cat = &c.catalog;
+    let (hunt, _) = cat.quest_by_name("hunt").unwrap();
+    let (rat, _) = cat.monster_by_name("rat").unwrap();
+    let (relic, _) = cat.item_by_name("relic").unwrap();
+    let mut p = PlayerData::import(
+        &CharacterSheet::new(CharacterName::try_from("hero").unwrap()),
+        cat,
+    );
+    // Nothing counts before the quest starts.
+    assert!(!p.deed(cat, Deed::Killed(rat)));
+    p.start(cat, hunt, 0).unwrap();
+    assert!(p.deed(cat, Deed::Killed(rat)));
+    assert!(p.deed(cat, Deed::Killed(rat)));
+    assert!(!p.deed(cat, Deed::Killed(rat)), "two is enough");
+    assert!(!p.deed(cat, Deed::At(TilePos::new(9, 9))), "too far");
+    assert!(!p.ready(cat, hunt));
+    assert!(p.deed(cat, Deed::At(TilePos::new(3, 3))));
+    assert!(p.deed(cat, Deed::Crafted(relic, 1)));
+    assert!(p.ready(cat, hunt));
+    // The count survives a save.
+    let mut sheet = CharacterSheet::new(CharacterName::try_from("hero").unwrap());
+    p.export(cat, &mut sheet);
+    assert_eq!(sheet.quests[0].progress, vec![2, 1, 1]);
+    assert!(PlayerData::import(&sheet, cat).ready(cat, hunt));
 }

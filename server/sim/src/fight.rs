@@ -515,6 +515,12 @@ fn reward(z: &mut Zone, h: hecs::Entity, xp: u64, monster: &str, out: &mut TickO
         return;
     };
     p.growth.count(cat, "kills", monster, 1);
+    // A quest may ask for this kill.
+    if let Some((mid, _)) = cat.monster_by_name(monster)
+        && p.data.deed(cat, crate::player::Deed::Killed(mid))
+    {
+        p.dirty_quests = true;
+    }
     let xp = TitleBonuses::raise(xp, progression::title_bonuses(&p.growth.sheet, cat).xp_percent);
     let mut changes = progression::add_xp(&mut p.growth.sheet, xp, cat);
     changes.extend(p.growth.check_titles(cat));

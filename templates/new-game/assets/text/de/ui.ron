@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "Stumm an/aus",
     "ui.inventory.equipment": "Ausrüstung",
     "ui.inventory.empty": "Leer",
+    "ui.quests.kill": "Besiege {monster}: {have}/{need}",
+    "ui.quests.craft": "Stelle her: {item} {have}/{need}",
+    "ui.quests.reach": "Reise zum markierten Ort",
+    "ui.item.damage": "Schaden: {min}–{max} (+{attribute})",
+    "ui.item.speed": "Ein Schlag alle {seconds} s",
+    "ui.item.range": "Reichweite: {tiles} Felder",
+    "ui.item.defense": "Verteidigung: +{defense}",
+    "ui.item.trains": "Trainiert {proficiency}",
+    "ui.item.weight": "Gewicht: {kg} kg",
 }

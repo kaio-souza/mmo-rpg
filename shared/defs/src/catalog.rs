@@ -470,6 +470,7 @@ impl Catalog {
             quests: &quest_ids,
             recipes: &recipe_ids,
             techniques: &tech_ids,
+            monsters: &monster_ids,
         };
         let key =
             |problems: &mut Vec<ContentProblem>, k: String, problem: &dyn Fn(String) -> ContentProblem| {
@@ -643,6 +644,22 @@ impl Catalog {
         }
 
         // Every spawn must name an NPC that exists.
+        // A place to reach is walkable ground of some zone.
+        for q in &quests {
+            for o in &q.objectives {
+                if let crate::Objective::Reach { pos, .. } = o {
+                    let ok = crate::zone::zone_at(&zones, *pos)
+                        .and_then(|z| z.tile_at(*pos))
+                        .is_some_and(|t| !t.blocks_movement);
+                    if !ok {
+                        problems.push(ContentProblem::File {
+                            path: format!("quests/{}.ron", q.id),
+                            message: format!("Reach ({}, {}): not walkable ground of any zone", pos.x, pos.y),
+                        });
+                    }
+                }
+            }
+        }
         // A teleport lands on walkable ground of some zone.
         for d in &dialogues {
             let effects = d.nodes.iter().flat_map(|n| &n.options).flat_map(|o| &o.effects);

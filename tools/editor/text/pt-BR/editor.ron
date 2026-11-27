@@ -1002,4 +1002,7 @@
     "editor.field.party": "Tamanho do grupo (mín, máx)",
     "editor.field.boss": "Chefe (conclui a run)",
     "editor.field.lockout": "Bloqueio após concluir",
+    "editor.value.kill": "Derrotar monstros",
+    "editor.value.reach": "Viajar até um local",
+    "editor.value.craft": "Fabricar itens",
 }

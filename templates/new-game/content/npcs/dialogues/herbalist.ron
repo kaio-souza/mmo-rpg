@@ -22,8 +22,24 @@
                     when: All([Quest(quest: "herbs_for_the_healer", state: Completed), Not(RecipeKnown("health_potion"))]),
                     effects: [TakeCoins(100), LearnRecipe("health_potion")],
                 ),
+                (
+                    text: "npc.herbalist.option.wolves",
+                    next: "wolves",
+                    when: Quest(quest: "wolf_cull", state: NotStarted),
+                    effects: [StartQuest("wolf_cull")],
+                ),
+                (
+                    text: "npc.herbalist.option.wolves_done",
+                    next: "thanks",
+                    when: QuestReady("wolf_cull"),
+                    effects: [CompleteQuest("wolf_cull")],
+                ),
                 (text: "npc.herbalist.option.bye"),
             ],
+        ),
+        "wolves": (
+            text: "npc.herbalist.wolves",
+            options: [(text: "npc.herbalist.option.bye")],
         ),
         "asked": (
             text: "npc.herbalist.asked",

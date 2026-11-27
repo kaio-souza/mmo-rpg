@@ -1002,4 +1002,7 @@
     "editor.field.party": "Gruppengröße (min, max)",
     "editor.field.boss": "Boss (schließt den Lauf ab)",
     "editor.field.lockout": "Sperre nach Abschluss",
+    "editor.value.kill": "Monster besiegen",
+    "editor.value.reach": "Zu einem Ort reisen",
+    "editor.value.craft": "Gegenstände herstellen",
 }

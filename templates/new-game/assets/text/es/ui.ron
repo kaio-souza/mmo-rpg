@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "Silenciar o activar",
     "ui.inventory.equipment": "Equipo",
     "ui.inventory.empty": "Vacío",
+    "ui.quests.kill": "Derrota a {monster}: {have}/{need}",
+    "ui.quests.craft": "Fabrica {item}: {have}/{need}",
+    "ui.quests.reach": "Viaja al lugar marcado",
+    "ui.item.damage": "Daño: {min}–{max} (+{attribute})",
+    "ui.item.speed": "Un golpe cada {seconds} s",
+    "ui.item.range": "Alcance: {tiles} casillas",
+    "ui.item.defense": "Defensa: +{defense}",
+    "ui.item.trains": "Entrena {proficiency}",
+    "ui.item.weight": "Peso: {kg} kg",
 }

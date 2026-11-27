@@ -238,6 +238,12 @@ impl Zone {
         if let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(handle) {
             p.data = data;
             p.dirty_bag = true;
+            // A quest may ask for this craft.
+            if p.data
+                .deed(cat, crate::player::Deed::Crafted(def.result, def.qty))
+            {
+                p.dirty_quests = true;
+            }
         }
         if equipment {
             let who = self

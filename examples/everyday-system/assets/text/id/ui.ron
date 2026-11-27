@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "Bisukan atau nyalakan",
     "ui.inventory.equipment": "Perlengkapan",
     "ui.inventory.empty": "Kosong",
+    "ui.quests.kill": "Kalahkan {monster}: {have}/{need}",
+    "ui.quests.craft": "Buat {item}: {have}/{need}",
+    "ui.quests.reach": "Pergi ke tempat yang ditandai",
+    "ui.item.damage": "Kerusakan: {min}–{max} (+{attribute})",
+    "ui.item.speed": "Satu serangan tiap {seconds} dtk",
+    "ui.item.range": "Jangkauan: {tiles} petak",
+    "ui.item.defense": "Pertahanan: +{defense}",
+    "ui.item.trains": "Melatih {proficiency}",
+    "ui.item.weight": "Berat: {kg} kg",
 }

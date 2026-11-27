@@ -638,6 +638,16 @@ impl App {
             return;
         }
         self.mark_bag(slot);
+        let item = self
+            .state
+            .inventory()
+            .and_then(|i| i.slots.get(usize::from(slot)))
+            .and_then(|s| s.as_ref())
+            .map(|s| s.item);
+        if let Some(item) = item {
+            let now_ms = self.started.elapsed().as_secs_f64() * 1000.0;
+            self.state.note_item_used(item, now_ms);
+        }
         self.send(&ClientMsg::UseItem { slot });
     }
 

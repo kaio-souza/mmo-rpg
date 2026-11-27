@@ -1002,4 +1002,7 @@
     "editor.field.party": "Dimensione del gruppo (min, max)",
     "editor.field.boss": "Boss (completa la run)",
     "editor.field.lockout": "Blocco dopo il completamento",
+    "editor.value.kill": "Sconfiggere mostri",
+    "editor.value.reach": "Raggiungere un luogo",
+    "editor.value.craft": "Creare oggetti",
 }

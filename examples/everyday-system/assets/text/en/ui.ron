@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": (text: "Mute or unmute", note: "Help window: key action.", max_chars: 30),
     "ui.inventory.equipment": (text: "Equipment", note: "Inventory: header over the worn pieces.", max_chars: 20),
     "ui.inventory.empty": (text: "Empty", note: "Inventory: an equipment slot with nothing worn.", max_chars: 16),
+    "ui.quests.kill": (text: "Defeat {monster}: {have}/{need}", note: "Kill objective; {monster}: monster name; {have}: defeated; {need}: needed.", max_chars: 60),
+    "ui.quests.craft": (text: "Craft {item}: {have}/{need}", note: "Craft objective; {item}: item name; {have}: crafted; {need}: needed.", max_chars: 60),
+    "ui.quests.reach": (text: "Travel to the marked place", note: "Travel objective: go to the place the quest pointer and minimap show.", max_chars: 60),
+    "ui.item.damage": (text: "Damage: {min}–{max} (+{attribute})", note: "Tooltip: weapon damage range and the attribute that adds to it; {min}, {max}: damage; {attribute}: attribute name.", max_chars: 60),
+    "ui.item.speed": (text: "A blow every {seconds} s", note: "Tooltip: seconds between two blows of a weapon; {seconds}: seconds.", max_chars: 40),
+    "ui.item.range": (text: "Reach: {tiles} tiles", note: "Tooltip: tiles a weapon reaches; {tiles}: tiles.", max_chars: 40),
+    "ui.item.defense": (text: "Defense: +{defense}", note: "Tooltip: defense a worn piece adds; {defense}: points.", max_chars: 40),
+    "ui.item.trains": (text: "Trains {proficiency}", note: "Tooltip: the proficiency a weapon trains and its techniques need; {proficiency}: name.", max_chars: 50),
+    "ui.item.weight": (text: "Weight: {kg} kg", note: "Tooltip: weight of one piece; {kg}: kilograms.", max_chars: 40),
 }

@@ -209,6 +209,9 @@ pub struct WorldState {
     /// at the key press instead of one round trip later; a `Stats` or an
     /// `Error` that arrives afterwards replaces the guess.
     used: Vec<(base::TechniqueId, f64, f64)>,
+    /// Consumables just used, before the server's `Stats` shows their
+    /// cooldown: `(item, when, milliseconds)`.
+    items_used: Vec<(ItemId, f64, f64)>,
     markers: BTreeMap<EntityId, QuestMarker>,
     combat: Vec<CombatEvent>,
     /// Items with identity in the backpack: `(slot, id, hidden once appraised)`.
@@ -444,6 +447,7 @@ impl WorldState {
             ServerMsg::Error { code, args } => {
                 // The use was refused: no cooldown started.
                 self.used.clear();
+                self.items_used.clear();
                 self.last_error = Some((code, args));
             }
             ServerMsg::QueuePosition {
@@ -531,6 +535,7 @@ impl WorldState {
                 self.stats = Some(*st);
                 self.stats_at_ms = now_ms;
                 self.used.clear();
+                self.items_used.clear();
                 self.stats_changed = true;
             }
             ServerMsg::QuestLog { quests } => {
@@ -701,6 +706,35 @@ impl WorldState {
             })
             .fold(0.0, f64::max);
         known.max(guess).max(0.0)
+    }
+
+    /// Milliseconds until a consumable can be used again; 0 when ready.
+    pub fn item_cooldown_left_ms(&self, item: ItemId, now_ms: f64) -> f64 {
+        let known = self.stats.as_ref().map_or(0.0, |s| {
+            let ticks = s
+                .item_cooldowns
+                .iter()
+                .find(|(i, _)| *i == item)
+                .map_or(0, |(_, n)| *n);
+            f64::from(ticks) * TICK_MS - (now_ms - self.stats_at_ms)
+        });
+        let guess = self
+            .items_used
+            .iter()
+            .filter(|(i, _, _)| *i == item)
+            .map(|(_, at, ms)| ms - (now_ms - at))
+            .fold(0.0, f64::max);
+        known.max(guess).max(0.0)
+    }
+
+    /// A consumable was just used: its cooldown shows now, not when the
+    /// server's answer comes back.
+    pub fn note_item_used(&mut self, item: ItemId, now_ms: f64) {
+        let Some(u) = self.item(item).and_then(|d| d.use_effect) else {
+            return;
+        };
+        self.items_used
+            .push((item, now_ms, f64::from(u.cooldown_ticks) * TICK_MS));
     }
 
     /// A technique was just sent: its cooldown starts on the bar now, not

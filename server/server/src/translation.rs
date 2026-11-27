@@ -226,6 +226,24 @@ pub fn player_frames(out: &TickOutput) -> Vec<(PlayerId, Bytes)> {
                                 npc: *npc,
                                 done: *done,
                             },
+                            sim::ObjectiveView::Kill { monster, have, need } => {
+                                protocol::ObjectiveView::Kill {
+                                    monster: *monster,
+                                    have: *have,
+                                    need: *need,
+                                }
+                            }
+                            sim::ObjectiveView::Craft { item, have, need } => {
+                                protocol::ObjectiveView::Craft {
+                                    item: *item,
+                                    have: *have,
+                                    need: *need,
+                                }
+                            }
+                            sim::ObjectiveView::Reach { pos, done } => protocol::ObjectiveView::Reach {
+                                pos: *pos,
+                                done: *done,
+                            },
                         })
                         .collect(),
                 })
@@ -257,6 +275,7 @@ pub fn player_frames(out: &TickOutput) -> Vec<(PlayerId, Bytes)> {
             fallen: st.fallen,
             cooldowns: st.cooldowns.clone(),
             global_cooldown: st.global_cooldown,
+            item_cooldowns: st.item_cooldowns.clone(),
             recipes: st.recipes.clone(),
             base_attributes: {
                 let b = st.base_attributes;
@@ -527,6 +546,34 @@ pub fn definitions(catalog: &defs::ValidatedCatalog) -> Result<Bytes, protocol::
                     color: [l.color.0, l.color.1, l.color.2],
                 }),
                 burn: d.burn,
+                equip: d.equip.as_ref().map(|e| match e {
+                    defs::Equip::Weapon {
+                        damage,
+                        attack_ticks,
+                        attribute,
+                        range,
+                        ..
+                    } => protocol::EquipInfo {
+                        damage: *damage,
+                        attack_ticks: *attack_ticks,
+                        range: *range,
+                        defense: 0,
+                        attribute: base::Attribute::ALL
+                            .iter()
+                            .position(|a| a == attribute)
+                            .and_then(|i| u8::try_from(i).ok())
+                            .unwrap_or(0),
+                    },
+                    defs::Equip::Armor { defense, .. } | defs::Equip::Offhand { defense, .. } => {
+                        protocol::EquipInfo {
+                            damage: (0, 0),
+                            attack_ticks: 0,
+                            range: 0,
+                            defense: *defense,
+                            attribute: 0,
+                        }
+                    }
+                }),
             })
             .collect(),
         classes: catalog
@@ -666,6 +713,7 @@ pub fn sheet_to_sim(name: base::CharacterName, saved: &persistence::SavedSheet) 
                 completed: q.completed,
                 talked: q.talked,
                 completed_at: q.completed_at,
+                progress: q.progress.clone(),
             })
             .collect(),
         affinity: saved.affinity.clone(),
@@ -733,6 +781,7 @@ pub fn sheet_to_saved(sheet: &sim::CharacterSheet) -> persistence::SavedSheet {
                 completed: q.completed,
                 talked: q.talked,
                 completed_at: q.completed_at,
+                progress: q.progress.clone(),
             })
             .collect(),
         affinity: sheet.affinity.clone(),

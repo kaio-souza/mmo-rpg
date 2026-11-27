@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "Выключить/включить звук",
     "ui.inventory.equipment": "Снаряжение",
     "ui.inventory.empty": "Пусто",
+    "ui.quests.kill": "Победить: {monster} {have}/{need}",
+    "ui.quests.craft": "Создать: {item} {have}/{need}",
+    "ui.quests.reach": "Доберитесь до отмеченного места",
+    "ui.item.damage": "Урон: {min}–{max} (+{attribute})",
+    "ui.item.speed": "Удар каждые {seconds} с",
+    "ui.item.range": "Дальность: {tiles} клеток",
+    "ui.item.defense": "Защита: +{defense}",
+    "ui.item.trains": "Развивает: {proficiency}",
+    "ui.item.weight": "Вес: {kg} кг",
 }

@@ -295,6 +295,7 @@ impl Zone {
             self.apply(cmd, out);
         }
         movement::run(self);
+        crate::portal::reached(self);
         crate::portal::run(self, out);
         fight::ai(self, out);
         fight::attacks(self, out);

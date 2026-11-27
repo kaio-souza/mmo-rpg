@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "ミュート切り替え",
     "ui.inventory.equipment": "装備",
     "ui.inventory.empty": "空き",
+    "ui.quests.kill": "{monster}を倒す: {have}/{need}",
+    "ui.quests.craft": "{item}を作る: {have}/{need}",
+    "ui.quests.reach": "印の場所へ向かう",
+    "ui.item.damage": "ダメージ：{min}〜{max}（+{attribute}）",
+    "ui.item.speed": "{seconds}秒ごとに攻撃",
+    "ui.item.range": "射程：{tiles}マス",
+    "ui.item.defense": "防御：+{defense}",
+    "ui.item.trains": "{proficiency}を鍛える",
+    "ui.item.weight": "重さ：{kg} kg",
 }

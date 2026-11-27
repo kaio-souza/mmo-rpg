@@ -1002,4 +1002,7 @@
     "editor.field.party": "Ukuran grup (min, maks)",
     "editor.field.boss": "Bos (menuntaskan)",
     "editor.field.lockout": "Kunci setelah tuntas",
+    "editor.value.kill": "Kalahkan monster",
+    "editor.value.reach": "Pergi ke tempat",
+    "editor.value.craft": "Membuat barang",
 }

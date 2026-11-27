@@ -1002,4 +1002,7 @@
     "editor.field.party": "Размер группы (мин, макс)",
     "editor.field.boss": "Босс (завершает забег)",
     "editor.field.lockout": "Блокировка после прохождения",
+    "editor.value.kill": "Победить монстров",
+    "editor.value.reach": "Добраться до места",
+    "editor.value.craft": "Создать предметы",
 }

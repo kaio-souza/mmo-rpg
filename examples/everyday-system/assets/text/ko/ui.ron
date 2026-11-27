@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "음소거 켜기/끄기",
     "ui.inventory.equipment": "장비",
     "ui.inventory.empty": "비어 있음",
+    "ui.quests.kill": "{monster} 처치: {have}/{need}",
+    "ui.quests.craft": "{item} 제작: {have}/{need}",
+    "ui.quests.reach": "표시된 장소로 이동",
+    "ui.item.damage": "피해: {min}–{max} (+{attribute})",
+    "ui.item.speed": "{seconds}초마다 공격",
+    "ui.item.range": "사거리: {tiles}칸",
+    "ui.item.defense": "방어: +{defense}",
+    "ui.item.trains": "{proficiency} 숙련",
+    "ui.item.weight": "무게: {kg} kg",
 }

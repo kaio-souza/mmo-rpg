@@ -6,20 +6,36 @@ use base::{ItemId, NpcId, QuestId, TilePos};
 use defs::{Effect, Objective, ValidatedCatalog};
 
 /// The tile the quest asks for next, nearest to `from`: the NPC of the
-/// first `Talk` not done, else a place that yields the first item still
-/// missing (a monster that drops it, a node that gives it), else the NPC
-/// that takes the quest in. `None` when nothing in the world fits.
+/// first `Talk` not done, a place that yields the first item still
+/// missing (a monster that drops it, a node that gives it), the monsters
+/// to defeat, the place to reach; else the NPC that takes the quest in.
+/// `done(i)`: objective `i` that counts (talk, kill, craft, reach) is done.
+/// `None` when nothing in the world fits.
 pub(crate) fn quest_goal(
     cat: &ValidatedCatalog,
     quest: QuestId,
-    talked: impl Fn(usize) -> bool,
+    done: impl Fn(usize) -> bool,
     have: impl Fn(ItemId) -> u64,
     from: TilePos,
 ) -> Option<TilePos> {
     let def = cat.quest(quest)?;
     for (i, o) in def.objectives.iter().enumerate() {
         match o {
-            Objective::Talk { npc } if !talked(i) => return npc_place(cat, from, |id| id == *npc),
+            Objective::Talk { npc } if !done(i) => return npc_place(cat, from, |id| id == *npc),
+            Objective::Reach { pos, .. } if !done(i) => return Some(*pos),
+            Objective::Kill { monster, .. } if !done(i) => {
+                let spawns = cat
+                    .zones()
+                    .flat_map(|(_, z)| z.monsters.iter())
+                    .filter(|s| {
+                        cat.monster_by_name(&s.monster)
+                            .is_some_and(|(id, _)| id == *monster)
+                    })
+                    .map(|s| s.pos);
+                if let Some(p) = nearest(from, spawns) {
+                    return Some(p);
+                }
+            }
             Objective::Item { item, qty } if have(*item) < u64::from(*qty) => {
                 if let Some(p) = item_place(cat, *item, from) {
                     return Some(p);

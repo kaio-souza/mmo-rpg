@@ -45,6 +45,24 @@ pub enum Objective {
     Item { item: ItemId, qty: u32 },
     /// Talk to this NPC while the quest is active.
     Talk { npc: NpcId },
+    /// Defeat `qty` of this monster while the quest is active (a kill
+    /// counts for the players who earn its XP).
+    Kill { monster: base::MonsterId, qty: u32 },
+    /// Stand within `radius` tiles of `pos` (global) while the quest is
+    /// active: travel.
+    Reach { pos: base::TilePos, radius: u8 },
+    /// Craft `qty` of this item while the quest is active.
+    Craft { item: ItemId, qty: u32 },
+}
+
+impl Objective {
+    /// The count this objective needs (`Reach` and `Talk`: 1).
+    pub fn needed(&self) -> u32 {
+        match self {
+            Objective::Item { qty, .. } | Objective::Kill { qty, .. } | Objective::Craft { qty, .. } => *qty,
+            Objective::Talk { .. } | Objective::Reach { .. } => 1,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,6 +135,28 @@ pub(crate) enum ObjectiveFile {
         #[cfg_attr(feature = "editor", schemars(with = "crate::editor::NpcRef"))]
         npc: String,
     },
+    /// Defeat `qty` of a monster while the quest is active.
+    Kill {
+        #[cfg_attr(feature = "editor", schemars(with = "crate::editor::MonsterRef"))]
+        monster: String,
+        qty: u32,
+    },
+    /// Reach a place: within `radius` tiles of `pos`.
+    Reach {
+        pos: base::TilePos,
+        #[serde(default = "two")]
+        radius: u8,
+    },
+    /// Craft `qty` of an item while the quest is active.
+    Craft {
+        #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ItemRef"))]
+        item: String,
+        qty: u32,
+    },
+}
+
+fn two() -> u8 {
+    2
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -144,6 +184,8 @@ pub(crate) struct Names<'a> {
     pub recipes: &'a BTreeMap<String, RecipeId>,
     /// Techniques a dialogue may teach (first magic by an NPC).
     pub techniques: &'a BTreeMap<String, TechniqueId>,
+    /// Monsters a quest may ask to defeat.
+    pub monsters: &'a BTreeMap<String, base::MonsterId>,
 }
 
 pub(crate) fn parse_quest(
@@ -186,6 +228,24 @@ pub(crate) fn parse_quest(
                 Some(n) => objectives.push(Objective::Talk { npc: *n }),
                 None => problems.push(format!("npc `{npc}` not found")),
             },
+            ObjectiveFile::Kill { monster, qty } => match names.monsters.get(monster) {
+                Some(_) if *qty == 0 => problems.push(format!("monster `{monster}`: qty must be at least 1")),
+                Some(m) => objectives.push(Objective::Kill {
+                    monster: *m,
+                    qty: *qty,
+                }),
+                None => problems.push(format!("monster `{monster}` not found")),
+            },
+            // Whether `pos` lies in a zone is checked with the zones.
+            ObjectiveFile::Reach { pos, radius } => objectives.push(Objective::Reach {
+                pos: *pos,
+                radius: *radius,
+            }),
+            ObjectiveFile::Craft { item: i, qty } => {
+                if let Some(it) = item(&mut problems, i, *qty) {
+                    objectives.push(Objective::Craft { item: it, qty: *qty });
+                }
+            }
         }
     }
     let mut rewards = Vec::with_capacity(file.rewards.len());

@@ -572,6 +572,7 @@ fn the_end_of_a_cooldown_refreshes_markers() {
         completed: true,
         talked: 0,
         completed_at: t0,
+        progress: Vec::new(),
     }];
     let me = PlayerId::new(1);
     let mut out = TickOutput::default();

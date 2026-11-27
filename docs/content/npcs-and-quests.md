@@ -55,7 +55,7 @@ The editor shows the dialogue as a map of steps, writes conditions and effects a
 )
 ```
 
-- Objectives: `Talk(npc)` while the quest is active, `Item(item, qty)` held (taken on completion).
+- Objectives: `Talk(npc)` while the quest is active, `Item(item, qty)` held (taken on completion), `Kill(monster, qty)` defeated while active (by everyone who earns its XP), `Reach(pos: (x, y), radius: 2)` stood on (travel; `pos` must be walkable ground of a zone), `Craft(item, qty)` crafted while active. The quest pointer leads to the next one: the NPC, the monsters, the place.
 - Rewards: `Item`, `Coins`, `Technique` (taught at level 1).
 - Quests start and complete through dialogue effects. The client shows the quest log, NPC markers and a direction to the next goal on the tracker and minimap.
 - Texts: `quest.<id>.name`, `quest.<id>.desc`.

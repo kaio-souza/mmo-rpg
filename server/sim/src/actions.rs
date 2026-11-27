@@ -763,6 +763,12 @@ impl Zone {
                 .map(|(t, r)| (*t, u32::try_from(r.saturating_sub(now)).unwrap_or(u32::MAX)))
                 .collect(),
             global_cooldown: u32::try_from(f.gcd_until.saturating_sub(now)).unwrap_or(u32::MAX),
+            item_cooldowns: p
+                .item_ready
+                .iter()
+                .filter(|(_, r)| *r > now)
+                .map(|(i, r)| (*i, u32::try_from(r.saturating_sub(now)).unwrap_or(u32::MAX)))
+                .collect(),
             recipes: p.data.recipes.clone(),
             specials: progression::special_attributes(s, cat)
                 .into_iter()

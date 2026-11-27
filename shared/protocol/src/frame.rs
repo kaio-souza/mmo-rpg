@@ -330,6 +330,13 @@ mod tests {
                         color: [255, 160, 70],
                     }),
                     burn: 1,
+                    equip: Some(crate::EquipInfo {
+                        damage: (5, 10),
+                        attack_ticks: 28,
+                        range: 1,
+                        defense: 0,
+                        attribute: 0,
+                    }),
                 }],
                 classes: vec![crate::NamedInfo {
                     name: TextId::new(3),

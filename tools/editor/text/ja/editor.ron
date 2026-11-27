@@ -1002,4 +1002,7 @@
     "editor.field.party": "パーティ人数（最小、最大）",
     "editor.field.boss": "ボス（撃破でクリア）",
     "editor.field.lockout": "クリア後のロック",
+    "editor.value.kill": "魔物を倒す",
+    "editor.value.reach": "場所へ行く",
+    "editor.value.craft": "アイテムを作る",
 }

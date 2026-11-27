@@ -1,0 +1,6 @@
+// Find the iron veins in the north east and smelt two ingots on the plaza.
+(
+    rank: F,
+    objectives: [Reach(pos: (x: 35, y: 5), radius: 2), Craft(item: "iron_ingot", qty: 2)],
+    rewards: [Coins(250), Item(item: "iron_ore", qty: 4)],
+)

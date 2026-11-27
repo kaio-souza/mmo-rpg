@@ -314,4 +314,13 @@
     "ui.help.toggle_mute": "静音/取消静音",
     "ui.inventory.equipment": "装备",
     "ui.inventory.empty": "空",
+    "ui.quests.kill": "击败{monster}：{have}/{need}",
+    "ui.quests.craft": "制作{item}：{have}/{need}",
+    "ui.quests.reach": "前往标记地点",
+    "ui.item.damage": "伤害：{min}–{max}（+{attribute}）",
+    "ui.item.speed": "每 {seconds} 秒一击",
+    "ui.item.range": "射程：{tiles} 格",
+    "ui.item.defense": "防御：+{defense}",
+    "ui.item.trains": "锻炼{proficiency}",
+    "ui.item.weight": "重量：{kg} 千克",
 }

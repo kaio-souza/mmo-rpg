@@ -1002,4 +1002,7 @@
     "editor.field.party": "Tamaño del grupo (mín, máx)",
     "editor.field.boss": "Jefe (completa la incursión)",
     "editor.field.lockout": "Bloqueo tras completar",
+    "editor.value.kill": "Derrotar monstruos",
+    "editor.value.reach": "Viajar a un lugar",
+    "editor.value.craft": "Fabricar objetos",
 }
