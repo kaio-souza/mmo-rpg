@@ -56,6 +56,7 @@ const ICONS = {
   ranking: '<path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7"/>',
   special_attribute: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
   map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  rules: '<path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
   advanced: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
@@ -249,7 +250,8 @@ const CATS = [
   { id: "gather_node", kinds: ["gather_node"] },
   { id: "emote", kinds: ["emote"] },
   { id: "loot_table", kinds: ["loot_table"] },
-  { id: "advanced", kinds: ["appearance", "progression_formulas", "combat_formulas", "economy_formulas", "raw"] },
+  { id: "rules", kinds: ["progression_formulas", "combat_formulas", "economy_formulas", "counters"] },
+  { id: "advanced", kinds: ["appearance", "moderation_reasons", "raw"] },
 ];
 
 // The files of a zone besides its map: the map page edits them together,
@@ -265,7 +267,11 @@ function cats() {
 
 function curCat() { return cats().find((c) => c.id === S.cat) || cats()[0]; }
 function catOf(kind) { return cats().find((c) => c.kinds.includes(kind ?? "raw")) || curCat(); }
-function catLabel(c) { return c.id === "advanced" ? t("editor.cat.advanced") : t("editor.kind." + c.id); }
+function catLabel(c) {
+  if (c.id === "advanced") return t("editor.cat.advanced");
+  if (c.id === "rules") return t("editor.cat.rules");
+  return t("editor.kind." + c.id);
+}
 
 function filesOfKind(k) {
   return S.content.files.filter((f) => !f.path.startsWith("text/") && (f.kind ?? "raw") === k);
@@ -341,9 +347,12 @@ function briefTags(kind, b) {
 
 function entryOf(f) {
   const kind = f.kind ?? "raw";
-  const title = (f.id && titleOf(kind, f.id)) || f.id || f.path;
+  // A file that is the only one of its kind (the formulas, counters.ron)
+  // is known by its kind's name, with the path under it.
+  const single = !f.id && kind !== "raw" && S.ui["editor.kind." + kind];
+  const title = single || (f.id && titleOf(kind, f.id)) || f.id || f.path;
   const tags = briefTags(kind, f.brief);
-  let sub = tags.length ? tags.join(" · ") : title !== f.id && f.id ? f.id : "";
+  let sub = tags.length ? tags.join(" · ") : title !== f.id && f.id ? f.id : single ? f.path : "";
   let pic = picOf(f.brief);
   // A dialogue has no name of its own: it is known by who speaks it.
   if (kind === "dialogue") {
@@ -411,7 +420,7 @@ const SECTIONS = [
   ["items", ["item", "recipe", "loot_table"]],
   ["progress", ["technique", "proficiency", "class", "title", "special_attribute", "ranking"]],
   ["story", ["quest", "dialogue", "emote", "goal"]],
-  ["system", ["advanced"]],
+  ["system", ["rules", "advanced"]],
 ];
 
 function drawRail() {
@@ -430,8 +439,15 @@ function drawRail() {
   for (const [sec, ids] of SECTIONS) {
     const here = all.filter((c) => ids.includes(c.id));
     if (!here.length) continue;
-    nav.append(el("div", { class: "rail-group" }, t("editor.section." + sec)));
+    // A section folds away with a click on its name; the choice is kept.
+    const folded = storeGet("editor-ui.fold." + sec) === "1";
+    const holds = here.some((c) => S.view === "content" && S.cat === c.id);
+    nav.append(el("button", { class: "rail-group fold" + (folded ? " folded" : ""), title: t("editor.fold_hint"),
+      onclick: () => { storeSet("editor-ui.fold." + sec, folded ? "0" : "1"); drawRail(); } },
+    el("span", { class: "chev" }, folded ? "▸" : "▾"), t("editor.section." + sec)));
     for (const c of here) {
+      // Folded, only the open category stays in sight.
+      if (folded && !(holds && S.cat === c.id)) continue;
       const files = filesOf(c);
       const errs = files.filter((f) => fileState(f.path, f.kind, f.id) === "err").length;
       nav.append(railBtn(c.id, catLabel(c), S.view === "content" && S.cat === c.id, () => goCat(c.id),
@@ -557,18 +573,29 @@ function listControls(c, entries) {
   const pics = entries.some((e) => e.pic) ? [["noimg", t("editor.status.no_image")]] : [];
   rows.push(sideSelect(S.lf.status, [["all", t("editor.filter_all")], ["err", t("editor.status.problems")], ["miss", t("editor.status.missing")], ...pics],
     (v) => { S.lf.status = v; redo(); }, t("editor.status")));
+  // Sort and state are always in sight; the rest folds under "More
+  // filters", open by itself while one of them is in use.
+  const more = [];
   for (const f of facets) {
     if (S.lf.facets[f.key] && !f.values.includes(S.lf.facets[f.key])) delete S.lf.facets[f.key];
-    rows.push(sideSelect(S.lf.facets[f.key] || "",
+    more.push(sideSelect(S.lf.facets[f.key] || "",
       [["", fmt("editor.facet_all", { name: flabel(f.key) })], ...f.values.map((v) => [v, facetLabel(f.key, v)])],
       (v) => { S.lf.facets[f.key] = v; redo(); }, flabel(f.key)));
   }
   if (c.kinds.length === 1 && facets.length) {
     if (S.lf.group && !facets.some((f) => f.key === S.lf.group)) S.lf.group = "";
-    rows.push(sideSelect(S.lf.group, [["", t("editor.group_none")], ...facets.map((f) => [f.key, `${t("editor.group")}: ${flabel(f.key)}`])],
+    more.push(sideSelect(S.lf.group, [["", t("editor.group_none")], ...facets.map((f) => [f.key, `${t("editor.group")}: ${flabel(f.key)}`])],
       (v) => { S.lf.group = v; redo(); }, t("editor.group")));
   }
+  const inUse = Object.values(S.lf.facets).filter(Boolean).length + (S.lf.group ? 1 : 0);
+  const open = inUse > 0 || storeGet("editor-ui.lf-more") === "1";
   box.append(el("div", { class: "lf-row" }, rows));
+  if (more.length) {
+    box.append(el("button", { class: "link lf-more", onclick: () => {
+      storeSet("editor-ui.lf-more", open ? "0" : "1"); drawSide();
+    } }, (open ? "▾ " : "▸ ") + (inUse ? fmt("editor.more_filters_n", { n: inUse }) : t("editor.more_filters"))));
+    if (open) box.append(el("div", { class: "lf-row" }, more));
+  }
   box.append(el("div", { class: "lf-count" }, el("span", { id: "lf-n" }),
     el("button", { class: "link", id: "lf-clear", hidden: true, onclick: () => {
       S.filter = ""; S.lf.status = "all"; S.lf.facets = {}; saveLf(); drawSide();
@@ -719,6 +746,7 @@ async function open(path) {
   if (path === S.sel) return;
   if (dirty() && !(await askLeave())) return;
   const f = await api("/api/file?path=" + encodeURIComponent(path));
+  rememberRecent(path);
   S.sel = path; S.kind = f.kind; S.isNew = false; S.pendingTexts = {}; S.saveReport = null;
   S.value = f.json; S.raw = f.json ? null : f.text; S.extra = null;
   if (f.kind) await schemaOf(f.kind);
@@ -847,14 +875,43 @@ function idOfPath(kind, path) {
 
 // ---------- the open file ----------
 
+// The files opened last, newest first (this browser only).
+function recentPaths() {
+  try { return JSON.parse(storeGet("editor-ui.recent") || "[]"); } catch (_) { return []; }
+}
+function rememberRecent(path) {
+  const list = [path, ...recentPaths().filter((p) => p !== path)].slice(0, 30);
+  storeSet("editor-ui.recent", JSON.stringify(list));
+}
+
+// With nothing open, the category's home: what needs a look (problems,
+// missing translations), what was opened last, and Create.
 function emptyState() {
   const c = curCat();
   const make = creatable(c);
-  return el("div", { class: "empty" },
-    el("div", { class: "empty-ic" }, icon(c.id, 40)),
-    el("p", {}, t("editor.select")),
+  const entries = listEntries(c);
+  const byPath = new Map(entries.map((e) => [e.path, e]));
+  const card = (title, list) => el("section", { class: "card home-card" },
+    el("div", { class: "card-head" }, el("h3", {}, title), el("span", { class: "n" }, list.length)),
+    el("div", { class: "home-list" }, list.slice(0, 8).map((e) => el("button", { class: "home-row", onclick: () => open(e.path) },
+      thumb(e.title, e.pic, 28, e.kind), el("span", { class: "home-t" }, e.title),
+      e.state !== "ok" ? el("span", { class: "badge " + (e.state === "err" ? "err" : "warn") },
+        t(e.state === "err" ? "editor.home.has_problem" : "editor.home.untranslated")) : null))));
+  const needs = entries.filter((e) => e.state !== "ok").sort((a, b) => (a.state === "err" ? 0 : 1) - (b.state === "err" ? 0 : 1));
+  const recent = recentPaths().map((p) => byPath.get(p)).filter(Boolean);
+  const head = el("div", { class: "home-head" },
+    el("div", { class: "empty-ic" }, icon(c.id, 32)),
+    el("div", {}, el("h2", {}, catLabel(c)), el("p", { class: "hint" }, fmtN("editor.home.count", entries.length))),
+    el("div", { class: "grow" }),
     make ? el("button", { class: "primary", onclick: () => startNew(make) }, icon("plus", 16), t("editor.new")) : null);
+  const page = el("div", { class: "page home" }, head);
+  if (needs.length) page.append(card(t("editor.home.needs"), needs));
+  else if (entries.length) page.append(el("p", { class: "home-ok" }, icon("check", 16), t("editor.home.all_good")));
+  if (recent.length) page.append(card(t("editor.home.recent"), recent));
+  if (!entries.length) page.append(el("p", { class: "hint" }, t("editor.select")));
+  return page;
 }
+function fmtN(key, n) { return fmt(key, { n }); }
 
 function drawPanel() {
   syncFocus();
@@ -1293,7 +1350,41 @@ function formOf(root, value) {
   return structParts(root, R(root, root), value, set, true);
 }
 
+// Long files of numbers split into cards by topic; a field not listed
+// lands in the last card, so a new field never hides.
+const FIELD_GROUPS = {
+  progression_formulas: [
+    ["level", ["max_level", "level_xp_base", "level_xp_exponent", "start_attribute", "free_points", "free_points_without_class"]],
+    ["skills", ["prof_xp_base", "prof_xp_growth_permille", "prof_max", "technique_uses_base", "technique_max"]],
+    ["resources", ["hp_base", "hp_per_vit", "hp_per_level", "vigor_base", "vigor_per_vit", "vigor_per_agi", "mp_base", "mp_per_int", "mp_per_level"]],
+    ["regen", ["regen_interval_ticks", "hp_regen_permille", "vigor_regen_permille", "mp_regen_permille", "mp_regen_per_spi_permille", "out_of_combat_ticks", "rest_regen_permille"]],
+    ["death", ["fallen_ticks", "newbie_level", "death_lock_secs"]],
+    ["world", ["day_secs", "night_from_permille", "night_until_permille"]],
+    ["companions", ["max_companions", "companion_rest_secs"]],
+    ["quests", ["quests_per_rank"]],
+  ],
+  combat_formulas: [
+    ["hit", ["hit_min_permille", "hit_max_permille", "hit_scale_permille", "variance_min_permille", "variance_max_permille"]],
+    ["crit", ["crit_base_permille", "crit_per_dex_permille", "crit_max_permille", "crit_damage_permille"]],
+    ["damage", ["attribute_coef_permille", "prof_damage_divisor", "level_diff_step_permille", "level_diff_cap_permille", "pvp_damage_permille", "unarmed_damage", "unarmed_attack_ticks"]],
+    ["pace", ["global_cooldown_ticks", "support_per_point_permille"]],
+  ],
+};
+
 function structParts(root, r, value, set, top) {
+  const groupsOf = top && FIELD_GROUPS[S.kind];
+  if (groupsOf) {
+    // One card per topic, each a struct of its own fields.
+    const listed = new Set(groupsOf.flatMap(([, ks]) => ks));
+    const rest = Object.keys(r.properties).filter((k) => !listed.has(k));
+    const cards = [...groupsOf, ["other", rest]].filter(([, ks]) => ks.some((k) => k in r.properties));
+    return cards.map(([g, ks]) => {
+      const part = { ...r, properties: Object.fromEntries(ks.filter((k) => k in r.properties).map((k) => [k, r.properties[k]])) };
+      return el("section", { class: "card" },
+        el("div", { class: "card-head" }, el("h3", {}, t("editor.fgroup." + g))),
+        ...structParts(root, part, value, set, false));
+    });
+  }
   const grid = el("div", { class: "fields" });
   const groups = [];
   // A counter key names something only the family next to it knows, so
@@ -1412,7 +1503,7 @@ function numberField(r, value, set, k) {
 function unitOf(k, n) {
   if (!Number.isFinite(n)) return "";
   if (/_ticks$/.test(k)) return "≈ " + duration(n / S.meta.ticks_per_second);
-  if (/_permille$/.test(k)) return "= " + (n / 10).toLocaleString(S.uiLocale, { maximumFractionDigits: 1 }) + "%";
+  if (/_permille$/.test(k) || k === "chance") return "= " + (n / 10).toLocaleString(S.uiLocale, { maximumFractionDigits: 1 }) + "%";
   if (/_secs$/.test(k)) return "≈ " + duration(n);
   return "";
 }

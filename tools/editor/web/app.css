@@ -815,3 +815,20 @@ button.danger:hover:not(:disabled) { background: rgba(255, 107, 107, .2); }
 
 .icon-preview { display: flex; align-items: flex-end; gap: 16px; padding: 12px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .03); }
 .icon-preview img { image-rendering: auto; }
+
+/* Rail sections fold with a click on their name. */
+.rail-group.fold { display: flex; align-items: center; gap: 4px; width: 100%; background: none; border: 0; cursor: pointer; text-align: left; }
+.rail-group.fold:hover { color: var(--text); }
+.rail-group .chev { width: 10px; font-size: 10px; opacity: .7; }
+
+/* The category home, with nothing open. */
+.page.home { max-width: 760px; }
+.home-head { display: flex; align-items: center; gap: 14px; margin: 8px 0 18px; }
+.home-head h2 { margin: 0; font-size: 20px; }
+.home-head .empty-ic { width: 56px; height: 56px; }
+.home-list { display: flex; flex-direction: column; gap: 2px; }
+.home-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; background: none; border: 0; color: var(--text); cursor: pointer; text-align: left; }
+.home-row:hover { background: var(--panel-2, rgba(255,255,255,.05)); }
+.home-t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-ok { display: flex; align-items: center; gap: 8px; color: var(--ok, #4ade80); margin: 0 0 16px; }
+.lf-more { display: block; margin: 2px 0 6px; font-size: 12px; }
