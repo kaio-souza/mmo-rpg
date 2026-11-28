@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "Monster",
     "editor.replays.kind.npc": "NPC",
     "editor.replays.kind.node": "Node",
+    "editor.replays.kind.companion": "Rekan",
+    "editor.replays.controls": "Roda: zoom · seret: geser · klik: ikuti · klik ganda: seluruh zona",
     "editor.problem.error": "galat",
     "editor.problem.warning": "peringatan",
     "editor.problem.entry": "entri {n}",

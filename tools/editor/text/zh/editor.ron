@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "怪物",
     "editor.replays.kind.npc": "NPC",
     "editor.replays.kind.node": "资源点",
+    "editor.replays.kind.companion": "伙伴",
+    "editor.replays.controls": "滚轮：缩放 · 拖动：移动 · 点击：跟随 · 双击：整个区域",
     "editor.problem.error": "错误",
     "editor.problem.warning": "警告",
     "editor.problem.entry": "第 {n} 项",

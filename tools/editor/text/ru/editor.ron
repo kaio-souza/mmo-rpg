@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "Монстры",
     "editor.replays.kind.npc": "НИП",
     "editor.replays.kind.node": "Узлы",
+    "editor.replays.kind.companion": "Спутники",
+    "editor.replays.controls": "Колесо: масштаб · перетаскивание: сдвиг · щелчок: следить · двойной щелчок: вся зона",
     "editor.problem.error": "ошибка",
     "editor.problem.warning": "предупреждение",
     "editor.problem.entry": "запись {n}",

@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "Mostri",
     "editor.replays.kind.npc": "PNG",
     "editor.replays.kind.node": "Nodi",
+    "editor.replays.kind.companion": "Compagni",
+    "editor.replays.controls": "Rotella: zoom · trascina: sposta · clic: segui · doppio clic: zona intera",
     "editor.problem.error": "errore",
     "editor.problem.warning": "avviso",
     "editor.problem.entry": "voce {n}",

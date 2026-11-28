@@ -1,7 +1,7 @@
 // Replays screen: the logs a zone recorded (replays/, on a panic or by the
 // admin `/replay` command), and one of them run again by the `replay`
-// library and drawn from above: ground, players, monsters, NPCs and nodes,
-// tick by tick, with a timeline.
+// library and drawn as the game shows it (isometric, with the real tile and
+// creature sprites), tick by tick, with a timeline.
 "use strict";
 
 const RP = {
@@ -51,24 +51,64 @@ async function openReplay(file) {
   draw();
 }
 
-// The ground once, in an offscreen canvas: one pixel per tile, scaled up.
+// The scene as the game shows it: isometric 64x32 tiles with their
+// sprites, walls and creatures sorted by depth, creatures with their
+// strips facing where they look, moving smoothly between recorded frames.
+const RP_TW = 32, RP_TH = 16;
+const rpIso = (x, y) => [(x - y) * RP_TW, (x + y) * RP_TH];
+
 async function paintGround() {
+  // Sprites and their layouts come from the art and the manifest.
+  if (!S.art) await loadArt();
+  if (!L.manifest) L.manifest = await api("/api/sprite-manifest");
   const m = RP.run.map;
   const used = [...new Set(m.floors)].filter((f) => f);
   await Promise.all(used.map((f) => tileColor(f)));
-  const c = document.createElement("canvas");
-  c.width = m.w; c.height = m.h;
-  const g = c.getContext("2d");
-  for (let y = 0; y < m.h; y++) {
-    for (let x = 0; x < m.w; x++) {
-      const i = y * m.w + x;
-      const f = m.floors[i];
-      g.fillStyle = f ? M.colors[f] : "#05070a";
-      g.fillRect(x, y, 1, 1);
-      if (m.blocked[i] === "1" && f) { g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(x, y, 1, 1); }
-    }
+  RP.ground = true;
+  RP.cam = null;
+}
+
+// An image by sprite name (loaded once), and a tinted copy (body by skin,
+// hair by its colour), as the client multiplies light grey art.
+function rpImg(name) {
+  RP.imgs = RP.imgs || new Map();
+  let im = RP.imgs.get(name);
+  if (!im) { im = new Image(); im.src = artUrl("sprite", name); RP.imgs.set(name, im); }
+  return im;
+}
+function rpTinted(name, tint) {
+  const im = rpImg(name);
+  if (!tint || !im.complete || !im.naturalWidth) return im;
+  RP.tints = RP.tints || new Map();
+  const key = name + tint;
+  let c = RP.tints.get(key);
+  if (!c) {
+    c = document.createElement("canvas");
+    c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext("2d");
+    g.drawImage(im, 0, 0);
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = tint; g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = "destination-in";
+    g.drawImage(im, 0, 0);
+    RP.tints.set(key, c);
   }
-  RP.ground = c;
+  return c;
+}
+
+// One sprite standing on screen point (sx, sy): its strip's frame and row.
+function rpSprite(g, name, tint, sx, sy, k, row, moving, alpha) {
+  const im = rpImg(name);
+  if (!im.complete || !im.naturalWidth) return false;
+  const l = layoutOf(name);
+  if (!l.w) return false;
+  const playing = l.frames > 1 && (l.play === "Always" || moving);
+  const f = playing ? Math.floor((performance.now() / 1000) * l.fps) % l.frames : 0;
+  const r = l.directions === 4 ? row : 0;
+  g.globalAlpha = alpha;
+  g.drawImage(rpTinted(name, tint), f * l.w, r * l.h, l.w, l.h, sx - l.anchor[0] * k, sy - l.anchor[1] * k, l.w * k, l.h * k);
+  g.globalAlpha = 1;
+  return true;
 }
 
 // Brings RP.state to frame `n` (forward from where it is, or from 0).
@@ -78,47 +118,122 @@ function seek(n) {
   if (n < RP.at) { RP.state = new Map(); RP.at = -1; }
   for (let i = RP.at + 1; i <= n; i++) {
     const fr = frames[i];
-    for (const [id, x, y, hp] of fr.set) RP.state.set(id, { x, y, hp });
+    for (const [id, x, y, hp, dir] of fr.set) {
+      const old = RP.state.get(id);
+      const moved = old && (old.x !== x || old.y !== y);
+      RP.state.set(id, { x, y, hp, dir: dir ?? 0, px: moved ? old.x : (old?.px ?? x), py: moved ? old.y : (old?.py ?? y),
+        at: moved ? performance.now() : (old?.at ?? 0) });
+    }
     for (const id of fr.gone) RP.state.delete(id);
   }
   RP.at = n;
   RP.frame = n;
 }
 
-const KIND_COLOR = { player: "#3fb8ff", monster: "#ff6b6b", npc: "#f5b04c", node: "#4fd18b" };
+const KIND_COLOR = { player: "#3fb8ff", monster: "#ff6b6b", npc: "#f5b04c", node: "#4fd18b", companion: "#a78bfa" };
+
+// Where an entity stands now: between its last two tiles while it walks.
+function rpPos(e) {
+  const ms = (1000 / 20) * RP.run.every / RP.speed;
+  const t = e.at ? Math.min(1, (performance.now() - e.at) / ms) : 1;
+  return [e.px + (e.x - e.px) * t, e.py + (e.y - e.py) * t, t < 1];
+}
 
 function paintReplay(canvas) {
   const r = RP.run;
   const m = r.map;
   const g = canvas.getContext("2d");
-  const k = Math.max(2, Math.floor(Math.min(canvas.width / m.w, canvas.height / m.h)));
-  const ox = Math.floor((canvas.width - m.w * k) / 2), oy = Math.floor((canvas.height - m.h * k) / 2);
-  canvas._view = { k, ox, oy };
+  const W = canvas.width, H = canvas.height;
+  // The camera: fits the zone at first, follows the chosen entity.
+  if (!RP.cam) {
+    const [ax] = rpIso(m.x, m.y + m.h), [bx] = rpIso(m.x + m.w, m.y);
+    const [, ay] = rpIso(m.x, m.y), [, by] = rpIso(m.x + m.w, m.y + m.h);
+    const k = Math.max(0.25, Math.min(W / (bx - ax + 64), H / (by - ay + 96)));
+    RP.cam = { k, cx: (ax + bx) / 2, cy: (ay + by) / 2 };
+  }
+  const fol = RP.follow != null && RP.state.get(RP.follow);
+  if (fol) { const [fx, fy] = rpPos(fol); [RP.cam.cx, RP.cam.cy] = rpIso(fx, fy); }
+  const { k, cx, cy } = RP.cam;
+  const scr = (x, y) => { const [ix, iy] = rpIso(x, y); return [W / 2 + (ix - cx) * k, H / 2 + (iy - cy) * k]; };
+  canvas._view = { scr, k };
   g.imageSmoothingEnabled = false;
   g.fillStyle = "#05070a";
-  g.fillRect(0, 0, canvas.width, canvas.height);
-  if (RP.ground) g.drawImage(RP.ground, ox, oy, m.w * k, m.h * k);
-  // Nodes and NPCs under, monsters, players on top.
-  const order = { node: 0, npc: 1, monster: 2, player: 3 };
-  const list = [...RP.state.entries()].map(([id, s]) => ({ id, ...s, info: r.names[id] || { kind: "monster", name: "?" } }))
-    .sort((a, b) => order[a.info.kind] - order[b.info.kind]);
-  for (const e of list) {
-    const cx = ox + (e.x - m.x + 0.5) * k, cy = oy + (e.y - m.y + 0.5) * k;
-    const rad = Math.max(2, k * (e.info.kind === "player" ? 0.75 : e.info.kind === "node" ? 0.4 : 0.55));
-    g.beginPath();
-    g.arc(cx, cy, rad, 0, Math.PI * 2);
-    g.fillStyle = KIND_COLOR[e.info.kind] || "#fff";
-    g.globalAlpha = e.info.kind !== "node" && e.hp === 0 ? 0.35 : 1;
-    g.fill();
-    g.globalAlpha = 1;
-    if (e.id === RP.hover || e.id === RP.follow) { g.strokeStyle = "#fff"; g.lineWidth = 2; g.stroke(); }
-    if (e.info.kind === "player") {
-      g.font = `${Math.max(10, k * 1.2)}px system-ui`;
-      g.fillStyle = "#fff";
-      g.textAlign = "center";
-      g.fillText(e.info.name, cx, cy - rad - 3);
+  g.fillRect(0, 0, W, H);
+  // Flat ground first; walls and creatures wait for the depth-sorted pass.
+  const tall = [];
+  for (let ty = 0; ty < m.h; ty++) {
+    for (let tx = 0; tx < m.w; tx++) {
+      const f = m.floors[ty * m.w + tx];
+      if (!f) continue;
+      const x = m.x + tx, y = m.y + ty;
+      const [sx, sy] = scr(x, y);
+      if (sx < -64 * k || sx > W + 64 * k || sy < -96 * k || sy > H + 64 * k) continue;
+      const look = M.tiles?.[f];
+      if (look?.wall) { tall.push({ d: x + y, wall: look.sprite || "", x, y, f }); continue; }
+      if (!(look?.sprite && rpSprite(g, look.sprite, null, sx, sy, k, 0, false, 1))) {
+        g.fillStyle = M.colors[f] || "#333";
+        g.beginPath();
+        g.moveTo(sx, sy - RP_TH * k); g.lineTo(sx + RP_TW * k, sy); g.lineTo(sx, sy + RP_TH * k); g.lineTo(sx - RP_TW * k, sy);
+        g.closePath(); g.fill();
+      }
     }
   }
+  for (const [id, e] of RP.state) {
+    const [x, y, moving] = rpPos(e);
+    tall.push({ d: x + y + 0.01, id, e, x, y, moving, info: r.names[id] || { kind: "monster", name: "?", layers: [] } });
+  }
+  tall.sort((a, b) => a.d - b.d);
+  const labels = [];
+  for (const t of tall) {
+    const [sx, sy] = scr(t.x, t.y);
+    if (t.wall !== undefined) {
+      if (!(t.wall && rpSprite(g, t.wall, null, sx, sy, k, 0, false, 1))) {
+        g.fillStyle = M.colors[t.f] || "#555";
+        g.fillRect(sx - RP_TW * k * 0.6, sy - 40 * k, RP_TW * k * 1.2, 40 * k);
+      }
+      continue;
+    }
+    const { e, info } = t;
+    const dead = info.kind !== "node" && e.hp === 0;
+    const chosen = t.id === RP.hover || t.id === RP.follow;
+    if (chosen) {
+      g.strokeStyle = t.id === RP.follow ? "#fff" : "rgba(255,255,255,.6)";
+      g.lineWidth = 2;
+      g.beginPath(); g.ellipse(sx, sy, RP_TW * k * 0.7, RP_TH * k * 0.7, 0, 0, Math.PI * 2); g.stroke();
+    }
+    let drawn = false;
+    for (const [name, tint] of info.layers || []) drawn = rpSprite(g, name, tint, sx, sy, k, e.dir || 0, t.moving, dead ? 0.35 : 1) || drawn;
+    if (!drawn) {
+      g.beginPath(); g.arc(sx, sy - 12 * k, Math.max(3, 10 * k), 0, Math.PI * 2);
+      g.fillStyle = KIND_COLOR[info.kind] || "#fff"; g.globalAlpha = dead ? 0.35 : 1; g.fill(); g.globalAlpha = 1;
+    }
+    labels.push({ sx, sy, e, info, chosen });
+  }
+  // Names and life over everything, as in the game.
+  g.textAlign = "center";
+  g.font = `${Math.max(11, Math.round(12 * Math.min(k, 1.6)))}px system-ui`;
+  for (const { sx, sy, e, info, chosen } of labels) {
+    const top = sy - 62 * k;
+    if (info.kind !== "node" && e.hp < 100 && e.hp > 0) {
+      const w = 30 * Math.max(k, 0.8);
+      g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(sx - w / 2, top, w, 4);
+      g.fillStyle = e.hp > 50 ? "#4ade80" : e.hp > 25 ? "#fbbf24" : "#f87171";
+      g.fillRect(sx - w / 2, top, (w * e.hp) / 100, 4);
+    }
+    if (info.kind === "player" || info.kind === "companion" || chosen) {
+      g.fillStyle = "rgba(0,0,0,.7)"; g.fillText(info.name, sx + 1, top - 5);
+      g.fillStyle = info.kind === "player" ? "#fff" : KIND_COLOR[info.kind] || "#fff"; g.fillText(info.name, sx, top - 6);
+    }
+  }
+}
+
+// While the screen is open the scene keeps drawing: smooth steps and
+// strips play between recorded frames.
+function rpLoop() {
+  const c = $("rp-canvas");
+  if (!c || S.view !== "replays" || !RP.run) { RP.raf = 0; return; }
+  paintReplay(c);
+  RP.raf = requestAnimationFrame(rpLoop);
 }
 
 function play() {
@@ -148,7 +263,7 @@ function refreshReplay() {
   if (lbl) lbl.textContent = `${fmt("editor.replays.tick", { n: num(fr.tick) })} · ${clock(fr.tick - RP.run.first_tick)}`;
   const cmds = $("rp-cmds");
   if (cmds) cmds.replaceChildren(...(fr.cmds.length ? fr.cmds.map(([n, c]) => el("span", { class: "tag" }, `${n} ×${c}`)) : [el("span", { class: "hint" }, "—")]));
-  const counts = { player: 0, monster: 0, npc: 0, node: 0 };
+  const counts = { player: 0, monster: 0, npc: 0, node: 0, companion: 0 };
   for (const id of RP.state.keys()) counts[RP.run.names[id]?.kind] = (counts[RP.run.names[id]?.kind] || 0) + 1;
   const cnt = $("rp-counts");
   if (cnt) cnt.replaceChildren(...Object.entries(counts).map(([k, n]) => el("span", { class: "legend-dot" },
@@ -173,12 +288,13 @@ function pickAt(canvas, ev) {
   const v = canvas._view;
   if (!v) return null;
   const rect = canvas.getBoundingClientRect();
-  const sx = (ev.clientX - rect.left) * (canvas.width / rect.width), sy = (ev.clientY - rect.top) * (canvas.height / rect.height);
-  const m = RP.run.map;
-  const tx = (sx - v.ox) / v.k + m.x - 0.5, ty = (sy - v.oy) / v.k + m.y - 0.5;
-  let best = null, bd = 2.5;
-  for (const [id, s] of RP.state) {
-    const d = Math.hypot(s.x - tx, s.y - ty);
+  const mx = (ev.clientX - rect.left) * (canvas.width / rect.width), my = (ev.clientY - rect.top) * (canvas.height / rect.height);
+  // The nearest creature whose figure covers the point.
+  let best = null, bd = 40 * Math.max(v.k, 0.5);
+  for (const [id, e] of RP.state) {
+    const [x, y] = rpPos(e);
+    const [sx, sy] = v.scr(x, y);
+    const d = Math.hypot(sx - mx, sy - 20 * v.k - my);
     if (d < bd) { bd = d; best = id; }
   }
   return best;
@@ -209,10 +325,32 @@ function drawReplays() {
     r.diverged ? tile(t("editor.replays.check"), t("editor.replays.diverged"), fmt("editor.replays.diverged_at", { n: num(r.diverged.tick) }), "warn")
       : tile(t("editor.replays.check"), t("editor.replays.identical"), t("editor.replays.identical_hint"), "ok")));
 
-  const canvas = el("canvas", { id: "rp-canvas", class: "rp-canvas", width: 960, height: 600 });
-  canvas.addEventListener("mousemove", (e) => { const id = pickAt(canvas, e); if (id !== RP.hover) { RP.hover = id; paintReplay(canvas); hoverInfo(); } });
-  canvas.addEventListener("mouseleave", () => { RP.hover = null; paintReplay(canvas); hoverInfo(); });
-  canvas.addEventListener("click", (e) => { RP.follow = pickAt(canvas, e); paintReplay(canvas); hoverInfo(); });
+  const canvas = el("canvas", { id: "rp-canvas", class: "rp-canvas", width: 1280, height: 720 });
+  // Wheel zooms, drag pans (and stops following), click follows a
+  // creature, double click shows the whole zone again.
+  let drag = null;
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    if (RP.cam) RP.cam.k = Math.max(0.25, Math.min(4, RP.cam.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+  }, { passive: false });
+  canvas.addEventListener("mousedown", (e) => { drag = { x: e.clientX, y: e.clientY, moved: false }; });
+  canvas.addEventListener("mouseup", () => { setTimeout(() => { drag = null; }, 0); });
+  canvas.addEventListener("mousemove", (e) => {
+    if (drag && e.buttons && RP.cam) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (drag.moved || Math.abs(dx) + Math.abs(dy) > 3) {
+        drag.moved = true; RP.follow = null;
+        const sc = canvas.width / canvas.getBoundingClientRect().width;
+        RP.cam.cx -= (dx * sc) / RP.cam.k; RP.cam.cy -= (dy * sc) / RP.cam.k;
+        drag.x = e.clientX; drag.y = e.clientY;
+      }
+      return;
+    }
+    const id = pickAt(canvas, e); if (id !== RP.hover) { RP.hover = id; hoverInfo(); }
+  });
+  canvas.addEventListener("mouseleave", () => { RP.hover = null; drag = null; hoverInfo(); });
+  canvas.addEventListener("click", (e) => { if (drag?.moved) return; RP.follow = pickAt(canvas, e); hoverInfo(); });
+  canvas.addEventListener("dblclick", () => { RP.follow = null; RP.cam = null; });
   const slider = el("input", { id: "rp-slider", type: "range", min: 0, max: r.frames.length - 1, value: RP.frame, class: "grow",
     oninput: (e) => { seek(Number(e.target.value)); refreshReplay(); } });
   const speed = el("div", { class: "seg" }, [0.5, 1, 2, 4, 8].map((s) => el("button", { class: s === RP.speed ? "on" : "",
@@ -226,6 +364,7 @@ function drawReplays() {
       el("button", { class: "ghost", onclick: () => { stopPlay(); seek(RP.frame + 10); refreshReplay(); } }, "+10"),
       slider, speed),
     el("div", { class: "rp-status" }, el("span", { id: "rp-tick", class: "mono" }), el("span", { id: "rp-hover" })),
+    el("p", { class: "hint rp-help" }, t("editor.replays.controls")),
     el("div", { class: "rp-cmds" }, el("span", { class: "hint" }, t("editor.replays.commands"), " "), el("span", { id: "rp-cmds" }))));
 
   const totals = Object.entries(r.commands).sort((a, b) => b[1] - a[1]);
@@ -233,4 +372,5 @@ function drawReplays() {
     el("div", { class: "card-head" }, el("h3", {}, t("editor.replays.all_commands")), el("span", { class: "card-hint" }, fmt("editor.replays.seed", { n: r.seed }))),
     bars(totals, "var(--accent)")));
   requestAnimationFrame(refreshReplay);
+  if (!RP.raf) RP.raf = requestAnimationFrame(rpLoop);
 }

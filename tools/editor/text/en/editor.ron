@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": (text: "Monsters", note: "Label of the content editor (a tool for game designers).", max_chars: 400),
     "editor.replays.kind.npc": (text: "NPCs", note: "Label of the content editor (a tool for game designers).", max_chars: 400),
     "editor.replays.kind.node": (text: "Nodes", note: "Label of the content editor (a tool for game designers).", max_chars: 400),
+    "editor.replays.kind.companion": (text: "Companions", note: "Label of the content editor (a tool for game designers): tamed monsters in a replay.", max_chars: 400),
+    "editor.replays.controls": (text: "Wheel: zoom · drag: move · click: follow · double click: whole zone", note: "Label of the content editor (a tool for game designers): how to move the replay camera.", max_chars: 400),
     "editor.problem.error": (text: "error", note: "Content editor: one piece of a content error (P12); words in braces are ids, numbers or other pieces.", max_chars: 160),
     "editor.problem.warning": (text: "warning", note: "Content editor: one piece of a content error (P12); words in braces are ids, numbers or other pieces.", max_chars: 160),
     "editor.problem.entry": (text: "entry {n}", note: "Content editor: one piece of a content error (P12); words in braces are ids, numbers or other pieces.", max_chars: 160),

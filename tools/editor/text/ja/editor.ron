@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "モンスター",
     "editor.replays.kind.npc": "NPC",
     "editor.replays.kind.node": "採集ポイント",
+    "editor.replays.kind.companion": "仲間",
+    "editor.replays.controls": "ホイール：ズーム・ドラッグ：移動・クリック：追従・ダブルクリック：ゾーン全体",
     "editor.problem.error": "エラー",
     "editor.problem.warning": "警告",
     "editor.problem.entry": "項目 {n}",

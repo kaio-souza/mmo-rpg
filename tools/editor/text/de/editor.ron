@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "Monster",
     "editor.replays.kind.npc": "NSCs",
     "editor.replays.kind.node": "Knoten",
+    "editor.replays.kind.companion": "Gefährten",
+    "editor.replays.controls": "Rad: Zoom · Ziehen: verschieben · Klick: folgen · Doppelklick: ganze Zone",
     "editor.problem.error": "Fehler",
     "editor.problem.warning": "Warnung",
     "editor.problem.entry": "Eintrag {n}",

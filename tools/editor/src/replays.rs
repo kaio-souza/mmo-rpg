@@ -94,7 +94,7 @@ pub fn run(
     }
 
     let mut names: BTreeMap<u64, Value> = BTreeMap::new();
-    let mut last: BTreeMap<u64, (i32, i32, u8)> = BTreeMap::new();
+    let mut last: BTreeMap<u64, (i32, i32, u8, u8)> = BTreeMap::new();
     let mut frames: Vec<Value> = Vec::new();
     let mut commands: BTreeMap<String, u64> = BTreeMap::new();
     let mut tick_cmds: BTreeMap<String, u64> = BTreeMap::new();
@@ -107,14 +107,14 @@ pub fn run(
         for e in &now {
             let id = u64::from(e.id.get());
             seen.insert(id);
-            let state = (e.pos.x, e.pos.y, e.health);
+            let state = (e.pos.x, e.pos.y, e.health, strip_row(e.direction));
             names.entry(id).or_insert_with(|| {
                 let label = r.label(e);
                 let shown = english.get(&label).cloned().unwrap_or(label);
-                json!({ "kind": replay::kind_name(e.kind), "name": shown, "level": e.level })
+                json!({ "kind": replay::kind_name(e.kind), "name": shown, "level": e.level, "layers": layers(r, replay::kind_name(e.kind) == "player", e.appearance, e.look) })
             });
             if last.get(&id) != Some(&state) {
-                set.push(json!([id, state.0, state.1, state.2]));
+                set.push(json!([id, state.0, state.1, state.2, state.3]));
                 last.insert(id, state);
             }
         }
@@ -164,4 +164,53 @@ pub fn run(
         "worst_us": worst_us,
         "diverged": diverged,
     }))
+}
+
+/// Row of a four-direction strip (S, W, N, E), as the client draws it.
+fn strip_row(d: base::Direction) -> u8 {
+    use base::Direction as D;
+    match d {
+        D::S | D::SE => 0,
+        D::W | D::SW => 1,
+        D::N | D::NW => 2,
+        D::E | D::NE => 3,
+    }
+}
+
+/// What an entity is drawn with, bottom first: `[sprite, tint]` pairs
+/// (`tint`: `#rrggbb` or null). A player is body, clothes and hair tinted
+/// by skin and hair colour, as in the client; the others one sprite.
+fn layers(r: &replay::Replay, player: bool, appearance: u16, look: base::Look) -> Value {
+    let cat = &r.zone().content().catalog;
+    let hex = |c: u32| format!("#{c:06x}");
+    if !player {
+        let sprite = usize::from(appearance)
+            .checked_sub(1)
+            .and_then(|i| cat.sprites().get(i));
+        return match sprite {
+            Some(s) => json!([[s, null]]),
+            None => json!([]),
+        };
+    }
+    let lists = &cat.appearance().lists;
+    let pick = |i: usize, at: u8| {
+        lists
+            .get(i)
+            .and_then(|l| l.get(usize::from(at)).or_else(|| l.first()))
+    };
+    let skin = pick(1, look.skin).map(|o| hex(o.color));
+    let hair = pick(3, look.hair_color).map(|o| hex(o.color));
+    let body = pick(0, look.body);
+    let mut out = Vec::new();
+    match body.filter(|b| !b.sprite.is_empty()) {
+        Some(b) => out.push(json!([b.sprite, skin])),
+        None => out.push(json!(["player", skin])),
+    }
+    if let Some(c) = body.map(|b| &b.clothes).filter(|c| !c.is_empty()) {
+        out.push(json!([c, null]));
+    }
+    if let Some(h) = pick(2, look.hair_style).filter(|o| !o.sprite.is_empty()) {
+        out.push(json!([h.sprite, hair]));
+    }
+    Value::Array(out)
 }

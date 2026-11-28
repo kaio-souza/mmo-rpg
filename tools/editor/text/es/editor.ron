@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "Monstruos",
     "editor.replays.kind.npc": "PNJ",
     "editor.replays.kind.node": "Nodos",
+    "editor.replays.kind.companion": "Compañeros",
+    "editor.replays.controls": "Rueda: zoom · arrastrar: mover · clic: seguir · doble clic: zona entera",
     "editor.problem.error": "error",
     "editor.problem.warning": "aviso",
     "editor.problem.entry": "entrada {n}",

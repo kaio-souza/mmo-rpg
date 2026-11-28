@@ -783,7 +783,9 @@ button.danger:hover:not(:disabled) { background: rgba(255, 107, 107, .2); }
 .rl.target { color: var(--warn); }
 .entry.on { background: var(--accent-bg); }
 .rp-card { padding: 12px; }
-.rp-canvas { width: 100%; height: auto; display: block; border-radius: var(--r-sm); background: #05070a; cursor: crosshair; image-rendering: pixelated; }
+.rp-canvas { width: 100%; height: auto; display: block; border-radius: var(--r-sm); background: #05070a; cursor: grab; image-rendering: pixelated; }
+.rp-canvas:active { cursor: grabbing; }
+.rp-help { margin: 4px 0 0; font-size: 12px; }
 .rp-controls { margin: 10px 0 4px; }
 .rp-controls input[type=range] { flex: 1; min-width: 160px; }
 .rp-status { display: flex; gap: 16px; font-size: 13px; min-height: 20px; }

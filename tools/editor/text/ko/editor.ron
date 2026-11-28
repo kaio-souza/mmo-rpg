@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "몬스터",
     "editor.replays.kind.npc": "NPC",
     "editor.replays.kind.node": "채집 지점",
+    "editor.replays.kind.companion": "동료",
+    "editor.replays.controls": "휠: 확대 · 드래그: 이동 · 클릭: 따라가기 · 더블클릭: 구역 전체",
     "editor.problem.error": "오류",
     "editor.problem.warning": "경고",
     "editor.problem.entry": "항목 {n}",

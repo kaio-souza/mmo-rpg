@@ -903,6 +903,8 @@
     "editor.replays.kind.monster": "Monstros",
     "editor.replays.kind.npc": "NPCs",
     "editor.replays.kind.node": "Nós",
+    "editor.replays.kind.companion": "Companheiros",
+    "editor.replays.controls": "Roda: zoom · arrastar: mover · clique: seguir · clique duplo: zona inteira",
     "editor.problem.error": "erro",
     "editor.problem.warning": "aviso",
     "editor.problem.entry": "entrada {n}",
