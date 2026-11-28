@@ -53,6 +53,9 @@ impl Zone {
             if let Some(n) = &e.node {
                 builder.add(n.clone());
             }
+            if let Some(c) = &e.companion {
+                builder.add(c.clone());
+            }
             if let Some(g) = e
                 .gear
                 .as_deref()
@@ -100,6 +103,11 @@ impl Zone {
                 let shop = self.world.get::<&ShopComp>(h).ok().map(|s| ShopComp::clone(&s));
                 let shop_open = self.world.get::<&ShopOpen>(h).ok().map(|o| *o);
                 let node = self.world.get::<&NodeComp>(h).ok().map(|n| NodeComp::clone(&n));
+                let companion = self
+                    .world
+                    .get::<&crate::companion::CompanionComp>(h)
+                    .ok()
+                    .map(|c| crate::companion::CompanionComp::clone(&c));
                 Some(crate::replay::EntitySnapshot {
                     body,
                     walk,
@@ -112,6 +120,7 @@ impl Zone {
                     shop,
                     shop_open,
                     node,
+                    companion,
                 })
             })
             .collect();
@@ -197,6 +206,9 @@ impl Zone {
             }
             if let Ok(m) = self.world.get::<&MonsterComp>(handle) {
                 hash_encoded(&mut h, &mut buf, &*m);
+            }
+            if let Ok(c) = self.world.get::<&crate::companion::CompanionComp>(handle) {
+                hash_encoded(&mut h, &mut buf, &*c);
             }
             if let Ok(g) = self.world.get::<&Gear>(handle) {
                 hash_encoded(&mut h, &mut buf, &*g);

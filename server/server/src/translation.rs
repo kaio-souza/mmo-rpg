@@ -18,6 +18,7 @@ pub fn entity(s: &EntityState) -> Entity {
             sim::EntityKind::Npc => EntityKind::Npc,
             sim::EntityKind::Monster => EntityKind::Monster,
             sim::EntityKind::Node => EntityKind::Node,
+            sim::EntityKind::Companion => EntityKind::Companion,
         },
         pos: s.pos,
         direction: s.direction,
@@ -285,6 +286,31 @@ pub fn player_frames(out: &TickOutput) -> Vec<(PlayerId, Bytes)> {
             specials: st.specials.clone(),
             // Every production class mends its own pieces.
             self_repairs: st.appraises,
+            companions: st
+                .companions
+                .iter()
+                .map(|c| protocol::CompanionInfo {
+                    name: c.name,
+                    given: c.given.clone(),
+                    icon: c.icon,
+                    level: c.level,
+                    out: c.out,
+                    rest_secs: c.rest_secs,
+                })
+                .collect(),
+            adventurer_rank: st.adventurer_rank,
+            resting: st.resting,
+            bestiary: st
+                .bestiary
+                .iter()
+                .map(|b| protocol::BestiaryInfo {
+                    name: b.name,
+                    icon: b.icon,
+                    level: b.level,
+                    kills: b.kills,
+                    tames: b.tames,
+                })
+                .collect(),
         }));
         push(&mut frames, *player, &msg);
     }
@@ -454,6 +480,12 @@ pub fn fight_command(player: PlayerId, msg: protocol::ClientMsg) -> Option<sim::
     use sim::Command as C;
     Some(match msg {
         M::Attack { target } => C::Attack { player, target },
+        M::Tame { target } => C::Tame { player, target },
+        M::Summon { index } => C::Summon { player, index },
+        M::Dismiss => C::Dismiss { player },
+        M::ReleaseCompanion { index } => C::ReleaseCompanion { player, index },
+        M::NameCompanion { index, name } => C::NameCompanion { player, index, name },
+        M::Rest { on } => C::Rest { player, on },
         M::UseTechnique { technique, target } => C::UseTechnique {
             player,
             technique,
@@ -648,6 +680,18 @@ pub fn definitions(catalog: &defs::ValidatedCatalog) -> Result<Bytes, protocol::
                 name: z.name.clone(),
                 min: z.origin,
                 max: base::TilePos::new(z.origin.x + z.width - 1, z.origin.y + z.height - 1),
+                weather: z
+                    .weather
+                    .iter()
+                    .map(|w| {
+                        let kind = match w.kind {
+                            defs::Weather::Rain => 0,
+                            defs::Weather::Snow => 1,
+                            defs::Weather::Fog => 2,
+                        };
+                        (kind, w.permille)
+                    })
+                    .collect(),
             })
             .collect(),
         title_bonuses: catalog
@@ -682,6 +726,7 @@ fn title_bonus_info(
         defs::TitleBonus::MaxVigor(v) => I::MaxVigor(*v),
         defs::TitleBonus::Percent(k, v) => percent(*k, *v, None),
         defs::TitleBonus::PercentUntilLevel(k, v, l) => percent(*k, *v, Some(*l)),
+        defs::TitleBonus::LastStand(secs) => I::LastStand(*secs),
         defs::TitleBonus::Special(id, v) => I::Special(
             catalog.special_attributes().iter().find(|s| s.id == *id)?.name,
             *v,
@@ -746,6 +791,18 @@ pub fn sheet_to_sim(name: base::CharacterName, saved: &persistence::SavedSheet) 
         hp: saved.hp,
         locked_until: saved.locked_until,
         shop_sales: saved.shop_sales.clone(),
+        companions: saved
+            .companions
+            .iter()
+            .map(|(monster, rest_until, name)| sim::SavedCompanion {
+                monster: monster.clone(),
+                name: name
+                    .as_ref()
+                    .and_then(|n| base::CharacterName::try_from(n.clone()).ok()),
+                rest_until: *rest_until,
+            })
+            .collect(),
+        summoned: saved.summoned,
     }
 }
 
@@ -808,6 +865,18 @@ pub fn sheet_to_saved(sheet: &sim::CharacterSheet) -> persistence::SavedSheet {
         hp: sheet.hp,
         locked_until: sheet.locked_until,
         shop_sales: sheet.shop_sales.clone(),
+        companions: sheet
+            .companions
+            .iter()
+            .map(|c| {
+                (
+                    c.monster.clone(),
+                    c.rest_until,
+                    c.name.as_ref().map(ToString::to_string),
+                )
+            })
+            .collect(),
+        summoned: sheet.summoned,
     }
 }
 

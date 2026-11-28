@@ -134,6 +134,28 @@ impl Zone {
                     self.tell(out, *player, "system.unique_lost", smallvec::smallvec![arg]);
                 }
             }
+            Command::Tame { player, target } => {
+                if let Err(e) = self.tame(*player, *target, out) {
+                    out.refused.push((*player, e));
+                }
+            }
+            Command::Summon { player, index } => {
+                if let Err(e) = self.summon(*player, *index, out) {
+                    out.refused.push((*player, e));
+                }
+            }
+            Command::Dismiss { player } => self.dismiss(*player),
+            Command::Rest { player, on } => self.rest(*player, *on),
+            Command::NameCompanion { player, index, name } => {
+                if let Err(e) = self.name_companion(*player, *index, name.clone()) {
+                    out.refused.push((*player, e));
+                }
+            }
+            Command::ReleaseCompanion { player, index } => {
+                if let Err(e) = self.release_companion(*player, *index) {
+                    out.refused.push((*player, e));
+                }
+            }
             Command::Leave { player } => {
                 if let Some((sheet, pos, _)) = self.take_player(*player) {
                     out.left.push((*player, sheet, pos));
@@ -180,7 +202,27 @@ impl Zone {
                     }));
             }
             Command::ChooseOption { player, option } => {
+                let content = self.content.clone();
+                let rank_of = |z: &Zone| {
+                    z.by_player
+                        .get(player)
+                        .and_then(|h| z.world.get::<&PlayerComp>(*h).ok())
+                        .map(|p| p.data.adventurer_rank(&content.catalog))
+                };
+                let rank_before = rank_of(self);
                 let result = self.choose(*player, *option);
+                let rank_after = rank_of(self);
+                if let (Some(before), Some(after)) = (rank_before, rank_after)
+                    && after > before
+                {
+                    if let Some(&h) = self.by_player.get(player)
+                        && let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h)
+                    {
+                        p.dirty_stats = true;
+                    }
+                    let letter = base::Arg::Str(format!("{after:?}"));
+                    self.tell(out, *player, "system.rank_up", smallvec::smallvec![letter]);
+                }
                 out.dialogue
                     .push(result.unwrap_or_else(|reason| DialogueOut::Refused {
                         player: *player,
@@ -383,12 +425,14 @@ impl Zone {
         );
         out.entered.push((player, id, pos));
         fight::announce(self, player, &titles, out);
+        self.companion_enters(player);
         Some(h)
     }
 
     /// Takes a player out of the zone with its sheet written back: on
     /// `Leave` and on a handoff. The groups and trades of the zone drop it.
     pub(crate) fn take_player(&mut self, player: PlayerId) -> Option<(CharacterSheet, TilePos, EntityId)> {
+        self.companion_leaves(player);
         let handle = *self.by_player.get(&player)?;
         let hp = self.world.get::<&Fighter>(handle).map_or(0, |f| f.hp);
         // The backpack leaves by value: an item has no `Clone`.
@@ -432,6 +476,35 @@ impl Zone {
             f.target = None;
             f.retaliating = false;
             f.last_order = now;
+            if f.resting {
+                f.resting = false;
+                // The rest button turns back into "Rest".
+                if let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h) {
+                    p.dirty_stats = true;
+                }
+            }
+        }
+    }
+
+    /// Sits down to rest or stands up. Fallen or moving, nothing happens.
+    pub(crate) fn rest(&mut self, player: PlayerId, on: bool) {
+        let Some(&h) = self.by_player.get(&player) else {
+            return;
+        };
+        if on && !self.standing(h) {
+            return;
+        }
+        if on && let Ok(mut w) = self.world.get::<&mut Walk>(h) {
+            w.steps.clear();
+        }
+        if let Ok((f, p)) = self.world.query_one_mut::<(&mut Fighter, &mut PlayerComp)>(h)
+            && f.resting != on
+        {
+            f.resting = on;
+            if on {
+                f.target = None;
+            }
+            p.dirty_stats = true;
         }
     }
 }

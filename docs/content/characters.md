@@ -55,7 +55,7 @@ A blow (`damage_permille` above 0) may also carry `area: 2` (every monster withi
 | `Counter(family: "kills", key: "wolf", at: 100)` (empty key: family total) | `MaxHp(n)`, `MaxVigor(n)` |
 | `Proficiency("sword", 50)` | `Percent(Damage | Xp | MaxMp, n)` |
 | `Attribute(Str, 30)` (base value) | `PercentUntilLevel(Xp, 5, 10)` |
-| `Karma(300)` at least; `Karma(-300)` at most (the cruel) | |
+| `Karma(300)` at least; `Karma(-300)` at most (the cruel) | `LastStand(60)`: a fatal blow leaves 1 HP, once every 60 s |
 | | `Special("faith", n)` |
 
 A title that `replaces` others removes them when earned, and they are never earned again while it is owned. Titles also serve as class requirements and show identity.
@@ -90,7 +90,7 @@ The whole server hears at 25, 50 and 75 % and when it is reached; then it is don
 
 ## Counters
 
-`counters.ron` lists the event families counted per character, for titles: `["kills", "deaths"]`. `kills`, `quests` and `clears` are keyed by monster, quest and dungeon id.
+`counters.ron` lists the event families counted per character, for titles: `["kills", "deaths"]`. `kills`, `quests`, `clears` and `tames` are keyed by monster, quest, dungeon and monster id.
 
 ## Appearance
 

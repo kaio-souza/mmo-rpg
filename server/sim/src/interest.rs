@@ -352,6 +352,25 @@ impl Zone {
                 look: base::Look::default(),
             });
         }
+        if let Ok(c) = self.world.get::<&crate::companion::CompanionComp>(h) {
+            let def = cat.monster(c.monster)?;
+            return Some(EntityState {
+                id,
+                kind: EntityKind::Companion,
+                pos: b.pos,
+                direction: b.facing,
+                appearance: cat.sprite_index(&def.sprite),
+                label: match &c.name {
+                    Some(n) => EntityLabel::Player(n.clone()),
+                    None => EntityLabel::Monster(def.name),
+                },
+                health,
+                equipment: (0, 0, 0),
+                light: 0,
+                level,
+                look: base::Look::default(),
+            });
+        }
         let m = self.world.get::<&MonsterComp>(h).ok()?;
         let def = cat.monster(m.monster)?;
         Some(EntityState {

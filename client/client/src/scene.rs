@@ -215,7 +215,7 @@ pub fn build(
     now_ms: f64,
     destination: Option<TilePos>,
     target: Option<base::EntityId>,
-    (gfx, night): (&Graphics, bool),
+    (gfx, night, weather): (&Graphics, bool, Option<u8>),
     (items, lights, fog): (&mut Vec<ItemDesign>, &mut Vec<PointLight>, &mut Fog),
 ) {
     items.clear();
@@ -233,6 +233,12 @@ pub fn build(
             let wall = look.map_or(blocks, |l| l.wall);
             // A fire put out by day shows its own sprite, without light.
             let by_day = look.and_then(|l| l.day_sprite.as_deref()).filter(|_| !night);
+            // Rain and snow have their own look of a tile, when it has one.
+            let by_weather = look.and_then(|l| match weather {
+                Some(0) => l.rain_sprite.as_deref(),
+                Some(1) => l.snow_sprite.as_deref(),
+                _ => None,
+            });
             let shine = look.and_then(|l| l.light).filter(|_| by_day.is_none());
             // The ground is shaded by the renderer from the sight mask;
             // walls and glowing tiles skip it and are tinted here.
@@ -243,7 +249,8 @@ pub fn build(
             };
             // Animated scenery (fire, water): each tile a little out of step.
             let pose = Pose::still(now_ms / 1000.0 + scatter(x, y));
-            let sprite = look.and_then(|l| gfx.sprite_at(by_day.unwrap_or(&l.sprite), tint, pose));
+            let sprite =
+                look.and_then(|l| gfx.sprite_at(by_day.or(by_weather).unwrap_or(&l.sprite), tint, pose));
             if let Some(l) = shine {
                 lights.push(PointLight {
                     tile,
@@ -278,7 +285,7 @@ pub fn build(
             EntityKind::Player if skin.is_some() => skin.unwrap_or(PLAYER),
             _ if Some(e.id) == me => ME,
             EntityKind::Player => PLAYER,
-            EntityKind::Npc | EntityKind::Node => NPC,
+            EntityKind::Npc | EntityKind::Node | EntityKind::Companion => NPC,
             EntityKind::Monster => MONSTER,
         };
         // Monsters darken as they lose HP.

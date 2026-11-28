@@ -10,6 +10,7 @@
 #![cfg_attr(not(test), deny(clippy::arithmetic_side_effects))]
 
 mod actions;
+mod companion;
 mod craft;
 mod dialogue;
 mod escrow;
@@ -54,11 +55,11 @@ pub use replay::{ReplayLog, SEGMENT_TICKS, TickRecord, ZoneState};
 pub use seam::{Arrival, ENTITY_ID_BITS, GHOST_TIMEOUT_TICKS, GhostDiff, world_map};
 pub use social::{INVITE_TICKS, MAX_PARTY, SHARE_RADIUS, TRADE_RADIUS, TRADE_TICKS};
 pub use types::{
-    CharacterSheet, ClearOut, CoinFlow, CombatOut, Command, DeliveredOut, DialogueOut, EntityKind,
-    EntityLabel, EntityState, EquipSlot, EscrowOut, EscrowParcel, InstanceView, InventoryView, InviteKind,
-    InviteOut, ItemPlace, LoadLevel, ObjectiveView, PartyView, QuestMarker, QuestView, Refusal, SavedItem,
-    SavedPower, SavedProgress, SavedQuest, SavedStack, ShopLineView, ShopView, StatsView, TickInput,
-    TickOutput, TradeView, View,
+    BestiaryView, CharacterSheet, ClearOut, CoinFlow, CombatOut, Command, CompanionView, DeliveredOut,
+    DialogueOut, EntityKind, EntityLabel, EntityState, EquipSlot, EscrowOut, EscrowParcel, InstanceView,
+    InventoryView, InviteKind, InviteOut, ItemPlace, LoadLevel, ObjectiveView, PartyView, QuestMarker,
+    QuestView, Refusal, SavedCompanion, SavedItem, SavedPower, SavedProgress, SavedQuest, SavedStack,
+    ShopLineView, ShopView, StatsView, TickInput, TickOutput, TradeView, View,
 };
 pub use zone::{
     BLOCKED_GIVE_UP_TICKS, MAX_MOVE_DISTANCE, PATH_MAX_NODES, STEP_TICKS, TALK_RADIUS, Zone, ZoneError,

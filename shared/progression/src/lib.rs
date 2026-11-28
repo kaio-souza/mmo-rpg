@@ -483,6 +483,9 @@ pub struct TitleBonuses {
     pub damage_percent: u32,
     pub xp_percent: u32,
     pub max_mp_percent: u32,
+    /// Seconds between two last stands, the shortest of the titles; `None`:
+    /// no title gives one.
+    pub last_stand_secs: Option<u32>,
 }
 
 impl TitleBonuses {
@@ -515,6 +518,9 @@ pub fn title_bonuses(s: &ProgressionSheet, cat: &ValidatedCatalog) -> TitleBonus
                 TitleBonus::Percent(kind, v) => b.add_percent(*kind, *v),
                 TitleBonus::PercentUntilLevel(kind, v, until) if s.level <= *until => {
                     b.add_percent(*kind, *v)
+                }
+                TitleBonus::LastStand(secs) => {
+                    b.last_stand_secs = Some(b.last_stand_secs.map_or(*secs, |s| s.min(*secs)));
                 }
                 TitleBonus::Special(..) | TitleBonus::PercentUntilLevel(..) => {}
             }

@@ -19,6 +19,8 @@ struct Who<'a> {
     now: u64,
     /// Server goals reached.
     goals_done: &'a std::collections::BTreeSet<String>,
+    /// Night or not, and the weather, in the zone now.
+    moment: (bool, Option<defs::Weather>),
 }
 
 fn holds(cat: &ValidatedCatalog, who: Who<'_>, npc: NpcId, c: &Condition) -> bool {
@@ -36,6 +38,7 @@ fn holds(cat: &ValidatedCatalog, who: Who<'_>, npc: NpcId, c: &Condition) -> boo
         Condition::TechniqueKnown(t) => who.sheet.technique(*t).is_some(),
         Condition::Karma(min) => who.sheet.karma >= *min,
         Condition::GoalDone(g) => who.goals_done.contains(g),
+        Condition::Moment(m) => m.holds(who.moment.0, who.moment.1),
     }
 }
 
@@ -65,6 +68,7 @@ impl Zone {
     /// Opens the start node of the target NPC's dialogue (replacing any
     /// open one) and counts the talk for quests.
     pub(crate) fn talk(&mut self, player: PlayerId, target: EntityId) -> Result<DialogueOut, Refusal> {
+        let moment = self.moment_now();
         let handle = *self.by_player.get(&player).ok_or(Refusal::NoDialogue)?;
         let pos = self
             .world
@@ -102,6 +106,7 @@ impl Zone {
             sheet: &p.growth.sheet,
             now: self.now_unix,
             goals_done: &self.goals_done,
+            moment,
         };
         let shown = visible(cat, who, npc, node);
         let out = DialogueOut::Show {
@@ -129,6 +134,7 @@ impl Zone {
     /// Follows an option of the open dialogue: effects, then the next node
     /// or the end.
     pub(crate) fn choose(&mut self, player: PlayerId, option: u16) -> Result<DialogueOut, Refusal> {
+        let moment = self.moment_now();
         let handle = *self.by_player.get(&player).ok_or(Refusal::NoDialogue)?;
         let (target, dialogue, node, index) = self
             .world
@@ -158,6 +164,7 @@ impl Zone {
             sheet: &sheet,
             now: self.now_unix,
             goals_done: &self.goals_done,
+            moment,
         };
         if chosen.when.as_ref().is_some_and(|c| !holds(cat, who, npc, c)) {
             return Err(Refusal::RequirementsNotMet);
@@ -167,8 +174,12 @@ impl Zone {
         let mut taught = Vec::new();
         let mut teleport = None;
         let mut karma = 0i32;
+        // A barber: `(look slot, option id)`, set once the rest succeeded.
+        let mut looks: Vec<(usize, String)> = Vec::new();
         for effect in &chosen.effects {
             match effect {
+                Effect::SetHairStyle(id) => looks.push((2, id.clone())),
+                Effect::SetHairColor(id) => looks.push((3, id.clone())),
                 Effect::Karma(d) => karma = karma.saturating_add(*d),
                 Effect::LearnTechnique(t) => taught.push(*t),
                 Effect::Teleport(p) => teleport = Some(*p),
@@ -198,6 +209,11 @@ impl Zone {
         if karma != 0 {
             p.growth.sheet.change_karma(karma);
         }
+        for (slot, id) in looks {
+            if let Some(l) = p.sheet.look.get_mut(slot) {
+                *l = id;
+            }
+        }
         for t in taught {
             if progression::learn_technique(&mut p.growth.sheet, t).is_some() {
                 p.dirty_stats = true;
@@ -218,6 +234,7 @@ impl Zone {
             sheet: &p.growth.sheet,
             now: self.now_unix,
             goals_done: &self.goals_done,
+            moment,
         };
         let shown = visible(cat, who, npc, next_node);
         let out = DialogueOut::Show {
@@ -256,7 +273,11 @@ impl Zone {
                 data.learn(*r);
             }
             // Applied by `choose` on the sheet.
-            Effect::LearnTechnique(_) | Effect::Teleport(_) | Effect::Karma(_) => {}
+            Effect::LearnTechnique(_)
+            | Effect::Teleport(_)
+            | Effect::Karma(_)
+            | Effect::SetHairStyle(_)
+            | Effect::SetHairColor(_) => {}
             Effect::StartQuest(q) => data.start(cat, *q, self.now_unix).map_err(fail)?,
             Effect::CompleteQuest(q) => data.complete(cat, *q, self.now_unix).map_err(fail)?,
             Effect::Affinity(d) => data.change_affinity(npc, *d),

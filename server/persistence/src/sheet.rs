@@ -8,7 +8,7 @@ use crate::RepoError;
 use serde::{Deserialize, Serialize};
 
 /// Version written by this build.
-pub const SHEET_VERSION: u16 = 10;
+pub const SHEET_VERSION: u16 = 12;
 
 /// The current sheet. Name and position live in columns, not here.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -35,6 +35,11 @@ pub struct SavedSheet {
     pub locked_until: u64,
     /// Alpha (v8): `(shop id, coins paid, unix second the purse opened)`.
     pub shop_sales: Vec<(String, u64, u64)>,
+    /// Tamed monsters (v11): `(monster id, unix second it rests until,
+    /// the name its owner gave it (v12))`.
+    pub companions: Vec<(String, u64, Option<String>)>,
+    /// The companion that follows, by position in `companions` (v11).
+    pub summoned: Option<u8>,
 }
 
 /// Level 0: never played in phase 4 (starts at level 1).
@@ -199,6 +204,44 @@ struct SheetV8 {
 struct SheetV9 {
     v8: SheetV8,
     progress: Vec<(String, Vec<u32>)>,
+}
+
+/// Version 11: companions and the one that follows. Frozen.
+#[derive(Serialize, Deserialize)]
+struct SheetV11 {
+    v10: SheetV10,
+    companions: Vec<(String, u64)>,
+    summoned: Option<u8>,
+}
+
+impl From<SheetV11> for SavedSheet {
+    fn from(v: SheetV11) -> Self {
+        SavedSheet {
+            companions: v.companions.into_iter().map(|(m, r)| (m, r, None)).collect(),
+            summoned: v.summoned,
+            ..SavedSheet::from(v.v10)
+        }
+    }
+}
+
+/// Version 12: the names players gave their companions, by position.
+/// Frozen.
+#[derive(Serialize, Deserialize)]
+struct SheetV12 {
+    v11: SheetV11,
+    names: Vec<(u8, String)>,
+}
+
+impl From<SheetV12> for SavedSheet {
+    fn from(v: SheetV12) -> Self {
+        let mut s = SavedSheet::from(v.v11);
+        for (i, name) in v.names {
+            if let Some(c) = s.companions.get_mut(usize::from(i)) {
+                c.2 = Some(name);
+            }
+        }
+        s
+    }
 }
 
 /// Version 10: karma, the hidden morality. Frozen.
@@ -494,7 +537,21 @@ pub(crate) fn encode(sheet: &SavedSheet) -> Result<(u16, Vec<u8>), RepoError> {
         v9,
         karma: sheet.progress.karma,
     };
-    postcard::to_stdvec(&v10)
+    let v11 = SheetV11 {
+        v10,
+        companions: sheet.companions.iter().map(|(m, r, _)| (m.clone(), *r)).collect(),
+        summoned: sheet.summoned,
+    };
+    let v12 = SheetV12 {
+        v11,
+        names: sheet
+            .companions
+            .iter()
+            .enumerate()
+            .filter_map(|(i, (_, _, n))| Some((u8::try_from(i).ok()?, n.clone()?)))
+            .collect(),
+    };
+    postcard::to_stdvec(&v12)
         .map(|b| (SHEET_VERSION, b))
         .map_err(|e| RepoError::Corrupt(e.to_string()))
 }
@@ -531,6 +588,12 @@ pub(crate) fn decode(version: u16, bytes: &[u8]) -> Result<SavedSheet, RepoError
         10 => postcard::from_bytes::<SheetV10>(bytes)
             .map(SavedSheet::from)
             .map_err(|e| RepoError::Corrupt(format!("sheet v10: {e}"))),
+        11 => postcard::from_bytes::<SheetV11>(bytes)
+            .map(SavedSheet::from)
+            .map_err(|e| RepoError::Corrupt(format!("sheet v11: {e}"))),
+        12 => postcard::from_bytes::<SheetV12>(bytes)
+            .map(SavedSheet::from)
+            .map_err(|e| RepoError::Corrupt(format!("sheet v12: {e}"))),
         v => Err(RepoError::Corrupt(format!("unknown sheet version {v}"))),
     }
 }
@@ -596,9 +659,14 @@ mod tests {
             hp: 40,
             locked_until: 99,
             shop_sales: vec![("village_store".into(), 1200, 1_700_000_100)],
+            companions: vec![
+                ("wolf".into(), 0, Some("Fang".into())),
+                ("bear".into(), 1_700_000_200, None),
+            ],
+            summoned: Some(1),
         };
         let (v, bytes) = encode(&s).unwrap();
-        assert_eq!(v, 10);
+        assert_eq!(v, 12);
         assert_eq!(decode(v, &bytes).unwrap(), s);
     }
 

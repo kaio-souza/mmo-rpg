@@ -41,6 +41,9 @@ pub struct EntitySnapshot {
     pub(crate) shop_open: Option<ShopOpen>,
     /// Phase 8: a resource node and who emptied it.
     pub(crate) node: Option<NodeComp>,
+    /// A player's companion.
+    #[serde(default)]
+    pub(crate) companion: Option<crate::companion::CompanionComp>,
 }
 
 /// Complete zone state, entities sorted by id.

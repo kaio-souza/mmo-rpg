@@ -239,6 +239,17 @@ mod tests {
             },
             ClientMsg::ServerFirsts,
             ClientMsg::ServerGoals,
+            ClientMsg::Tame {
+                target: base::EntityId::new(9),
+            },
+            ClientMsg::Summon { index: 1 },
+            ClientMsg::Dismiss,
+            ClientMsg::ReleaseCompanion { index: 2 },
+            ClientMsg::NameCompanion {
+                index: 0,
+                name: Some(CharacterName::try_from("Fang").unwrap()),
+            },
+            ClientMsg::Rest { on: true },
         ] {
             roundtrip(m, MAX_CLIENT_FRAME);
         }
@@ -365,6 +376,7 @@ mod tests {
                     name: "aurelia".into(),
                     min: base::TilePos::new(-32, -96),
                     max: base::TilePos::new(31, -33),
+                    weather: vec![(0, 150)],
                 }],
             },
             ServerMsg::Combat {

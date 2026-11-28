@@ -20,7 +20,7 @@ const MAP: &str = r#####"(
     ],
 )"#####;
 
-const KEYS: [&str; 51] = [
+const KEYS: [&str; 56] = [
     "item.bread.name",
     "item.bread.desc",
     "item.tonic.name",
@@ -72,6 +72,11 @@ const KEYS: [&str; 51] = [
     "technique.costly.desc",
     "goal.wolf_cull.name",
     "goal.wolf_cull.desc",
+    "title.stubborn.name",
+    "title.stubborn.desc",
+    "system.last_stand",
+    "monster.owl.name",
+    "monster.lark.name",
 ];
 
 fn content() -> Arc<Content> {
@@ -94,7 +99,7 @@ fn content() -> Arc<Content> {
         ("zones/f/map.ron", MAP),
         (
             "zones/f/monsters.ron",
-            "[(monster: \"wolf\", pos: (x: 12, y: 4)), (monster: \"dummy\", pos: (x: 6, y: 1)), (monster: \"ogre\", pos: (x: 18, y: 8)), (monster: \"post\", pos: (x: 6, y: 6)), (monster: \"post\", pos: (x: 8, y: 6)), (monster: \"brute\", pos: (x: 17, y: 0))]",
+            "[(monster: \"wolf\", pos: (x: 12, y: 4)), (monster: \"dummy\", pos: (x: 6, y: 1)), (monster: \"ogre\", pos: (x: 18, y: 8)), (monster: \"post\", pos: (x: 6, y: 6)), (monster: \"post\", pos: (x: 8, y: 6)), (monster: \"brute\", pos: (x: 17, y: 0)), (monster: \"owl\", pos: (x: 10, y: 2), when: Some(Night)), (monster: \"lark\", pos: (x: 11, y: 2), when: Some(Day))]",
         ),
         // Wolf: aggressive, weak, drops a pelt and a sword.
         (
@@ -104,7 +109,7 @@ fn content() -> Arc<Content> {
         // Dummy: never attacks first (aggro 0), lots of XP.
         (
             "monsters/dummy.ron",
-            "(level: 5, hp: 5, damage: (0, 0), xp: 3000, aggro_radius: 0, leash: 30, respawn_ticks: 5)",
+            "(level: 5, hp: 5, damage: (0, 0), xp: 3000, aggro_radius: 0, leash: 30, respawn_ticks: 5, tame: Some((requires: [Level(1)])))",
         ),
         // Ogre: kills anyone.
         (
@@ -114,12 +119,21 @@ fn content() -> Arc<Content> {
         // Posts: stand still and take blows (area and poison).
         (
             "monsters/post.ron",
-            "(level: 1, hp: 1000, damage: (0, 0), xp: 1, aggro_radius: 0, leash: 30)",
+            "(level: 1, hp: 1000, damage: (0, 0), xp: 1, aggro_radius: 0, leash: 30, tame: Some((requires: [Proficiency(\"sword\", 50)])))",
         ),
         // Brute: below half HP its blows slow whoever they hit.
         (
             "monsters/brute.ron",
             "(level: 1, hp: 100, damage: (1, 1), attributes: (dex: 500), xp: 1, attack_ticks: 5, aggro_radius: 1, leash: 30, phases: [(below_hp_permille: 500, status: Some((kind: Slow, duration_ticks: 200, power: 500)))])",
+        ),
+        // Out only at night, and only by day.
+        (
+            "monsters/owl.ron",
+            "(level: 1, hp: 10, damage: (0, 0), xp: 1, aggro_radius: 0, leash: 30)",
+        ),
+        (
+            "monsters/lark.ron",
+            "(level: 1, hp: 10, damage: (0, 0), xp: 1, aggro_radius: 0, leash: 30)",
         ),
         ("items/pelt.ron", "(kind: Material, max_stack: 20)"),
         (
@@ -176,6 +190,11 @@ fn content() -> Arc<Content> {
             "titles/wolf_bane.ron",
             "(trigger: Counter(family: \"kills\", key: \"wolf\", at: 1), announce: First, unique: Some((heir_after_days: 7)))",
         ),
+        // Strong ones hold on once at the edge of falling.
+        (
+            "titles/stubborn.ron",
+            "(trigger: Attribute(Str, 50), bonuses: [LastStand(60)])",
+        ),
         (
             "titles/hardy.ron",
             "(trigger: Attribute(Vit, 20), bonuses: [MaxHp(50)])",
@@ -201,9 +220,13 @@ impl Run {
     }
 
     fn tick(&mut self, commands: &[Command]) {
+        self.tick_at(commands, 1_000);
+    }
+
+    fn tick_at(&mut self, commands: &[Command], now_unix: u64) {
         let input = TickInput {
             commands,
-            now_unix: 1_000,
+            now_unix,
             load: LoadLevel::N0,
         };
         self.zone.tick(&input, &mut self.out);
@@ -925,4 +948,114 @@ fn a_kill_feeds_the_server_goal_until_it_is_reached() {
         ids: vec!["wolf_cull".into()],
     }]);
     assert!(kill_wolf(&mut r).is_empty(), "a reached goal is not counted");
+}
+
+#[test]
+fn a_tamed_monster_follows_is_saved_and_comes_back() {
+    let mut r = Run::new();
+    r.tick(&[
+        enter_at(1, TilePos::new(5, 1), None),
+        enter_at(2, TilePos::new(7, 5), None),
+    ]);
+    let dummy = r.monster("dummy").unwrap();
+    let post = r.monster("post").unwrap();
+    // The requirement the post asks for is missing: nothing happens.
+    r.tick(&[Command::Tame {
+        player: PlayerId::new(2),
+        target: post,
+    }]);
+    assert!(r.sheet(2).companions.is_empty());
+    r.tick(&[Command::Tame {
+        player: P1,
+        target: dummy,
+    }]);
+    let s = r.sheet(1);
+    assert_eq!(s.companions.len(), 1);
+    assert_eq!(s.companions[0].monster, "dummy");
+    assert_eq!(s.summoned, Some(0), "the first one follows at once");
+    assert_eq!(companions(&r), 1);
+    // Leaving takes it along; entering again brings it back.
+    r.tick(&[Command::Leave { player: P1 }]);
+    let (_, saved, _) = r.out.left[0].clone();
+    assert_eq!(companions(&r), 0);
+    r.tick(&[enter_at(1, TilePos::new(5, 1), Some(saved))]);
+    assert_eq!(companions(&r), 1);
+    r.tick(&[Command::Dismiss { player: P1 }]);
+    assert_eq!(companions(&r), 0);
+    assert_eq!(r.sheet(1).summoned, None);
+    r.tick(&[Command::ReleaseCompanion { player: P1, index: 0 }]);
+    assert!(r.sheet(1).companions.is_empty());
+}
+
+fn companions(r: &Run) -> usize {
+    r.zone
+        .entity_states()
+        .into_iter()
+        .filter(|e| e.kind == EntityKind::Companion)
+        .count()
+}
+
+#[test]
+fn a_last_stand_holds_once_and_resting_stands_up_on_a_move() {
+    let mut r = Run::new();
+    let mut sheet = CharacterSheet::new(CharacterName::try_from("hero").unwrap());
+    sheet.progress.attributes.str = 50;
+    sheet.progress.level = 20;
+    sheet.progress.max_level = 20;
+    r.tick(&[enter_at(1, TilePos::new(17, 8), Some(sheet))]);
+    let me = r.out.entered[0].1;
+    assert!(
+        r.sheet(1).progress.titles.contains(&"stubborn".to_owned()),
+        "{:?}",
+        r.sheet(1).progress
+    );
+    // The ogre hits for far more than the whole HP: the first blow (it may
+    // come in the tick of entering) leaves 1.
+    let mut first = None;
+    for i in 0..200 {
+        if i > 0 {
+            r.tick(&[]);
+        }
+        if r.out.combat.iter().any(|c| c.target == me && c.damage.is_some()) {
+            first = Some(r.sheet(1).hp);
+            break;
+        }
+    }
+    assert_eq!(first, Some(1), "held on at 1 HP");
+    assert!(r.out.system.iter().any(|(p, _)| *p == P1));
+    // The next one, inside the minute, is not held.
+    let mut fell = false;
+    for _ in 0..200 {
+        r.tick(&[]);
+        if r.out.combat.iter().any(|c| c.target == me && c.damage.is_some()) {
+            fell = true;
+            break;
+        }
+    }
+    assert!(fell);
+    // Resting: on, then a move stands the player up.
+    let mut r = Run::new();
+    r.tick(&[enter_at(1, TilePos::new(2, 2), None)]);
+    r.tick(&[Command::Rest { player: P1, on: true }]);
+    assert!(r.out.stats.iter().any(|(p, s)| *p == P1 && s.resting));
+    r.tick(&[Command::Move {
+        player: P1,
+        destination: TilePos::new(2, 4),
+    }]);
+    assert!(r.out.stats.iter().any(|(p, s)| *p == P1 && !s.resting));
+}
+
+#[test]
+fn a_spawn_of_the_night_comes_and_goes_with_it() {
+    // At 1000 s the world (2 h days) is in its night.
+    let mut r = Run::new();
+    r.tick(&[]);
+    assert!(r.monster("owl").is_some(), "the owl is out at night");
+    assert!(r.monster("lark").is_none(), "the lark waits for the day");
+    // Midday: the owl leaves within a few seconds, the lark comes.
+    for _ in 0..250 {
+        r.tick_at(&[], 4_000);
+    }
+    assert!(r.monster("owl").is_none());
+    assert!(r.monster("lark").is_some());
 }

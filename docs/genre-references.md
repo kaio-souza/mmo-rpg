@@ -11,7 +11,7 @@ Distance: 🟢 close (mostly content), 🟡 one or two large mechanics, 🔴 far
 | The Gamer | attributes and skills grow by use, titles, a "system window"; not an MMO, but works as one where every player is a gamer | almost nothing: proficiencies by use, techniques unlocked by proficiency and titles exist. Missing: only the system-window look (a theme); the instant dungeon is an instance (`examples/everyday-system/`) |
 | Hardcore Leveling Warrior | ranked MMO, death costs a level, classes and titles | content only now (rankings and announcements exist) |
 | Tomb Raider King | unique relics with powers, each with one owner | content only now (relics exist once) |
-| Taming Master | a tamer, pets that grow and evolve | [companions](mounts-and-companions.md) (W10) |
+| Taming Master | a tamer, pets that grow and evolve | taming and companions exist; missing: growth and evolution ([companions](mounts-and-companions.md)) |
 | Bofuri | extreme builds the game rewards, skills earned by deeds | content only now (titles teach techniques; statuses exist) |
 | The Player That Can't Level Up | growth by items and skill, not levels | content only now (dungeons exist) |
 
@@ -32,7 +32,7 @@ Distance: 🟢 close (mostly content), 🟡 one or two large mechanics, 🔴 far
 | Overgeared | recipes designed by players, [crafting with skill](crafting-minigames.md), guilds and kingdoms |
 | Log Horizon | [living NPCs](living-npcs.md), [town politics](towns-and-politics.md), large raids |
 | Ark | quests with several outcomes that change the world, territory |
-| Solo Leveling | gates that open in the world (dungeons as instances exist), summons ([companions](mounts-and-companions.md)) |
+| Solo Leveling | gates that open in the world (dungeons as instances exist), summons (companions exist; several at once and summoned by a technique are missing) |
 
 ## What repeats
 

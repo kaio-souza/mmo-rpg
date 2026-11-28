@@ -75,7 +75,7 @@ Positions are global tiles. All three files are optional.
 )
 ```
 
-Optional: `range` (attacks from a distance and keeps it), `weapon_prof`, `loot_table` (a shared [loot table](items-and-economy.md#loot)), `phases` (a boss, below). The name is the text key `monster.<id>.name`. Threat decides who a monster attacks; XP is shared by everyone who did at least 10% of the threat.
+Optional: `range` (attacks from a distance and keeps it), `weapon_prof`, `loot_table` (a shared [loot table](items-and-economy.md#loot)), `phases` (a boss, below), `tame` (below). The name is the text key `monster.<id>.name`. Threat decides who a monster attacks; XP is shared by everyone who did at least 10% of the threat.
 
 ### Boss phases
 
@@ -88,6 +88,31 @@ phases: [
 ```
 
 From a share of HP down (thousandths, each phase lower than the one before) the monster hits as the phase says: damage, pace, `area` (every player within that many tiles of its target) and a [status](characters.md#techniques). The deepest phase reached holds until the monster resets; the players fighting it hear `system.boss_phase`.
+
+### Taming
+
+```ron
+tame: Some((
+    requires: [Proficiency("taming", 10), Item(item: "raw_meat", qty: 1)],
+    below_hp_permille: 300,   // weakened to 30 % of its HP or less (1000: any)
+    chance_permille: 500,     // of each attempt (1000: always)
+)),
+```
+
+A monster with `tame` can become a player's [companion](../mounts-and-companions.md): the player right clicks it and chooses **Tame**. `requires` is open, all must hold, so each game picks its own rule: `Level(n)`, `Attribute(Str, n)`, `Proficiency("id", n)` (a taming skill or a profession), `Title("id")`, `Class("id")`, `Karma(n)` (negative: at most) and `Item(item, qty)` (a bait, taken on every attempt). Without `tame` it cannot be tamed. A tamed monster leaves the world as if defeated and respawns later; the tamer counts a `tames` [counter](characters.md#counters) keyed by monster.
+
+### Weather
+
+```ron
+weather: [(kind: Rain, permille: 150), (kind: Fog, permille: 80)],   // in zone.ron
+```
+
+Each world hour a zone may rain, snow or be foggy by these chances (they add up to 1000 at most; the rest is clear). Every player of the zone sees the same, computed from the zone and the hour, on the server too, so it can drive rules as well as pictures:
+
+- **Pictures**: rain, snow or fog over the screen; tiles may have a `rain_sprite` and a `snow_sprite` ([assets](../assets.md#floors-tilesron)), like the `day_sprite` of day and night.
+- **Rules**: the dialogue condition `Moment(Rain)` ([dialogues](npcs-and-quests.md)) and a monster spawn's `when` (below). A `Moment` is `Day`, `Night`, `Rain`, `Snow`, `Fog` or `Clear`; night for the rules runs from `night_from_permille` to `night_until_permille` of the world day (`progression/formulas.ron`, 800 and 250).
+
+A spawn in `monsters.ron` may be only for a moment: `(monster: "ghost", pos: (x: 10, y: 4), when: Some(Night))`. It comes when the moment starts and leaves a few seconds after it ends, unless it is fighting. The map page sets it per spawn, and the zone's weather chances in its Weather card.
 
 ## Dungeons
 

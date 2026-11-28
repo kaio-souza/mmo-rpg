@@ -645,9 +645,11 @@ impl Gateway {
     fn world_time(&self) -> ServerMsg {
         let content = crate::content::slot_get(&self.cfg.slot);
         let f = &content.catalog.formulas().progression;
+        let now = login::now_unix();
         ServerMsg::WorldTime {
-            secs_of_day: f.time_of_day(login::now_unix()),
+            secs_of_day: f.time_of_day(now),
             day_secs: f.day_secs.max(1),
+            day: now / u64::from(f.day_secs.max(1)),
         }
     }
 

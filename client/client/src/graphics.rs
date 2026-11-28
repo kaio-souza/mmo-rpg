@@ -41,6 +41,12 @@ pub struct TileLook {
     /// light (a brazier put out at dawn).
     #[serde(default)]
     pub day_sprite: Option<String>,
+    /// Drawn instead of `sprite` while it rains (wet stones, puddles).
+    #[serde(default)]
+    pub rain_sprite: Option<String>,
+    /// Drawn instead of `sprite` while it snows (a white roof).
+    #[serde(default)]
+    pub snow_sprite: Option<String>,
 }
 
 /// Mean ambient level under which fires burn (full day is 1).

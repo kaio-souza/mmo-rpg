@@ -8,6 +8,21 @@ pub const STEP_TICKS: u64 = 4;
 /// speed seen on screen stays even.
 pub const WIDE_STEP_TICKS: u64 = 7;
 
+/// The world hour (24 per world day) at `secs_of_day` of world day `day`.
+pub fn world_hour(day: u64, secs_of_day: u32, day_secs: u32) -> u64 {
+    let hour = u64::from(secs_of_day).saturating_mul(24) / u64::from(day_secs.max(1));
+    day.saturating_mul(24).saturating_add(hour.min(23))
+}
+
+/// A roll 0..1000 for `zone` in world hour `hour`, the same on the server
+/// and every client (the weather of the hour, picture only).
+pub fn hour_roll(zone: &str, hour: u64) -> u16 {
+    let mut h = crate::Fnv64::new();
+    h.write_str(zone);
+    h.write(&hour.to_le_bytes());
+    u16::try_from(h.finish() % 1000).unwrap_or(0)
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]

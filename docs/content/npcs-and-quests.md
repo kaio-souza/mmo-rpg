@@ -39,7 +39,9 @@ An option shows only when its `when` holds; choosing it runs its `effects` in or
 | `QuestReady(id)` objectives done | `TopUpItem(item, qty)` gives only what is missing |
 | `Affinity(n)` with this NPC | `Affinity(n)` adds to it |
 | `RecipeKnown(id)`, `TechniqueKnown(id)` | `LearnRecipe(id)`, `LearnTechnique(id)` |
+| `Moment(Night)`, `Moment(Rain)`... day, night or weather in the NPC's zone ([weather](world.md#weather)) | |
 | `Karma(n)` at least (`Not(Karma(n))`: below) | `Karma(n)` adds to it (hidden from the player) |
+| | `SetHairStyle("long")`, `SetHairColor("red")`: a barber (ids of `appearance.ron`) |
 | `GoalDone(id)` a [server goal](characters.md#server-goals) was reached | `Teleport((x: 300, y: 12))`: to a tile of the world; ends the dialogue |
 | `All([...])`, `Any([...])`, `Not(...)` | |
 
@@ -51,7 +53,7 @@ The editor shows the dialogue as a map of steps, writes conditions and effects a
 
 ```ron
 (
-    rank: F,                       // F, E, D, C, B, A, S, SS, SSS
+    rank: F,                       // F to SSS: the character's adventurer rank must be at least this
     repeatable: false,             // with `cooldown_secs` when true
     objectives: [Talk(npc: "herbalist"), Item(item: "glow_herb", qty: 3)],
     rewards: [Coins(150), Item(item: "travel_bread", qty: 2), Technique("kick")],

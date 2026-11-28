@@ -234,6 +234,29 @@ pub enum ClientMsg {
     /// Protocol 31: `/goals`, the server goals and how far the server got
     /// (System lines).
     ServerGoals,
+    /// Protocol 32: try to tame this monster.
+    Tame {
+        target: EntityId,
+    },
+    /// Protocol 32: the companion at `index` follows (the one out goes back).
+    Summon {
+        index: u8,
+    },
+    /// Protocol 32: the companion that follows goes back.
+    Dismiss,
+    /// Protocol 32: let the companion at `index` go for good.
+    ReleaseCompanion {
+        index: u8,
+    },
+    /// Protocol 32: name the companion at `index` (`None`: its monster's).
+    NameCompanion {
+        index: u8,
+        name: Option<CharacterName>,
+    },
+    /// Protocol 32: sit down to rest, or stand up.
+    Rest {
+        on: bool,
+    },
 }
 
 /// Id of a ranking of `content/rankings/` (`hunters`).
@@ -474,6 +497,8 @@ pub enum ServerMsg {
     WorldTime {
         secs_of_day: u32,
         day_secs: u32,
+        /// Protocol 32: days since the world began (weather of the hour).
+        day: u64,
     },
     /// Protocol 19: the server restarts in `in_secs` seconds
     /// (sent at 10 min, 5 min, 1 min and 10 s, and when scheduled). A client
@@ -620,6 +645,9 @@ pub struct ZoneInfo {
     pub name: String,
     pub min: TilePos,
     pub max: TilePos,
+    /// Protocol 32: weather chances per world hour, `(kind, thousandths)`;
+    /// kind 0 rain, 1 snow, 2 fog (picture only).
+    pub weather: Vec<(u8, u16)>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -662,6 +690,40 @@ pub struct StatsInfo {
     pub specials: Vec<(TextId, u8)>,
     /// Protocol 18: the class mends its own pieces with materials.
     pub self_repairs: bool,
+    /// Protocol 32: the companions the character keeps, in order.
+    pub companions: Vec<CompanionInfo>,
+    /// Protocol 32: adventurer rank, 0 (F) to 8 (SSS).
+    pub adventurer_rank: u8,
+    /// Protocol 32: sitting to rest.
+    pub resting: bool,
+    /// Protocol 32: monsters defeated or tamed at least once.
+    pub bestiary: Vec<BestiaryInfo>,
+}
+
+/// A monster of the bestiary window (protocol 32).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BestiaryInfo {
+    pub name: TextId,
+    pub icon: u16,
+    pub level: u8,
+    pub kills: u64,
+    pub tames: u64,
+}
+
+/// A companion as the companions window shows it (protocol 32).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompanionInfo {
+    /// The monster's name.
+    pub name: TextId,
+    /// The name its owner gave it.
+    pub given: Option<CharacterName>,
+    /// Position + 1 in `Definitions::icons`; 0: generic.
+    pub icon: u16,
+    pub level: u8,
+    /// It follows the character now.
+    pub out: bool,
+    /// Seconds it still rests after falling, when this was sent.
+    pub rest_secs: u32,
 }
 
 /// A recipe as the crafting window shows it (protocol 9).
@@ -736,6 +798,8 @@ pub enum TitleBonusInfo {
     Special(TextId, u8),
     /// Protocol 25: percent more maximum MP; with a level, only up to it.
     MaxMpPercent(u16, Option<u8>),
+    /// Protocol 32: a fatal blow leaves 1 HP, once every this many seconds.
+    LastStand(u32),
 }
 
 /// Name and description of a class, technique, proficiency or title.
@@ -890,6 +954,8 @@ pub enum EntityKind {
     Monster,
     /// Phase 8: a resource node, gathered with `Gather`.
     Node,
+    /// Protocol 32: a tamed monster that follows a player.
+    Companion,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

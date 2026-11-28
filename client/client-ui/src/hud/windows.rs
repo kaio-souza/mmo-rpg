@@ -96,6 +96,206 @@ pub(super) fn techniques(f: &mut Frame<'_>, m: &HudModel, drag: &mut Option<Drag
     closed
 }
 
+/// Id of the field that names a companion.
+const COMPANION_NAME_FIELD: u32 = 300;
+
+/// The bestiary (B): every monster the character defeated or tamed, with
+/// how many times.
+pub(super) fn bestiary(f: &mut Frame<'_>, m: &HudModel) -> bool {
+    let s = f.theme.sizes.clone();
+    let pad = f.px(s.padding);
+    let lh = f.line_height(Role::Text, s.small);
+    let icon = 2.0 * lh;
+    let row = icon + pad / 2.0;
+    let shown = m.bestiary.len().clamp(1, 12) as f32;
+    let w = f.px(380.0).min(f.input.screen.0 - 2.0 * pad);
+    let h = f.line_height(Role::Title, s.title) + shown * row + 2.0 * pad;
+    let r = Rect::new((f.input.screen.0 - w) / 2.0, (f.input.screen.1 - h) / 3.0, w, h);
+    let (y, closed) = window(f, r, "ui.bestiary.title", Some(&key_of(m, MenuWindow::Bestiary)));
+    let c = f.theme.colors.clone();
+    if m.bestiary.is_empty() {
+        let none = f.tr("ui.bestiary.none");
+        f.label_fit(
+            Role::Text,
+            s.small,
+            (r.x + pad, y),
+            r.w - 2.0 * pad,
+            c.dim_text,
+            &none,
+        );
+        return closed;
+    }
+    for (i, b) in m.bestiary.iter().take(12).enumerate() {
+        let top = y + i as f32 * row;
+        let ir = Rect::new(r.x + pad, top, icon, icon);
+        f.panel(ir, false);
+        if let Some(uv) = b.icon {
+            f.painter.image(ir.shrink(pad / 4.0), uv, [1.0, 1.0, 1.0, 1.0]);
+        }
+        let tx = ir.x + icon + pad / 2.0;
+        let tw = r.x + r.w - tx - pad;
+        let name = f.tr_args(
+            "ui.companions.name",
+            &[base::Arg::Str(b.name.clone()), base::Arg::Int(i64::from(b.level))],
+        );
+        f.label_fit(Role::Text, s.small, (tx, top), tw, c.highlight, &name);
+        let counts = f.tr_args(
+            "ui.bestiary.counts",
+            &[
+                base::Arg::Int(i64::try_from(b.kills).unwrap_or(i64::MAX)),
+                base::Arg::Int(i64::try_from(b.tames).unwrap_or(i64::MAX)),
+            ],
+        );
+        f.label_fit(Role::Text, s.small, (tx, top + lh), tw, c.text, &counts);
+    }
+    closed
+}
+
+/// The companions window (P): every tamed monster with what it is doing
+/// and its buttons. Call makes it follow (the one out goes back), Send back
+/// dismisses it, Release lets it go after a second click.
+pub(super) fn companions(
+    f: &mut Frame<'_>,
+    m: &HudModel,
+    confirm: &mut Option<u8>,
+    naming: &mut Option<(u8, String)>,
+) -> bool {
+    let s = f.theme.sizes.clone();
+    let pad = f.px(s.padding);
+    let lh = f.line_height(Role::Text, s.small);
+    let bh = f.line_height(Role::Text, s.text) + pad / 2.0;
+    let icon = 2.0 * lh + pad / 2.0;
+    let row = icon.max(bh) + pad;
+    let rows = m.companions.len().max(1) as f32;
+    let w = f.px(420.0).min(f.input.screen.0 - 2.0 * pad);
+    let h = f.line_height(Role::Title, s.title) + rows * row + lh + 3.0 * pad;
+    let r = Rect::new((f.input.screen.0 - w) / 2.0, (f.input.screen.1 - h) / 3.0, w, h);
+    let (y, closed) = window(
+        f,
+        r,
+        "ui.companions.title",
+        Some(&key_of(m, MenuWindow::Companions)),
+    );
+    let c = f.theme.colors.clone();
+    if m.companions.is_empty() {
+        let none = f.tr("ui.companions.none");
+        for (i, line) in f
+            .fonts
+            .wrap(Role::Text, f.px(s.small), &none, r.w - 2.0 * pad)
+            .iter()
+            .enumerate()
+        {
+            f.label(
+                Role::Text,
+                s.small,
+                (r.x + pad, y + i as f32 * lh),
+                c.dim_text,
+                line,
+            );
+        }
+        return closed;
+    }
+    let (call, back, release, sure) = (
+        f.tr("ui.companions.call"),
+        f.tr("ui.companions.send_back"),
+        f.tr("ui.companions.release"),
+        f.tr("ui.companions.release_sure"),
+    );
+    let bw = f.px(96.0);
+    for (i, comp) in m.companions.iter().enumerate() {
+        let index = u8::try_from(i).unwrap_or(u8::MAX);
+        let top = y + i as f32 * row;
+        let ir = Rect::new(r.x + pad, top, icon, icon);
+        f.panel(ir, comp.out);
+        if let Some(uv) = comp.icon {
+            f.painter.image(ir.shrink(pad / 4.0), uv, [1.0, 1.0, 1.0, 1.0]);
+        }
+        let tx = ir.x + icon + pad / 2.0;
+        let text_w = r.x + r.w - tx - 2.0 * bw - 2.0 * pad;
+        // The name, or a field to type a new one (Enter keeps it, empty
+        // gives back the monster's).
+        match naming.as_mut().filter(|(i, _)| *i == index) {
+            Some((_, draft)) => {
+                let fr = Rect::new(tx, top, text_w, lh + pad / 2.0);
+                if f.field(COMPANION_NAME_FIELD, fr, draft, false, 16) {
+                    f.actions
+                        .push(UiAction::NameCompanion(index, draft.trim().to_owned()));
+                    *naming = None;
+                }
+            }
+            None => {
+                let name = f.tr_args(
+                    "ui.companions.name",
+                    &[
+                        base::Arg::Str(comp.name.clone()),
+                        base::Arg::Int(i64::from(comp.level)),
+                    ],
+                );
+                let nw = text_w - f.px(24.0);
+                f.label_fit(Role::Text, s.small, (tx, top), nw, c.highlight, &name);
+                // A small pen after the name starts naming it.
+                let pen = Rect::new(tx + nw, top, f.px(22.0), lh);
+                if f.button(pen, "✎") {
+                    *naming = Some((index, comp.given.clone().unwrap_or_default()));
+                    *f.focus = Some(COMPANION_NAME_FIELD);
+                }
+                if pen.contains(f.input.mouse) {
+                    let rename = f.tr("ui.companions.rename");
+                    overlay::tooltip(f, &[(rename, c.text)]);
+                }
+            }
+        }
+        let (state, color) = if comp.out {
+            (f.tr("ui.companions.following"), c.text)
+        } else if comp.rest_secs > 0 {
+            (
+                f.tr_args(
+                    "ui.companions.resting",
+                    &[base::Arg::Int(i64::from(comp.rest_secs))],
+                ),
+                c.error,
+            )
+        } else {
+            (f.tr("ui.companions.ready"), c.dim_text)
+        };
+        f.label_fit(Role::Text, s.small, (tx, top + lh), text_w, color, &state);
+        // Call or Send back, then Release.
+        let b1 = Rect::new(
+            r.x + r.w - 2.0 * bw - pad - pad / 2.0,
+            top + (icon - bh) / 2.0,
+            bw,
+            bh,
+        );
+        let b2 = Rect::new(r.x + r.w - bw - pad, b1.y, bw, bh);
+        if comp.out {
+            if f.button(b1, &back) {
+                f.actions.push(UiAction::Dismiss);
+            }
+        } else if comp.rest_secs == 0 && f.button(b1, &call) {
+            f.actions.push(UiAction::Summon(index));
+        }
+        let asking = *confirm == Some(index);
+        if f.button(b2, if asking { &sure } else { &release }) {
+            if asking {
+                f.actions.push(UiAction::ReleaseCompanion(index));
+                *confirm = None;
+            } else {
+                *confirm = Some(index);
+            }
+        }
+    }
+    let hint = f.tr("ui.companions.hint");
+    f.label_fit(
+        Role::Text,
+        s.small,
+        (r.x + pad, r.y + r.h - lh - pad),
+        r.w - 2.0 * pad,
+        c.dim_text,
+        &hint,
+    );
+    closed
+}
+
 /// The rows of a list that may be taller than `area`: which ones to draw,
 /// from `*first`, as many whole rows as fit. The wheel over the area moves
 /// the list a row at a time; a thin bar on the right says where the view is.
@@ -903,6 +1103,11 @@ pub(super) fn sheet(f: &mut Frame<'_>, m: &HudModel, first: &mut usize) -> bool 
         Row::Text(
             sm.class.clone().unwrap_or_else(|| f.tr("ui.sheet.no_class")),
             c.highlight,
+            s.text,
+        ),
+        Row::Text(
+            f.text.t_args("ui.sheet.rank", &[Arg::Str(sm.rank.clone())]),
+            c.text,
             s.text,
         ),
         Row::Text(

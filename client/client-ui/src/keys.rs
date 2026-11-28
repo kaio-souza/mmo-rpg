@@ -35,6 +35,12 @@ pub enum Action {
     OpenHelp,
     /// The Options window (sound).
     OpenOptions,
+    /// The companions window: tamed monsters.
+    OpenCompanions,
+    /// The bestiary: monsters defeated and tamed.
+    OpenBestiary,
+    /// Sit down to rest or stand up.
+    Rest,
     /// All sound off or back on.
     ToggleMute,
     ShowNames,
@@ -65,6 +71,9 @@ impl Action {
             Action::OpenMap,
             Action::OpenSocial,
             Action::OpenCrafting,
+            Action::OpenCompanions,
+            Action::OpenBestiary,
+            Action::Rest,
             Action::OpenHelp,
             Action::OpenOptions,
             Action::ToggleMute,
@@ -97,6 +106,9 @@ impl Action {
             Action::OpenCrafting => "open_crafting".into(),
             Action::OpenHelp => "open_help".into(),
             Action::OpenOptions => "open_options".into(),
+            Action::OpenCompanions => "open_companions".into(),
+            Action::OpenBestiary => "open_bestiary".into(),
+            Action::Rest => "rest".into(),
             Action::ToggleMute => "toggle_mute".into(),
             Action::ShowNames => "show_names".into(),
             Action::Menu => "menu".into(),
@@ -125,6 +137,9 @@ impl Action {
             Action::OpenCrafting => "KeyG".into(),
             Action::OpenHelp => "F1".into(),
             Action::OpenOptions => "F10".into(),
+            Action::OpenCompanions => "KeyP".into(),
+            Action::OpenBestiary => "KeyJ".into(),
+            Action::Rest => "KeyX".into(),
             Action::ToggleMute => "F9".into(),
             Action::ShowNames => "AltLeft".into(),
             Action::Screenshot => "F12".into(),

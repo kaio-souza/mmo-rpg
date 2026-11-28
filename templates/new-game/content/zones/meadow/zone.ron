@@ -9,4 +9,6 @@
         // The plaza is also a workshop: anyone may craft there.
         (kind: Workshop, min: (x: 16, y: 12), max: (x: 24, y: 18)),
     ],
+    // Picture only: some hours rain, a few are foggy.
+    weather: [(kind: Rain, permille: 150), (kind: Fog, permille: 80)],
 )

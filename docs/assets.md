@@ -36,6 +36,7 @@ A name is the file name without `.png`, in `[a-z0-9_]`, unique in its folder. Co
     6: (sprite: "brazier", wall: true,
         light: Some((radius: 6.0, color: (1.0, 0.62, 0.28), strength: 0.75)),
         day_sprite: Some("brazier_unlit")),     // drawn instead by day
+    1: (sprite: "grass", rain_sprite: Some("grass_wet"), snow_sprite: Some("grass_snow")),  // by weather
 }
 ```
 

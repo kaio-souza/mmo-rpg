@@ -17,10 +17,10 @@ mod ui;
 
 pub use fonts::{ATLAS_SIZE, Fonts, Role};
 pub use hud::{
-    BagSlot, Dot, EmoteEntry, EquippedModel, HelpModel, HotbarSlot, HudModel, HudState, LineKind, LogLine,
-    LogTab, MenuButton, MenuWindow, Minimap, PartyMember, PartyModel, Pending, PlayerMenu, QuestModel,
-    RecipeModel, SheetModel, ShopLineModel, ShopMode, ShopModel, SoundModel, Support, TargetModel,
-    TechniqueModel, TradeLine, TradeModel, VolumeSlot,
+    BagSlot, BestiaryModel, CompanionModel, Dot, EmoteEntry, EquippedModel, HelpModel, HotbarSlot, HudModel,
+    HudState, LineKind, LogLine, LogTab, MenuButton, MenuWindow, Minimap, PartyMember, PartyModel, Pending,
+    PlayerMenu, QuestModel, RecipeModel, SheetModel, ShopLineModel, ShopMode, ShopModel, SoundModel, Support,
+    TargetModel, TechniqueModel, TradeLine, TradeModel, VolumeSlot,
 };
 pub use keys::{Action, Chord, KeyMap};
 pub use overlay::{FloatKind, FloatText, MarkerKind, Overhead};

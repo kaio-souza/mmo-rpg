@@ -20,14 +20,15 @@ What players get with every game made with the kit.
 | `Tab` / `Esc` | target the nearest monster / clear target, close windows |
 | `F` | talk to the nearest NPC |
 | `1`–`0` | hotbar: techniques and consumables, arranged by dragging |
-| `I` `C` `K` `L` `M` `O` `G` | inventory, sheet, techniques, quests, map, social, crafting |
+| `I` `C` `K` `L` `M` `O` `G` `P` `J` | inventory, sheet, techniques, quests, map, social, crafting, companions, bestiary |
+| `X` | rest: sit down or stand up (also a button in the status strip) |
 | `Enter` | chat |
 | `F1` | help: keys and tips |
 | `F9` / `F10` | mute all sound / options (volume per channel, test sound) |
 | `Alt` | show names |
 | `F12` | screenshot, saved as PNG in the user folder's `screenshots/` |
 
-Clicking a creature's body or its feet picks it: left click attacks a monster or talks to an NPC, right click opens an NPC's shop or a player's menu (whisper, trade, invite, revive). `Tab` only selects a target; techniques on the hotbar act on it. Every key can be changed in `keybinds.ron` in the user folder (`~/.config/<game>/` on Linux, `%APPDATA%\<game>\` on Windows); a missing file means the defaults. `<game>` is the game's English title (`ui.game.title`) in lower case, with anything but letters, digits, `-` and `_` turned into `_`, so two games on one computer keep separate settings.
+Clicking a creature's body or its feet picks it: left click attacks a monster or talks to an NPC, right click opens an NPC's shop, a player's menu (whisper, trade, invite, revive) or a monster's menu (attack, tame). `Tab` only selects a target; techniques on the hotbar act on it. Every key can be changed in `keybinds.ron` in the user folder (`~/.config/<game>/` on Linux, `%APPDATA%\<game>\` on Windows); a missing file means the defaults. `<game>` is the game's English title (`ui.game.title`) in lower case, with anything but letters, digits, `-` and `_` turned into `_`, so two games on one computer keep separate settings.
 
 ## Chat commands
 

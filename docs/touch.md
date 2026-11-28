@@ -86,9 +86,9 @@ Wider screens (tablets) keep today's layout with touch sizes.
 | T1 | Touch events become tap, hold, drag and pinch in the native and browser clients | every action works with a finger on a tablet |
 | T2 | Touch mode with `touch_sizes` in the theme, its editor form and the interface scale option | buttons and slots are comfortable to hit |
 | T3 | On-screen buttons and the keyboard for chat in the browser | nothing needs a physical keyboard |
-| T4 | Small-screen layout | the template is playable on a phone held sideways |
+| T4 | Small-screen layout and the floating stick | the template is playable on a phone held sideways |
 
-## Open
+## Decided
 
-- ⚠ Open: walking by holding a direction (a virtual stick) besides tap to move; tap to move is enough for the isometric click-to-walk games the kit makes.
-- ⚠ Open: portrait as well as landscape, or landscape only.
+- Decided ([D71](decisions.md)): **landscape only**; the page asks to turn the phone when held upright.
+- Decided ([D71](decisions.md)): **tap to move and a floating stick**, both on: a tap walks there (as the mouse does), and a thumb held on the left half of the world shows a stick where it landed and walks in that direction while held (as `W` `A` `S` `D` do). Tapping fits travel and clicking targets; the stick fits fleeing and fine steps in a fight. The options can hide the stick.

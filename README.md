@@ -15,7 +15,7 @@ A kit for building 2D isometric, tile-based MMOs in Rust: an authoritative serve
 - **Items and economy:** items that can never be duplicated, six rarities, hidden rolls revealed by appraisal, powers, durability and repair, gathering, crafting signed by its maker, NPC shops, money sinks.
 - **World:** one open world of zones joined without loading screens; NPCs with dialogues and affinity; talk, deliver, kill, travel and craft quests with markers; portals; dungeons as instances with lockouts; day and night, light and fog.
 - **Social:** chat and whispers, emotes, groups that share XP, direct trades checked on both sides.
-- **What game-world stories need:** titles, classes and relics unique per server (passed to an heir), rare classes opened by a deed, server firsts and rankings, announcements to everyone, hidden karma, and **server goals** the whole world works on together. See which [manhwa and light-novel games](docs/genre-references.md) the kit can make, and the full list in [mechanics](docs/mechanics.md).
+- **What game-world stories need:** titles, classes and relics unique per server (passed to an heir), rare classes opened by a deed, server firsts and rankings, announcements to everyone, hidden karma, **taming** monsters that become companions (who may tame what is the designer's choice), and **server goals** the whole world works on together. See which [manhwa and light-novel games](docs/genre-references.md) the kit can make, and the full list in [mechanics](docs/mechanics.md).
 
 ## Why this kit
 

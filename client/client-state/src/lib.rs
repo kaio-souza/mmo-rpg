@@ -157,6 +157,8 @@ pub struct WorldState {
     me: Option<EntityId>,
     /// Phase 10: the world's clock at `at_ms` (seconds since midnight, day length).
     world_time: Option<(u32, u32, f64)>,
+    /// Days since the world began, from the last `WorldTime`.
+    world_day: u64,
     content_hash: u64,
     server_tick: u32,
     /// Protocol 18: how far the player sees (`Welcome`).
@@ -414,8 +416,10 @@ impl WorldState {
             ServerMsg::WorldTime {
                 secs_of_day,
                 day_secs,
+                day,
             } => {
                 self.world_time = Some((secs_of_day, day_secs.max(1), now_ms));
+                self.world_day = day;
             }
             // The login flow of the binary owns the restart notice.
             ServerMsg::Maintenance { .. } | ServerMsg::MaintenanceCancelled => {}
@@ -708,6 +712,15 @@ impl WorldState {
         known.max(guess).max(0.0)
     }
 
+    /// Seconds a companion of the list still rests; 0 when it can be called.
+    pub fn companion_rest_secs(&self, index: usize, now_ms: f64) -> u32 {
+        let Some(c) = self.stats.as_ref().and_then(|s| s.companions.get(index)) else {
+            return 0;
+        };
+        let left = f64::from(c.rest_secs) - (now_ms - self.stats_at_ms) / 1000.0;
+        left.max(0.0).ceil() as u32
+    }
+
     /// Milliseconds until a consumable can be used again; 0 when ready.
     pub fn item_cooldown_left_ms(&self, item: ItemId, now_ms: f64) -> f64 {
         let known = self.stats.as_ref().map_or(0.0, |s| {
@@ -900,6 +913,30 @@ impl WorldState {
         Some((now / f64::from(day)).fract())
     }
 
+    /// The weather where the player stands now (kind 0 rain, 1 snow,
+    /// 2 fog), from the zone's chances and the world hour: every client
+    /// of the zone shows the same.
+    pub fn weather(&self, now_ms: f64) -> Option<u8> {
+        let (secs, day_secs, at) = self.world_time?;
+        let me = self.me()?;
+        let zone = self
+            .zones
+            .iter()
+            .find(|z| (z.min.x..=z.max.x).contains(&me.pos.x) && (z.min.y..=z.max.y).contains(&me.pos.y))?;
+        let elapsed = u64::from(secs).saturating_add(((now_ms - at).max(0.0) / 1000.0) as u64);
+        let day = self.world_day.saturating_add(elapsed / u64::from(day_secs));
+        let of_day = u32::try_from(elapsed % u64::from(day_secs)).unwrap_or(0);
+        let hour = base::world_hour(day, of_day, day_secs);
+        let mut roll = base::hour_roll(&zone.name, hour);
+        for (kind, permille) in &zone.weather {
+            if roll < *permille {
+                return Some(*kind);
+            }
+            roll -= permille;
+        }
+        None
+    }
+
     pub fn my_id(&self) -> Option<EntityId> {
         self.me
     }
@@ -1006,6 +1043,7 @@ mod tests {
                 name: "aurelia".into(),
                 min: base::TilePos::new(0, 0),
                 max: base::TilePos::new(9, 19),
+                weather: Vec::new(),
             }],
             ..WorldState::default()
         };

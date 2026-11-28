@@ -26,6 +26,7 @@ function condText(c) {
     case "TechniqueKnown": return fmt("editor.dlg.c.technique", { technique: dref("technique", v) });
     case "Karma": return fmt("editor.dlg.c.karma", { n: v });
     case "GoalDone": return fmt("editor.dlg.c.goal", { goal: dref("goal", v) });
+    case "Moment": return fmt("editor.dlg.c.moment", { moment: vlabel(v) });
     case "All": return (v || []).map(condText).map((s) => (v.length > 1 ? `(${s})` : s)).join(` ${t("editor.dlg.and")} `);
     case "Any": return (v || []).map(condText).map((s) => (v.length > 1 ? `(${s})` : s)).join(` ${t("editor.dlg.or")} `);
     case "Not": return fmt("editor.dlg.c.not", { c: condText(v) });
@@ -47,6 +48,8 @@ function effectText(e) {
     case "Affinity": return fmt("editor.dlg.e.affinity", { n: v > 0 ? `+${v}` : v });
     case "LearnRecipe": return fmt("editor.dlg.e.recipe", { recipe: dref("recipe", v) });
     case "LearnTechnique": return fmt("editor.dlg.e.technique", { technique: dref("technique", v) });
+    case "SetHairStyle": return fmt("editor.dlg.e.hair_style", { id: v });
+    case "SetHairColor": return fmt("editor.dlg.e.hair_color", { id: v });
     case "Karma": return fmt("editor.dlg.e.karma", { n: v > 0 ? `+${v}` : v });
     default: return k || "";
   }

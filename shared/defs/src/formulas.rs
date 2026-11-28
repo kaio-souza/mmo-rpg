@@ -120,9 +120,44 @@ pub struct ProgressionFormulas {
     /// Phase 10: length of a day of the world in real seconds;
     /// one clock for every zone, from the gateway's time.
     pub day_secs: u32,
+    /// Companions a character may keep (tamed monsters); one follows at a time.
+    pub max_companions: u8,
+    /// Seconds a companion that fell rests before it can be called again.
+    pub companion_rest_secs: u32,
+    /// Quests of a rank a character completes to reach the next rank.
+    pub quests_per_rank: u8,
+    /// Regeneration while resting (sitting, out of combat), in thousandths
+    /// of the normal one.
+    pub rest_regen_permille: u32,
+    /// Night for the rules (dialogues, spawns): from this share of the
+    /// world day to that one, in thousandths (midnight is 0).
+    pub night_from_permille: u16,
+    pub night_until_permille: u16,
 }
 
 impl ProgressionFormulas {
+    /// Whether the world is in its night at this wall-clock time.
+    pub fn is_night(&self, now_unix: u64) -> bool {
+        let day = u64::from(self.day_secs.max(1));
+        let at = u16::try_from(u64::from(self.time_of_day(now_unix)).saturating_mul(1000) / day).unwrap_or(0);
+        let (from, until) = (self.night_from_permille, self.night_until_permille);
+        if from <= until {
+            (from..until).contains(&at)
+        } else {
+            at >= from || at < until
+        }
+    }
+
+    /// The world hour (24 per world day) at this wall-clock time.
+    pub fn world_hour(&self, now_unix: u64) -> u64 {
+        let day_secs = self.day_secs.max(1);
+        base::world_hour(
+            now_unix / u64::from(day_secs),
+            self.time_of_day(now_unix),
+            day_secs,
+        )
+    }
+
     /// Seconds since the world's midnight at this wall-clock time.
     pub fn time_of_day(&self, now_unix: u64) -> u32 {
         u32::try_from(now_unix % u64::from(self.day_secs.max(1))).unwrap_or(0)
@@ -162,6 +197,12 @@ impl Default for ProgressionFormulas {
             newbie_level: 10,
             death_lock_secs: 6 * 3600,
             day_secs: 2 * 3600,
+            max_companions: 3,
+            companion_rest_secs: 60,
+            quests_per_rank: 5,
+            rest_regen_permille: 3000,
+            night_from_permille: 800,
+            night_until_permille: 250,
         }
     }
 }

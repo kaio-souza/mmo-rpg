@@ -35,6 +35,21 @@ pub struct CharacterSheet {
     /// Alpha (sheet v8): coins each shop paid this character since the
     /// unix second its purse opened, by shop id.
     pub shop_sales: Vec<(String, u64, u64)>,
+    /// Tamed monsters the character keeps (sheet v11), in the order tamed.
+    pub companions: Vec<SavedCompanion>,
+    /// The companion following the character, by position in `companions`.
+    pub summoned: Option<u8>,
+}
+
+/// A tamed monster kept by a character, by monster id.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SavedCompanion {
+    pub monster: String,
+    /// The name its owner gave it (sheet v12); `None`: its monster's.
+    #[serde(default)]
+    pub name: Option<CharacterName>,
+    /// Unix second before which it rests after falling (0: ready).
+    pub rest_until: u64,
 }
 
 /// Progression by text id. `level == 0`: a sheet from before phase 4,
@@ -133,6 +148,8 @@ impl CharacterSheet {
             hp: 0,
             locked_until: 0,
             shop_sales: Vec::new(),
+            companions: Vec::new(),
+            summoned: None,
         }
     }
 }
@@ -168,6 +185,36 @@ pub enum Command {
     },
     Leave {
         player: PlayerId,
+    },
+    /// Tries to tame `target`, a monster whose content allows it.
+    Tame {
+        player: PlayerId,
+        target: EntityId,
+    },
+    /// Calls the companion at `index` to follow (the one out goes back).
+    Summon {
+        player: PlayerId,
+        index: u8,
+    },
+    /// Sends the companion that follows back.
+    Dismiss {
+        player: PlayerId,
+    },
+    /// Sits down to rest (`on`) or stands up.
+    Rest {
+        player: PlayerId,
+        on: bool,
+    },
+    /// Gives the companion at `index` a name (`None`: its monster's again).
+    NameCompanion {
+        player: PlayerId,
+        index: u8,
+        name: Option<CharacterName>,
+    },
+    /// Lets the companion at `index` go for good.
+    ReleaseCompanion {
+        player: PlayerId,
+        index: u8,
     },
     /// Path by A*, at most `MAX_MOVE_DISTANCE` tiles away; replaces the current walk.
     Move {
@@ -870,6 +917,14 @@ pub struct StatsView {
     pub recipes: Vec<RecipeId>,
     /// Special attributes above 0, by name.
     pub specials: Vec<(TextId, u8)>,
+    /// The companions the character keeps, in order.
+    pub companions: Vec<CompanionView>,
+    /// Adventurer rank, 0 (F) to 8 (SSS).
+    pub adventurer_rank: u8,
+    /// Sitting to rest.
+    pub resting: bool,
+    /// What the character defeated and tamed, by monster.
+    pub bestiary: Vec<BestiaryView>,
 }
 
 /// Backpack as the client sees it.
@@ -965,6 +1020,8 @@ pub enum EntityKind {
     Monster,
     /// Phase 8: a resource node.
     Node,
+    /// A tamed monster that follows a player.
+    Companion,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -993,4 +1050,30 @@ pub struct EntityState {
     pub level: u8,
     /// Players: positions in the creation lists.
     pub look: base::Look,
+}
+
+/// A monster of the bestiary: defeated or tamed at least once.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BestiaryView {
+    pub name: TextId,
+    pub icon: u16,
+    pub level: u8,
+    pub kills: u64,
+    pub tames: u64,
+}
+
+/// A companion as the companions window shows it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompanionView {
+    /// The monster's name.
+    pub name: TextId,
+    /// The name its owner gave it.
+    pub given: Option<CharacterName>,
+    /// Icon number (`ValidatedCatalog::icon_index`); 0: generic.
+    pub icon: u16,
+    pub level: u8,
+    /// It follows the character now.
+    pub out: bool,
+    /// Seconds it still rests after falling (0: ready).
+    pub rest_secs: u32,
 }

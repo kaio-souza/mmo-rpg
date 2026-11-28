@@ -32,4 +32,4 @@ pub use sound::SoundEvent;
 pub use space::{Direction, TilePos};
 pub use stats::{Attribute, Look, Resource};
 pub use text::{Arg, TextId, TextRef};
-pub use time::{STEP_TICKS, TICKS_PER_SECOND, Tick, WIDE_STEP_TICKS};
+pub use time::{STEP_TICKS, TICKS_PER_SECOND, Tick, WIDE_STEP_TICKS, hour_roll, world_hour};

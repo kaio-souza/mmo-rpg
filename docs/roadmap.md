@@ -77,7 +77,8 @@ Order by how many references each opens ([genre references](genre-references.md#
 | G9 | ✅ **Done: example in the style of The Gamer** (`examples/everyday-system/`), content only, with an instant dungeon | a player grows every attribute and skill by use and earns titles for it |
 | G11 | ✅ **Done: karma** ([D67](decisions.md)): hidden, moved by dialogues, read by dialogue conditions and title triggers | an NPC refuses the cruel and a title greets the kind |
 | G12 | ✅ **Done: server goals, first step** ([D68](decisions.md)): `goals/` over a counter, announced by quarters, `/goals`, `GoalDone` in dialogues. *Next: rewards, timers and repeats ([world quests](world-quests.md))* | the whole server hunts 500 wolves together |
-| G10 | Then W10 companions (Taming Master, Solo Leveling), W6 crafting minigames and W8/W12 guilds and kingdoms (Overgeared, Moonlight Sculptor) | |
+| G13 | ✅ **Done: taming and companions, first step** ([D69](decisions.md)): `tame` on monsters with open requirements, companions that follow and fight, window P. *Next: growth, names, behaviours, mounts ([companions](mounts-and-companions.md))* | a player weakens a wolf, tames it and hunts beside it |
+| G10 | Then the rest of W10 companions (Taming Master, Solo Leveling), W6 crafting minigames and W8/W12 guilds and kingdoms (Overgeared, Moonlight Sculptor) | |
 
 ### Ideas (not scheduled)
 
@@ -87,6 +88,4 @@ Ideas to make a creator's life easier: sprites baked from voxel and 3D models, a
 
 | Question | Blocks |
 |---|---|
-| ⚠ Open: one home per character or per account; visits while the owner is offline ([homes](player-homes.md#open)) | W13 |
-| ⚠ Open: a virtual stick besides tap to move; portrait or landscape only ([touch](touch.md#open)) | T4 |
 | ⚠ Open: check that overload levels N1 and N2 thin AI and far updates as designed ([runtime](runtime.md)) | crowded zones |

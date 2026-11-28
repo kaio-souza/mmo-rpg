@@ -8,6 +8,7 @@ What the engine does today, configured by [content](content/README.md), and the 
 - Hit, damage, defense and critical hits from attributes and formulas; line of sight; threat decides a monster's target.
 - Weapon blows cost vigor (without vigor the blow waits twice as long); ranged monsters keep their distance.
 - Techniques with cooldown, vigor or MP cost, damage, healing, revival and timed buffs on the caster.
+- Rest: sitting (button in the status strip, key X) multiplies regeneration out of combat; any order stands up. A title bonus `LastStand(secs)` leaves 1 HP after a fatal blow, once every so many seconds.
 - Counter-attack: an idle player hit by a monster fights back on their own.
 - Falling and death: a character falls first and can be revived (by a technique or an item); death costs a level and locks the character for a while (both content numbers; none below `newbie_level`).
 - PvP only inside `Pvp` regions; no combat in `Safe` regions.
@@ -37,6 +38,9 @@ What the engine does today, configured by [content](content/README.md), and the 
 **World**
 - NPCs with dialogue graphs built from conditions and effects; affinity per NPC; karma, a hidden morality that dialogues move and that opens options and titles.
 - Server goals: one shared quest the whole server works on, announced at each quarter and at the end, read with `/goals`; a reached goal opens dialogue options.
+- Adventurer rank F to SSS: completing `quests_per_rank` quests of a rank raises it; a quest above the character's rank cannot start.
+- Barbers: dialogue effects `SetHairStyle` and `SetHairColor`.
+- Weather per zone (rain, snow, fog) with a chance per world hour, the same for every player (picture only).
 - Quests: talk, deliver, kill, travel and craft objectives, item, coin and technique rewards, repeatable quests with a cooldown, quest log, markers and a pointer to the goal.
 - Zones joined by seams into one open world, in one process or many; a starting zone; safe respawn.
 - Portals and NPC teleports; instance zones (a copy per party) and dungeons with level and group checks, a boss that clears the run, lockouts and fastest-clear rankings.
@@ -45,6 +49,8 @@ What the engine does today, configured by [content](content/README.md), and the 
 
 **Social**
 - Local chat and whispers, reports, mute; emotes with an image.
+- Taming: monsters with a `tame` block (requirements the game chooses, weakened, a chance) become companions that follow, fight beside their owner and rest when they fall; window P calls, sends back and releases them.
+- Companions get a name from their owner (window P). A bestiary (window J) lists every monster defeated or tamed.
 - Groups of up to 6 sharing XP by contribution; direct trade with confirmations on both sides, saved atomically.
 - Ten languages; each player picks one.
 
@@ -59,11 +65,11 @@ Designed for the example game but not built. Each needs engine work before conte
 
 | Area | Mechanic |
 |---|---|
-| Combat | damage types; surviving a fatal blow; meditation; a murderer mark for player killers |
-| Progression | class change after level 30 within the tree; titles that give a penalty instead of a bonus; attributes earned by deeds; adventurer rank; bestiary, collections |
+| Combat | damage types; a murderer mark for player killers |
+| Progression | class change after level 30 within the tree; titles that give a penalty instead of a bonus; attributes earned by deeds; collections |
 | Items | enhancement +1 to +15 with protection stones; dismantling equipment; carry weight limits; dimensional storage; exclusive items created by legendary classes |
 | Economy | regional markets plus a global auction; buy orders; mail |
-| World | ranked and hidden quests; karma moved by deeds outside dialogue (killing players, crimes); goals with rewards, timers and repeats; NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
+| World | ranked and hidden quests; karma moved by deeds outside dialogue (killing players, crimes); goals with rewards, timers and repeats; NPC routines; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
 | Social | group loot rules and shared quests; clans with ranks, storage and alliances; territory war with scheduled sieges; marriage with a shared vault; fame, bounties, mentoring, housing ([homes](player-homes.md): farming, breeding, carpentry); a human check for players who repeat one action for hours |
-| Accounts | second factor (TOTP) at login; a barber to change hair |
+| Accounts | second factor (TOTP) at login |
 | Presentation | a look built from parts (clothes chosen apart from the body) with palettes ([character parts](character-parts.md)); ambient sound layers |

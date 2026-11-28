@@ -112,6 +112,16 @@ impl Zone {
         let content = self.content.clone();
         let cat = &content.catalog;
         let now = self.tick.0;
+        // A blow or a technique stands a resting player up.
+        if matches!(cmd, Command::Attack { .. } | Command::UseTechnique { .. })
+            && let Ok(f) = self.world.query_one_mut::<&mut Fighter>(h)
+            && f.resting
+        {
+            f.resting = false;
+            if let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h) {
+                p.dirty_stats = true;
+            }
+        }
         match cmd {
             Command::Attack { target, .. } => {
                 let me = self
@@ -712,6 +722,18 @@ impl Zone {
         let now = self.tick.0;
         let content = self.content.clone();
         let cat = &content.catalog;
+        let companions = {
+            let p = self.world.get::<&PlayerComp>(h).ok()?;
+            if !p.dirty_stats {
+                return None;
+            }
+            (
+                self.companion_views(&p),
+                self.bestiary(&p),
+                p.data.adventurer_rank(cat).index(),
+            )
+        };
+        let (companions, bestiary, adventurer_rank) = companions;
         let (p, f, gear) = self
             .world
             .query_one_mut::<(&mut PlayerComp, &Fighter, &Gear)>(h)
@@ -774,6 +796,10 @@ impl Zone {
                 .into_iter()
                 .filter_map(|(i, v)| Some((cat.special_attributes().get(i)?.name, v)))
                 .collect(),
+            companions,
+            adventurer_rank,
+            resting: f.resting,
+            bestiary,
         })
     }
 

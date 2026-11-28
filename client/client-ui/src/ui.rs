@@ -41,6 +41,16 @@ pub struct Input {
 /// Everything the player can do on the interface.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UiAction {
+    /// The companions window: this one follows.
+    Summon(u8),
+    /// The companions window: the one that follows goes back.
+    Dismiss,
+    /// The companions window: let this one go for good (confirmed).
+    ReleaseCompanion(u8),
+    /// The companions window: this one's name (empty: the monster's).
+    NameCompanion(u8, String),
+    /// Sit down to rest (`true`) or stand up.
+    Rest(bool),
     Login {
         server: String,
         account: String,
@@ -170,6 +180,10 @@ pub enum PlayerAct {
     Revive,
     /// A heal technique on them.
     Heal,
+    /// A monster: fight it.
+    Attack,
+    /// A monster: try to tame it.
+    Tame,
 }
 
 /// Where a dragged thing came from.

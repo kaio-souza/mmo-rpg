@@ -1130,3 +1130,96 @@ fn karma_moves_opens_and_earns_a_title() {
         "earned on the answer"
     );
 }
+
+/// Adventurer rank: a quest above the character's rank cannot start; a
+/// completed quest of the rank raises it. A barber changes the hair.
+#[test]
+fn rank_gates_quests_and_a_barber_cuts_hair() {
+    let mut files = npc_files();
+    for (path, text) in &mut files {
+        if path.starts_with("text/") {
+            *text = text.replace(
+                "\"npc.elder.name\": \"Elder\",",
+                "\"npc.elder.name\": \"Elder\", \"quest.chat.name\": \"-\", \"quest.chat.desc\": \"-\", \
+                 \"quest.hunt.name\": \"-\", \"quest.hunt.desc\": \"-\", \
+                 \"appearance.body.b\": \"-\", \"appearance.skin.s\": \"-\", \
+                 \"appearance.hair_style.short\": \"-\", \"appearance.hair_style.long\": \"-\", \
+                 \"appearance.hair_color.black\": \"-\", \"system.rank_up\": \"{rank}\",",
+            );
+        }
+    }
+    files.push((
+        "appearance/appearance.ron".into(),
+        r#"(bodies: [(id: "b")], skins: [(id: "s")], hair_styles: [(id: "short"), (id: "long")], hair_colors: [(id: "black")])"#.into(),
+    ));
+    files.push(("progression/formulas.ron".into(), "(quests_per_rank: 1)".into()));
+    files.push((
+        "quests/chat.ron".into(),
+        r#"(objectives: [Talk(npc: "elder")])"#.into(),
+    ));
+    files.push((
+        "quests/hunt.ron".into(),
+        r#"(rank: E, objectives: [Talk(npc: "elder")])"#.into(),
+    ));
+    if let Some(d) = files.iter_mut().find(|(p, _)| p == "npcs/dialogues/elder.ron") {
+        d.1 = r#"(
+            start: "greeting",
+            nodes: {
+                "greeting": (
+                    text: "npc.elder.greeting",
+                    options: [
+                        (text: "npc.elder.option.about", next: "greeting",
+                         when: Quest(quest: "chat", state: NotStarted), effects: [StartQuest("hunt")]),
+                        (text: "npc.elder.option.about", next: "greeting",
+                         when: Quest(quest: "chat", state: NotStarted), effects: [StartQuest("chat")]),
+                        (text: "npc.elder.option.bye", next: "greeting",
+                         when: QuestReady("chat"), effects: [CompleteQuest("chat")]),
+                        (text: "npc.elder.option.bye", next: "greeting",
+                         when: Quest(quest: "chat", state: Completed),
+                         effects: [StartQuest("hunt"), SetHairStyle("long")]),
+                    ],
+                ),
+            },
+        )"#
+        .into();
+    }
+    let mut run = Run {
+        zone: Zone::new(content_from(files), ZoneId::new(0), 42).unwrap(),
+        out: TickOutput::default(),
+    };
+    run.tick(&[enter(1, "Ana", p(3, 3))]);
+    let npc = run
+        .out
+        .entities
+        .iter()
+        .find(|e| e.kind == EntityKind::Npc)
+        .map(|e| e.id)
+        .unwrap();
+    let me = PlayerId::new(1);
+    assert_eq!(shown(run.tick(&[talk(npc)])), 2);
+    // Rank E is above a new character's F.
+    let out = run.tick(&[choose(0)]);
+    assert!(
+        matches!(out.dialogue.last(), Some(DialogueOut::Refused { .. })),
+        "{:?}",
+        out.dialogue
+    );
+    run.tick(&[choose(1)]);
+    assert_eq!(shown(run.tick(&[talk(npc)])), 1, "chat is ready");
+    let out = run.tick(&[choose(0)]);
+    assert!(
+        out.system
+            .iter()
+            .any(|(p, t)| *p == me && t.args.iter().any(|a| *a == base::Arg::Str("E".into()))),
+        "rank up told"
+    );
+    let out = run.tick(&[choose(0)]);
+    assert!(
+        matches!(out.dialogue.last(), Some(DialogueOut::Show { .. })),
+        "hunt starts at rank E"
+    );
+    run.tick(&[Command::Leave { player: me }]);
+    let (_, sheet, _) = &run.out.left[0];
+    assert!(sheet.quests.iter().any(|q| q.quest == "hunt"));
+    assert_eq!(sheet.look[2], "long", "the barber's cut is saved");
+}

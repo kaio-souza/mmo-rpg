@@ -56,6 +56,13 @@ pub(crate) struct Fighter {
     /// Poison, stun and slow on this fighter, sorted by kind.
     #[serde(default)]
     pub statuses: Vec<crate::status::ActiveStatus>,
+    /// Players: sitting to rest (faster regeneration out of combat); any
+    /// order, blow or hit stands them up.
+    #[serde(default)]
+    pub resting: bool,
+    /// Players: tick from which a title's last stand works again.
+    #[serde(default)]
+    pub last_stand_ready: u64,
 }
 
 /// A timed defense buff: the defense rises by `permille`
@@ -99,6 +106,8 @@ impl Fighter {
             retaliating: false,
             ward: Ward::default(),
             statuses: Vec::new(),
+            resting: false,
+            last_stand_ready: 0,
         }
     }
 
@@ -165,6 +174,24 @@ fn arms(z: &Zone, h: hecs::Entity) -> Option<Arms> {
                 weapon_attribute: Attribute::Str,
                 weapon_prof: def.weapon_prof,
                 defense: def.defense,
+            },
+            range: def.range,
+            attack_ticks: def.attack_ticks,
+            prof: None,
+            vigor: 0,
+        });
+    }
+    // A companion fights with its monster's stats.
+    if let Ok(c) = z.world.get::<&crate::companion::CompanionComp>(h) {
+        let def = cat.monster(c.monster)?;
+        return Some(Arms {
+            sheet: CombatSheet {
+                level,
+                attributes: def.attributes,
+                weapon_damage: def.damage,
+                weapon_attribute: Attribute::Str,
+                weapon_prof: def.weapon_prof,
+                defense: ward.defense(def.defense, z.tick.0),
             },
             range: def.range,
             attack_ticks: def.attack_ticks,
@@ -296,6 +323,12 @@ impl Zone {
         {
             return Err(Refusal::InvalidTarget);
         }
+        let companion = |h| self.world.get::<&crate::companion::CompanionComp>(h).is_ok();
+        let monster = |h| self.world.get::<&MonsterComp>(h).is_ok();
+        // A companion fights monsters, and only monsters fight it.
+        if (companion(ah) && !monster(th)) || (companion(th) && !monster(ah)) {
+            return Err(Refusal::InvalidTarget);
+        }
         let both_monsters =
             self.world.get::<&MonsterComp>(ah).is_ok() && self.world.get::<&MonsterComp>(th).is_ok();
         if both_monsters || self.world.get::<&Fighter>(ah).is_err() {
@@ -345,13 +378,32 @@ pub(crate) fn strike(
         HitResult::Hit { damage, crit } => (Some(damage), crit),
     };
     let mut killed = false;
+    let mut stood = false;
+    // A title's last stand: the fatal blow leaves the character at 1 HP.
+    let last_stand = z
+        .world
+        .get::<&PlayerComp>(th)
+        .ok()
+        .and_then(|p| progression::title_bonuses(&p.growth.sheet, cat).last_stand_secs);
     if let Ok((f, body)) = z.world.query_one_mut::<(&mut Fighter, &mut Body)>(th) {
         f.last_combat = now;
+        f.resting = false;
         if let Some(dmg) = damage {
-            f.hp = f.hp.saturating_sub(dmg);
+            match last_stand {
+                Some(secs) if dmg >= f.hp && f.hp > 1 && now >= f.last_stand_ready => {
+                    f.hp = 1;
+                    f.last_stand_ready =
+                        now.saturating_add(u64::from(secs).saturating_mul(base::TICKS_PER_SECOND));
+                    stood = true;
+                }
+                _ => f.hp = f.hp.saturating_sub(dmg),
+            }
             body.status_tick = now;
             killed = f.hp == 0;
         }
+    }
+    if stood && let Some(player) = z.world.get::<&PlayerComp>(th).ok().map(|p| p.player) {
+        z.tell(out, player, "system.last_stand", SmallVec::new());
     }
     out.combat.push(CombatOut {
         attacker: att,
@@ -568,10 +620,38 @@ pub(crate) fn kill_xp(z: &Zone, m: &MonsterComp, monster: hecs::Entity, xp: u64)
     let mut who: Vec<(EntityId, base::PlayerId, u32)> = Vec::new();
     for id in m.threat.keys() {
         let Some(&h) = z.by_id.get(&id) else { continue };
+        // A companion's share is its owner's.
+        let (id, h) = match z.world.get::<&crate::companion::CompanionComp>(h) {
+            Ok(c) => match z
+                .by_player
+                .get(&c.owner)
+                .and_then(|oh| Some((z.id_of(*oh)?, *oh)))
+            {
+                Some(owner) => owner,
+                None => continue,
+            },
+            Err(_) => (id, h),
+        };
         let Ok(p) = z.world.get::<&PlayerComp>(h) else {
             continue;
         };
-        who.push((id, p.player, m.threat.share_permille(id)));
+        let share = m.threat.share_permille(id).saturating_add(
+            m.threat
+                .keys()
+                .filter(|k| {
+                    z.by_id.get(k).is_some_and(|kh| {
+                        z.world
+                            .get::<&crate::companion::CompanionComp>(*kh)
+                            .is_ok_and(|c| c.owner == p.player)
+                    })
+                })
+                .map(|k| m.threat.share_permille(k))
+                .sum::<u32>(),
+        );
+        if who.iter().any(|(e, _, _)| *e == id) {
+            continue;
+        }
+        who.push((id, p.player, share));
     }
     let mut out: Vec<(EntityId, u64)> = Vec::new();
     let mut done: Vec<base::PlayerId> = Vec::new();
@@ -645,15 +725,15 @@ pub(crate) fn on_kill(z: &mut Zone, att: EntityId, tgt: EntityId, out: &mut Tick
                     reward(z, h, xp, &def.id, out);
                 }
             }
-            let looter = if z
-                .by_id
-                .get(&att)
-                .is_some_and(|h| z.world.get::<&PlayerComp>(*h).is_ok())
-            {
-                Some(att)
-            } else {
-                m.threat.top()
+            let owner_of = |z: &Zone, e: EntityId| -> Option<EntityId> {
+                let h = *z.by_id.get(&e)?;
+                if z.world.get::<&PlayerComp>(h).is_ok() {
+                    return Some(e);
+                }
+                let c = z.world.get::<&crate::companion::CompanionComp>(h).ok()?;
+                z.id_of(*z.by_player.get(&c.owner)?)
             };
+            let looter = owner_of(z, att).or_else(|| m.threat.top().and_then(|t| owner_of(z, t)));
             if let Some(l) = looter.and_then(|l| z.by_id.get(&l).copied()) {
                 loot(z, l, m.monster, out);
             }
@@ -669,6 +749,7 @@ pub(crate) fn on_kill(z: &mut Zone, att: EntityId, tgt: EntityId, out: &mut Tick
                 cleared(z, d, out);
             }
         }
+        None if z.world.get::<&crate::companion::CompanionComp>(th).is_ok() => z.companion_fell(th, out),
         None => fall(z, th, out),
     }
 }
@@ -1033,7 +1114,8 @@ pub(crate) fn ai(z: &mut Zone, out: &mut TickOutput) {
             let valid = |z: &Zone, t: EntityId| -> bool {
                 z.body_of(t).is_some_and(|(th, tpos)| {
                     z.world.get::<&Fighter>(th).is_ok_and(|f| f.alive())
-                        && z.world.get::<&PlayerComp>(th).is_ok()
+                        && (z.world.get::<&PlayerComp>(th).is_ok()
+                            || z.world.get::<&crate::companion::CompanionComp>(th).is_ok())
                         && z.region(tpos) != Some(RegionKind::Safe)
                         && tpos.distance(m.home) <= u32::from(def.leash)
                 })
@@ -1168,7 +1250,7 @@ fn reset_monster(z: &mut Zone, h: hecs::Entity, pos: TilePos, home: TilePos) {
 }
 
 /// Path toward `to`, at most every `REPATH_TICKS`.
-fn walk_to(z: &mut Zone, h: hecs::Entity, from: TilePos, to: TilePos, now: u64) {
+pub(crate) fn walk_to(z: &mut Zone, h: hecs::Entity, from: TilePos, to: TilePos, now: u64) {
     let Ok((f, w)) = z.world.query_one_mut::<(&mut Fighter, &mut Walk)>(h) else {
         return;
     };
@@ -1250,23 +1332,33 @@ pub(crate) fn regen(z: &mut Zone) {
             continue;
         }
         let before = (fi.hp, fi.vigor, fi.mp);
+        let out_of_combat = now.saturating_sub(fi.last_combat) >= u64::from(f.out_of_combat_ticks);
+        // Resting multiplies what comes back.
+        let k = if fi.resting && out_of_combat {
+            u64::from(f.rest_regen_permille)
+        } else {
+            1000
+        };
+        let more = |v: u64| combat::permille(v, u32::try_from(k).unwrap_or(1000));
         // A vow that ran out: the status window shows the plain defense.
         let ward_ended = fi.ward.until != 0 && now >= fi.ward.until;
         if ward_ended {
             fi.ward = Ward::default();
         }
         if now.saturating_sub(fi.last_combat) >= u64::from(f.out_of_combat_ticks) && fi.hp < fi.max_hp {
-            let add = u32::try_from(combat::permille(u64::from(fi.max_hp), f.hp_regen_permille).max(1))
+            let add = u32::try_from(more(combat::permille(u64::from(fi.max_hp), f.hp_regen_permille)).max(1))
                 .unwrap_or(u32::MAX);
             fi.hp = fi.hp.saturating_add(add).min(fi.max_hp);
         }
         if fi.vigor < fi.max_vigor {
-            let add = u32::try_from(combat::permille(u64::from(fi.max_vigor), f.vigor_regen_permille).max(1))
-                .unwrap_or(u32::MAX);
+            let add =
+                u32::try_from(more(combat::permille(u64::from(fi.max_vigor), f.vigor_regen_permille)).max(1))
+                    .unwrap_or(u32::MAX);
             fi.vigor = fi.vigor.saturating_add(add).min(fi.max_vigor);
         }
         if fi.mp < fi.max_mp {
-            fi.mp = fi.mp.saturating_add(fi.mp_regen.max(1)).min(fi.max_mp);
+            let add = u32::try_from(more(u64::from(fi.mp_regen.max(1)))).unwrap_or(u32::MAX);
+            fi.mp = fi.mp.saturating_add(add.max(1)).min(fi.max_mp);
         }
         if before.0 != fi.hp {
             body.status_tick = now;
@@ -1307,6 +1399,51 @@ pub(crate) fn respawn(z: &mut Zone) {
     for (_, spawn) in due {
         z.spawn_monster(spawn);
     }
+    // Every few seconds, monsters of a moment that ended leave (unless
+    // they are fighting) and wait for it to come back.
+    if now.is_multiple_of(MOMENT_CHECK_TICKS) {
+        let gone: Vec<(EntityId, u16)> = z
+            .world
+            .query::<(&MonsterComp, &Fighter, &Body)>()
+            .iter()
+            .filter(|(_, (m, f, _))| m.threat.is_empty() && f.target.is_none())
+            .filter(|(_, (m, _, _))| {
+                z.monster_spawns
+                    .get(usize::from(m.spawn))
+                    .and_then(|s| s.when)
+                    .is_some_and(|w| !z.moment_holds(w))
+            })
+            .map(|(_, (m, _, b))| (b.id, m.spawn))
+            .collect();
+        let mut gone = gone;
+        gone.sort();
+        for (id, spawn) in gone {
+            z.remove_entity(id);
+            z.respawns.push((now.saturating_add(MOMENT_CHECK_TICKS), spawn));
+        }
+    }
+}
+
+/// Ticks between two looks at the moment (night, weather) for spawns.
+const MOMENT_CHECK_TICKS: u64 = 100;
+
+impl Zone {
+    /// Whether `m` holds in this zone now (night by the progression
+    /// formulas, weather by the zone's chances and the world hour).
+    pub(crate) fn moment_holds(&self, m: defs::Moment) -> bool {
+        let (night, weather) = self.moment_now();
+        m.holds(night, weather)
+    }
+
+    /// Night or not, and the weather, in this zone now.
+    pub(crate) fn moment_now(&self) -> (bool, Option<defs::Weather>) {
+        let cat = &self.content.catalog;
+        let f = &cat.formulas().progression;
+        let weather = cat
+            .zone(self.zone_id())
+            .and_then(|d| defs::weather_at(&d.name, &d.weather, f.world_hour(self.now_unix)));
+        (f.is_night(self.now_unix), weather)
+    }
 }
 
 impl Zone {
@@ -1329,6 +1466,12 @@ impl Zone {
         let Some((mid, def)) = cat.monster_by_name(&s.monster) else {
             return;
         };
+        // Only in its moment: until then it waits.
+        if s.when.is_some_and(|w| !self.moment_holds(w)) {
+            self.respawns
+                .push((self.tick.0.saturating_add(MOMENT_CHECK_TICKS), spawn));
+            return;
+        }
         let r = i32::from(s.radius);
         let mut pos = s.pos;
         for _ in 0..8 {

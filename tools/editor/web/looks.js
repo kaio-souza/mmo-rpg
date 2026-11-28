@@ -441,7 +441,7 @@ function drawLooksSide() {
   const list = el("div", { class: "list" });
   for (const [k, look] of Object.entries(L.tiles)) {
     const n = Number(k);
-    if (q && !norm(`${n} ${look.sprite} ${look.day_sprite || ""}`).includes(q)) continue;
+    if (q && !norm(`${n} ${look.sprite} ${look.day_sprite || ""} ${look.rain_sprite || ""} ${look.snow_sprite || ""}`).includes(q)) continue;
     const tags = [look.wall ? t("editor.looks.standing") : null, look.light ? t("editor.looks.shines") : null,
       floorUses(n).some((u) => u.sw || u.from) ? t("editor.looks.switches") : null].filter(Boolean).join(" · ");
     list.append(el("button", { class: "entry" + (L.sel === n ? " sel" : ""), onclick: () => { L.sel = n; drawLooksSide(); drawLooks(); } },
@@ -477,7 +477,7 @@ async function newFloor() {
   if (looksDirty() && !(await askLeave())) return;
   const used = Object.keys(L.tiles).map(Number);
   const n = Math.max(0, ...used) + 1;
-  const look = { sprite: "", wall: false, light: null, day_sprite: null };
+  const look = { sprite: "", wall: false, light: null, day_sprite: null, rain_sprite: null, snow_sprite: null };
   const wall = el("input", { type: "checkbox" });
   const pick = artPicker("sprite", "", (v) => {
     look.sprite = v || "";
@@ -581,6 +581,8 @@ function drawLooks() {
   const fillPv = () => pv.replaceChildren(...[
     look.sprite ? el("figure", {}, spritePreview(look.sprite, { light: () => look.light }), el("figcaption", {}, t("editor.looks.night"))) : null,
     look.day_sprite ? el("figure", {}, spritePreview(look.day_sprite), el("figcaption", {}, t("editor.looks.day"))) : null,
+    look.rain_sprite ? el("figure", {}, spritePreview(look.rain_sprite), el("figcaption", {}, t("editor.looks.rain"))) : null,
+    look.snow_sprite ? el("figure", {}, spritePreview(look.snow_sprite), el("figcaption", {}, t("editor.looks.snow"))) : null,
   ].filter(Boolean));
   fillPv();
   page.append(el("section", { class: "card" },
@@ -589,6 +591,14 @@ function drawLooks() {
     el("div", { class: "fld" }, el("label", {}, t("editor.looks.day_sprite")),
       artPicker("sprite", look.day_sprite || "", (v) => { look.day_sprite = v || null; again(); }),
       el("span", { class: "hint" }, t("editor.looks.day_sprite_hint")))));
+  // Weather: other sprites while it rains or snows (picture only).
+  page.append(el("section", { class: "card" },
+    el("div", { class: "card-head" }, el("h3", {}, t("editor.looks.weather"))),
+    el("div", { class: "fld" }, el("label", {}, t("editor.looks.rain_sprite")),
+      artPicker("sprite", look.rain_sprite || "", (v) => { look.rain_sprite = v || null; again(); })),
+    el("div", { class: "fld" }, el("label", {}, t("editor.looks.snow_sprite")),
+      artPicker("sprite", look.snow_sprite || "", (v) => { look.snow_sprite = v || null; again(); }),
+      el("span", { class: "hint" }, t("editor.looks.weather_hint")))));
   page.append(el("section", { class: "card" }, el("div", { class: "card-head" }, el("h3", {}, t("editor.looks.preview"))), pv));
   // Switch pair (a brazier lit and put out): set once here for every map.
   const current = floorUses(L.sel).find((u) => u.sw)?.sw ?? null;

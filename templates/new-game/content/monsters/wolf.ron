@@ -10,4 +10,7 @@
         (item: "mana_tonic", chance: 100),
         (item: "vigor_elixir", chance: 100),
     ],
+    // Right click a wolf below a third of its HP and choose Tame. A game
+    // may ask for more: a taming skill, a class, a title, a bait item.
+    tame: Some((requires: [Level(3)], below_hp_permille: 330, chance_permille: 400)),
 )

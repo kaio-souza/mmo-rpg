@@ -1025,6 +1025,7 @@ fn social_without_chat() {
                 name: "Bravo".into(),
                 at: (900.0, 400.0),
                 fallen: true,
+                monster: false,
             });
             u.hud.emotes_open = false;
             let (x, y) = (x as f32, y as f32);

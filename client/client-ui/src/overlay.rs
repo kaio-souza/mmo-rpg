@@ -185,6 +185,53 @@ fn emote_bubble(f: &mut Frame<'_>, t: &FloatText, uv: [f32; 4]) {
         .image(Rect::new(x, y, side, side), uv, [1.0, 1.0, 1.0, alpha]);
 }
 
+/// Weather over the world (picture only): rain falls in slanted streaks,
+/// snow drifts down, fog veils the view. Under every window.
+pub(crate) fn weather(f: &mut Frame<'_>, kind: Option<u8>) {
+    let Some(kind) = kind else { return };
+    let (w, h) = f.input.screen;
+    let t = f.input.now_ms as f32 / 1000.0;
+    // A fixed scatter: each drop has its own column and phase.
+    let spot = |i: u32, salt: u32| {
+        let x = i
+            .wrapping_mul(2_654_435_761)
+            .wrapping_add(salt.wrapping_mul(40_503));
+        (x % 10_000) as f32 / 10_000.0
+    };
+    match kind {
+        // Rain.
+        0 => {
+            let n = ((w * h) / 9000.0) as u32;
+            let len = f.px(14.0);
+            for i in 0..n {
+                let speed = 0.9 + spot(i, 3) * 0.4;
+                let y = ((spot(i, 1) + t * speed) % 1.0) * (h + len) - len;
+                let x = spot(i, 2) * w - (y / h) * f.px(30.0);
+                f.painter
+                    .rect(Rect::new(x, y, f.px(1.2), len), [0.75, 0.82, 0.95, 0.35]);
+            }
+        }
+        // Snow.
+        1 => {
+            let n = ((w * h) / 12000.0) as u32;
+            for i in 0..n {
+                let speed = 0.08 + spot(i, 3) * 0.08;
+                let y = ((spot(i, 1) + t * speed) % 1.0) * h;
+                let sway = (t * 0.8 + spot(i, 4) * 6.0).sin() * f.px(12.0);
+                let x = spot(i, 2) * w + sway;
+                let size = f.px(2.0 + spot(i, 5) * 2.0);
+                f.painter.rect(Rect::new(x, y, size, size), [1.0, 1.0, 1.0, 0.75]);
+            }
+        }
+        // Fog.
+        _ => {
+            let breath = 0.22 + 0.05 * (t * 0.2).sin();
+            f.painter
+                .rect(Rect::new(0.0, 0.0, w, h), [0.82, 0.84, 0.88, breath]);
+        }
+    }
+}
+
 /// A box of lines next to the mouse, kept inside the screen. The first
 /// line is the title. Drawn at the end of the frame, over every window.
 pub(crate) fn tooltip(f: &mut Frame<'_>, lines: &[(String, Color)]) {

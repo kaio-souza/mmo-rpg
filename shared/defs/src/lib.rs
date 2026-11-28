@@ -29,6 +29,7 @@ mod quest;
 mod rank;
 mod rules;
 mod sound;
+mod tame;
 mod zone;
 
 pub use appearance::{AppearanceDef, LOOK_LISTS, LookOption, MAX_LOOK_OPTIONS, look_name_key};
@@ -66,8 +67,9 @@ pub use sound::{
     SOUND_SAMPLE_RATE, ScreenMusic, SoundConfig, SoundEvent, SoundFile, ZoneMusic,
     valid_file as valid_sound_file,
 };
+pub use tame::{Tame, TameReq};
 pub use zone::{
-    DENSE_SPAWN, HANDOFF_DEPTH, InstanceRule, MAX_FLOOR, MAX_VIEW_RADIUS, MAX_ZONE_SIDE, MonsterSpawn,
-    PortalDef, Rect, RegionDef, RegionKind, SEAM_BAND, TileDef, ZoneDef, in_workshop, neighbors, region_of,
-    zone_at,
+    DENSE_SPAWN, HANDOFF_DEPTH, InstanceRule, MAX_FLOOR, MAX_VIEW_RADIUS, MAX_ZONE_SIDE, Moment,
+    MonsterSpawn, PortalDef, Rect, RegionDef, RegionKind, SEAM_BAND, TileDef, Weather, WeatherChance,
+    ZoneDef, in_workshop, neighbors, region_of, weather_at, zone_at,
 };

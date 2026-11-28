@@ -476,6 +476,7 @@ impl Catalog {
             techniques: &tech_ids,
             monsters: &monster_ids,
             goals: &self.goals,
+            looks: &appearance,
         };
         let key =
             |problems: &mut Vec<ContentProblem>, k: String, problem: &dyn Fn(String) -> ContentProblem| {
@@ -2017,6 +2018,18 @@ impl Catalog {
                 format!("`{}.ron` is required", progress::UNARMED),
             );
         }
+        let title_ids: BTreeMap<String, TitleId> = self
+            .titles
+            .keys()
+            .enumerate()
+            .filter_map(|(i, k)| Some((k.clone(), TitleId::new(u32::try_from(i).ok()?))))
+            .collect();
+        let tame_names = crate::tame::TameNames {
+            items,
+            proficiencies: prof_ids,
+            titles: &title_ids,
+            classes: class_ids,
+        };
         for (id, text) in &self.monsters {
             let path = format!("monsters/{id}.ron");
             let f = match progress::parse_monster(id, text) {
@@ -2041,6 +2054,16 @@ impl Catalog {
                     }
                 }
             };
+            let tame = match f.tame {
+                None => None,
+                Some(t) => match crate::tame::resolve(t, &tame_names) {
+                    Ok(t) => Some(t),
+                    Err(m) => {
+                        err(path.clone(), m);
+                        None
+                    }
+                },
+            };
             out.monsters.push(MonsterDef {
                 id: id.clone(),
                 name: key(&path, progress::monster_name_key(id), &mut err),
@@ -2062,6 +2085,7 @@ impl Catalog {
                 loot,
                 loot_table,
                 phases: f.phases,
+                tame,
             });
         }
         // Class techniques resolve once the techniques have ids.

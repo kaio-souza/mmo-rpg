@@ -17,6 +17,9 @@ const M = {
 };
 // Region kinds of the engine (defs::RegionKind).
 const REGION_KINDS = ["Safe", "Pvp", "Workshop"];
+// When a monster spawn is out (empty: always), and the weathers a zone may have.
+const MOMENTS = ["", "Day", "Night", "Rain", "Snow", "Fog", "Clear"];
+const WEATHERS = ["Rain", "Snow", "Fog"];
 const REGION_COLORS = { Safe: "#5fd38d", Pvp: "#ff5d5d", Workshop: "#f5b04c" };
 // Width of the band by a neighbor zone that the other side sees
 // no spawn, region or NPC.
@@ -571,7 +574,11 @@ function objectLists() {
   box.append(sec(t("editor.map.list_npcs"), S.extra.npcs.length, S.extra.npcs.map((n, i) => row("npcs", i, refTitle("npc", n.npc), at(n.pos)))));
   box.append(sec(t("editor.map.list_monsters"), S.extra.monsters.length, S.extra.monsters.map((m, i) => row("monsters", i,
     refTitle("monster", m.monster), at(m.pos),
-    el("span", { class: "obj-nums" }, "×", num(m.count ?? 1, (v) => { m.count = Math.max(1, v); }), "r", num(m.radius ?? 0, (v) => { m.radius = v; }))))));
+    el("span", { class: "obj-nums" }, "×", num(m.count ?? 1, (v) => { m.count = Math.max(1, v); }), "r", num(m.radius ?? 0, (v) => { m.radius = v; })),
+    // Only at night, only in the rain...: empty is always.
+    el("select", { class: "mini", title: t("editor.map.spawn_when"), onclick: (e) => e.stopPropagation(),
+      onchange: (e) => { remember(); m.when = e.target.value || undefined; changed(); } },
+    MOMENTS.map((k) => el("option", { value: k, selected: (m.when || "") === k }, k ? vlabel(k) : t("editor.map.always"))))))));
   box.append(sec(t("editor.map.list_nodes"), S.extra.nodes.length, S.extra.nodes.map((n, i) => row("nodes", i, refTitle("gather_node", n.node), at(n.pos)))));
   return box;
 }
@@ -604,7 +611,19 @@ function zoneCard() {
       el("div", { class: "row2" },
         el("label", {}, "X", num(z.origin.x, (v) => { moveZone(v - z.origin.x, 0); })),
         el("label", {}, "Y", num(z.origin.y, (v) => { moveZone(0, v - z.origin.y); }))),
-      el("button", { class: "wide", onclick: () => { M.view = "world"; redraw(); } }, "◫ ", t("editor.map.mode_world"))));
+      el("button", { class: "wide", onclick: () => { M.view = "world"; redraw(); } }, "◫ ", t("editor.map.mode_world"))),
+    // Weather: a chance per world hour for each (thousandths; the rest is clear sky).
+    sideCard(t("editor.map.weather"),
+      ...WEATHERS.map((k) => {
+        const cur = (z.weather || []).find((w) => w.kind === k)?.permille ?? 0;
+        return el("label", {}, vlabel(k), num(cur, (v) => {
+          const rest = (z.weather || []).filter((w) => w.kind !== k);
+          const p = Math.max(0, Math.min(1000, v));
+          z.weather = p > 0 ? [...rest, { kind: k, permille: p }] : rest;
+          if (!z.weather.length) delete z.weather;
+        }, 0));
+      }),
+      el("p", { class: "hint" }, t("editor.map.weather_hint"))));
 }
 
 function moveZone(dx, dy) {

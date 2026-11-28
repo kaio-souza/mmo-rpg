@@ -625,6 +625,7 @@ fn title_tip(state: &WorldState, texts: &Texts, ui: &UiText, t: base::TitleId) -
             B::DamagePercent(v, l) => until("ui.bonus.damage", *v, *l),
             B::XpPercent(v, l) => until("ui.bonus.xp", *v, *l),
             B::MaxMpPercent(v, l) => until("ui.bonus.max_mp", *v, *l),
+            B::LastStand(secs) => ui.t_args("ui.bonus.last_stand", &[Arg::Int(i64::from(*secs))]),
             B::Special(name, v) => ui.t_args(
                 "ui.bonus.special",
                 &[int(u16::from(*v)), Arg::Str(texts.show(&TextRef::new(*name)))],
@@ -805,6 +806,8 @@ pub fn overhead(
                 // A node wears its name so the player knows what it is.
                 EntityKind::Npc | EntityKind::Node => (true, None),
                 EntityKind::Player => (true, (hurt || is_target).then_some(e.health)),
+                // A companion wears its name and shows its health when hurt.
+                EntityKind::Companion => (true, (hurt || is_target).then_some(e.health)),
                 EntityKind::Monster => (is_target || hurt, (hurt || is_target).then_some(e.health)),
             };
             // Over the head of the figure (about two tile heights up).
@@ -957,6 +960,31 @@ pub fn model(
                 })
             })
             .collect();
+        m.companions = s
+            .companions
+            .iter()
+            .enumerate()
+            .map(|(i, c)| client_ui::CompanionModel {
+                name: c.given.as_ref().map_or_else(|| show(c.name), ToString::to_string),
+                given: c.given.as_ref().map(ToString::to_string),
+                icon: input.gfx.icon_uv(state.icon_name(c.icon), "generic_item"),
+                level: c.level,
+                out: c.out,
+                rest_secs: state.companion_rest_secs(i, now_ms),
+            })
+            .collect();
+        m.bestiary = s
+            .bestiary
+            .iter()
+            .map(|b| client_ui::BestiaryModel {
+                name: show(b.name),
+                icon: input.gfx.icon_uv(state.icon_name(b.icon), "generic_item"),
+                level: b.level,
+                kills: b.kills,
+                tames: b.tames,
+            })
+            .collect();
+        m.resting = s.resting;
         m.pending = input.pending;
         m.sheet = SheetModel {
             attributes: s.attributes,
@@ -987,6 +1015,7 @@ pub fn model(
                 .collect(),
             defense: s.defense,
             specials: s.specials.iter().map(|(n, v)| (show(*n), *v)).collect(),
+            rank: defs_rank_letter(s.adventurer_rank),
         };
         m.equipped = s
             .equipment
@@ -1116,6 +1145,7 @@ pub fn model(
     m.trade = crate::social::trade(state, texts, ui_text, input.gfx);
     m.recipes = recipe_models(state, texts, ui_text, input.gfx);
     m.no_recipes = ui_text.t("ui.crafting.none");
+    m.weather = state.weather(now_ms);
     m.menu = menu(&m, keys, input.gfx);
     m
 }
@@ -1146,6 +1176,9 @@ fn help(keys: &client_ui::KeyMap, ui: &UiText) -> client_ui::HelpModel {
         (A::OpenInventory, "ui.help.open_inventory"),
         (A::OpenSheet, "ui.help.open_sheet"),
         (A::OpenTechniques, "ui.help.open_techniques"),
+        (A::OpenCompanions, "ui.help.open_companions"),
+        (A::OpenBestiary, "ui.help.open_bestiary"),
+        (A::Rest, "ui.help.rest"),
         (A::OpenQuests, "ui.help.open_quests"),
         (A::OpenCrafting, "ui.help.open_crafting"),
         (A::OpenHelp, "ui.help.open_help"),
@@ -1184,11 +1217,16 @@ fn menu(m: &HudModel, keys: &client_ui::KeyMap, gfx: &crate::graphics::Graphics)
         (MenuWindow::Techniques, A::OpenTechniques, "ui_techniques", false),
         (MenuWindow::Quests, A::OpenQuests, "ui_quests", false),
         (MenuWindow::Crafting, A::OpenCrafting, "ui_crafting", false),
+        (MenuWindow::Companions, A::OpenCompanions, "ui_companions", false),
+        (MenuWindow::Bestiary, A::OpenBestiary, "ui_bestiary", false),
         (MenuWindow::Help, A::OpenHelp, "ui_help", false),
         (MenuWindow::Options, A::OpenOptions, "ui_options", false),
     ]
     .into_iter()
     .filter(|(w, ..)| *w != MenuWindow::Crafting || !m.recipes.is_empty())
+    // The companions button shows up with the first tamed monster.
+    .filter(|(w, ..)| *w != MenuWindow::Companions || !m.companions.is_empty())
+    .filter(|(w, ..)| *w != MenuWindow::Bestiary || !m.bestiary.is_empty())
     .map(|(window, action, icon, alert)| MenuButton {
         window,
         icon: gfx.icon_uv(Some(icon), "generic_item"),
@@ -1506,7 +1544,7 @@ fn minimap(state: &WorldState) -> Minimap {
                 Dot::Me
             } else {
                 match e.kind {
-                    EntityKind::Player => Dot::Player,
+                    EntityKind::Player | EntityKind::Companion => Dot::Player,
                     EntityKind::Npc if state.marker(e.id).is_some() => Dot::Quest,
                     EntityKind::Npc | EntityKind::Node => Dot::Npc,
                     EntityKind::Monster => Dot::Monster,
@@ -1517,6 +1555,15 @@ fn minimap(state: &WorldState) -> Minimap {
         .chain(goal_dots(state, me.pos, half))
         .collect();
     Minimap { side, tiles, dots }
+}
+
+/// The adventurer rank `0..=8` as its letter (F to SSS).
+fn defs_rank_letter(rank: u8) -> String {
+    ["F", "E", "D", "C", "B", "A", "S", "SS", "SSS"]
+        .get(usize::from(rank))
+        .copied()
+        .unwrap_or("F")
+        .to_owned()
 }
 
 #[cfg(test)]

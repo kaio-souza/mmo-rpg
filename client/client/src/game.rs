@@ -86,6 +86,7 @@ impl App {
             (
                 &self.graphics,
                 self.graphics.is_night(self.state.day_fraction(now_ms)),
+                self.state.weather(now_ms),
             ),
             (&mut self.items, &mut self.lights, &mut self.fog),
         );
@@ -588,6 +589,26 @@ impl App {
             }
             A::Player { target, name, act } => self.player_act(target, &name, act),
             A::LeaveParty => self.send(&ClientMsg::LeaveParty),
+            A::Summon(index) => self.send(&ClientMsg::Summon { index }),
+            A::Dismiss => self.send(&ClientMsg::Dismiss),
+            A::ReleaseCompanion(index) => self.send(&ClientMsg::ReleaseCompanion { index }),
+            A::NameCompanion(index, name) => {
+                if name.is_empty() {
+                    self.send(&ClientMsg::NameCompanion { index, name: None });
+                } else {
+                    match base::CharacterName::try_from(name) {
+                        Ok(name) => self.send(&ClientMsg::NameCompanion {
+                            index,
+                            name: Some(name),
+                        }),
+                        Err(_) => {
+                            let text = self.ui.text.t("ui.companions.bad_name");
+                            self.log.push(client_ui::LineKind::Error, text);
+                        }
+                    }
+                }
+            }
+            A::Rest(on) => self.send(&ClientMsg::Rest { on }),
             A::Emote(emote) => self.send(&ClientMsg::Emote { emote }),
             A::AnswerInvite(true) => self.social(chat::Social::Accept),
             A::AnswerInvite(false) => self.social(chat::Social::Decline),
@@ -701,6 +722,14 @@ impl App {
         use client_ui::PlayerAct as P;
         match act {
             P::Trade => self.send(&ClientMsg::TradeRequest { target }),
+            P::Attack => {
+                self.target = Some(target);
+                self.send(&ClientMsg::Attack { target });
+            }
+            P::Tame => {
+                self.target = Some(target);
+                self.send(&ClientMsg::Tame { target });
+            }
             P::Invite => self.send(&ClientMsg::PartyInvite { target }),
             P::Lead => self.send(&ClientMsg::PartyLead { target }),
             P::Kick => self.send(&ClientMsg::PartyKick { target }),
@@ -958,6 +987,12 @@ impl App {
             K::OpenQuests => self.ui.hud.toggle_quests(),
             K::OpenCrafting => self.ui.hud.toggle_crafting(),
             K::OpenTechniques => self.ui.hud.toggle_techniques(),
+            K::OpenCompanions => self.ui.hud.toggle_companions(),
+            K::OpenBestiary => self.ui.hud.toggle_bestiary(),
+            K::Rest => {
+                let on = !self.state.stats().is_some_and(|s| s.resting);
+                self.send(&ClientMsg::Rest { on });
+            }
             K::OpenHelp => self.ui.hud.toggle_help(),
             K::OpenOptions => self.ui.hud.toggle_options(),
             K::ToggleMute => self.sound.toggle_mute(),
@@ -999,6 +1034,18 @@ impl App {
                 name: interface::entity_name(&self.state, &self.texts, target),
                 at: self.cursor,
                 fallen: self.state.entity(target).is_some_and(|e| e.health == 0),
+                monster: false,
+            });
+            return;
+        }
+        // A monster: fight it or try to tame it.
+        if let Some(target) = self.entity_under(tile, &[EntityKind::Monster]) {
+            self.ui.hud.player_menu = Some(client_ui::PlayerMenu {
+                target,
+                name: interface::entity_name(&self.state, &self.texts, target),
+                at: self.cursor,
+                fallen: false,
+                monster: true,
             });
             return;
         }

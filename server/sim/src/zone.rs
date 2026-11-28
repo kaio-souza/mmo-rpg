@@ -301,6 +301,7 @@ impl Zone {
         crate::portal::reached(self);
         crate::portal::run(self, out);
         fight::ai(self, out);
+        crate::companion::ai(self, out);
         fight::attacks(self, out);
         crate::status::run(self, out);
         fight::regen(self);

@@ -105,7 +105,7 @@ Nothing here punishes absence; every hook is a reward for returning.
 
 - Decided ([D63](decisions.md)): homes are persistent instances keyed by owner; crops grow from the world day computed on load; neglect never destroys.
 
-## Open
+## Decided
 
-- ⚠ Open: one home per character or per account.
-- ⚠ Open: may a home be entered while its owner is offline (visitors with rights, stalls)?
+- Decided ([D70](decisions.md)): **one home per character**.
+- Decided ([D70](decisions.md)): **no visits while the owner is offline**; visitors enter only with the owner in the game, and leave when the owner does.

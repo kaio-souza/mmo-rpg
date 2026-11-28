@@ -353,6 +353,8 @@ pub struct SheetModel {
     pub defense: u32,
     /// Special attributes above 0 (faith), by name.
     pub specials: Vec<(String, u8)>,
+    /// Adventurer rank as a letter (F to SSS).
+    pub rank: String,
 }
 
 /// One quest of the log, already written out.
@@ -399,15 +401,21 @@ pub enum MenuWindow {
     Help,
     /// Sound now; keys later.
     Options,
+    /// Tamed monsters: call, send back, let go.
+    Companions,
+    /// Monsters defeated and tamed.
+    Bestiary,
 }
 
 impl MenuWindow {
-    pub const ALL: [MenuWindow; 7] = [
+    pub const ALL: [MenuWindow; 9] = [
+        MenuWindow::Bestiary,
         MenuWindow::Inventory,
         MenuWindow::Sheet,
         MenuWindow::Techniques,
         MenuWindow::Quests,
         MenuWindow::Crafting,
+        MenuWindow::Companions,
         MenuWindow::Help,
         MenuWindow::Options,
     ];
@@ -421,6 +429,8 @@ impl MenuWindow {
             MenuWindow::Crafting => "ui.crafting.title",
             MenuWindow::Help => "ui.help.title",
             MenuWindow::Options => "ui.options.title",
+            MenuWindow::Companions => "ui.companions.title",
+            MenuWindow::Bestiary => "ui.bestiary.title",
         }
     }
 
@@ -433,8 +443,34 @@ impl MenuWindow {
             MenuWindow::Crafting => "ui.menu.crafting",
             MenuWindow::Help => "ui.menu.help",
             MenuWindow::Options => "ui.menu.options",
+            MenuWindow::Companions => "ui.menu.companions",
+            MenuWindow::Bestiary => "ui.menu.bestiary",
         }
     }
+}
+
+/// A monster of the bestiary window.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct BestiaryModel {
+    pub name: String,
+    pub icon: Option<[f32; 4]>,
+    pub level: u8,
+    pub kills: u64,
+    pub tames: u64,
+}
+
+/// A tamed monster as the companions window shows it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct CompanionModel {
+    pub name: String,
+    /// The name its owner gave it (shown as `name`), for the naming field.
+    pub given: Option<String>,
+    pub icon: Option<[f32; 4]>,
+    pub level: u8,
+    /// It follows the character now.
+    pub out: bool,
+    /// Seconds it still rests after falling (0: ready).
+    pub rest_secs: u32,
 }
 
 /// One button of the menu bar: what opens, its icon, its key and whether
@@ -516,6 +552,14 @@ pub struct HudModel {
     pub floats: Vec<FloatText>,
     /// Techniques the character knows (window K), in learning order.
     pub techniques: Vec<TechniqueModel>,
+    /// Tamed monsters (window P), in the order tamed.
+    pub companions: Vec<CompanionModel>,
+    /// Monsters defeated or tamed (window B).
+    pub bestiary: Vec<BestiaryModel>,
+    /// Sitting to rest: the rest button shows "Stand up".
+    pub resting: bool,
+    /// Weather where the player stands: 0 rain, 1 snow, 2 fog.
+    pub weather: Option<u8>,
     /// Actions waiting for the server's answer.
     pub pending: Pending,
 }
@@ -533,6 +577,14 @@ pub struct HudState {
     pub log_tab: LogTab,
     /// The techniques window (K): drag from it to the hotbar.
     pub techniques: bool,
+    /// The companions window (P).
+    pub companions: bool,
+    /// A companion whose Release was clicked once: the next click lets it go.
+    pub release_confirm: Option<u8>,
+    /// A companion being named: which one and the name typed so far.
+    pub naming: Option<(u8, String)>,
+    /// The bestiary window (B).
+    pub bestiary: bool,
     /// The help window (F1); `help_seen`: opened once, its button stops pulsing.
     pub help: bool,
     help_seen: bool,
@@ -615,6 +667,16 @@ fn key_of(m: &HudModel, w: MenuWindow) -> String {
 impl HudState {
     pub fn toggle_inventory(&mut self) {
         self.inventory = !self.inventory;
+    }
+
+    pub fn toggle_companions(&mut self) {
+        self.companions = !self.companions;
+        self.release_confirm = None;
+        self.naming = None;
+    }
+
+    pub fn toggle_bestiary(&mut self) {
+        self.bestiary = !self.bestiary;
     }
 
     /// Status and crafting share the left side: one at a time.
@@ -750,6 +812,7 @@ impl HudState {
     /// Everything the dialogue window may cover; returns the player menu the
     /// party window asked for.
     fn draw_below(&mut self, f: &mut Frame<'_>, m: &HudModel) -> Option<PlayerMenu> {
+        overlay::weather(f, m.weather);
         low_health(f, m);
         overlay::overheads(f, &m.overhead);
         overlay::floats(f, &m.floats);
@@ -787,6 +850,17 @@ impl HudState {
         let open = self.techniques;
         if self.animated(f, "techniques", open, |s, f| techniques(f, m, &mut s.drag)) {
             self.techniques = false;
+        }
+        let open = self.companions;
+        if self.animated(f, "companions", open, |s, f| {
+            companions(f, m, &mut s.release_confirm, &mut s.naming)
+        }) {
+            self.companions = false;
+            self.naming = None;
+        }
+        let open = self.bestiary;
+        if self.animated(f, "bestiary", open, |_, f| bestiary(f, m)) {
+            self.bestiary = false;
         }
         let open = self.sheet;
         if self.animated(f, "sheet", open, |s, f| {
@@ -908,6 +982,8 @@ impl HudState {
             MenuWindow::Crafting => self.crafting,
             MenuWindow::Help => self.help,
             MenuWindow::Options => self.options,
+            MenuWindow::Companions => self.companions,
+            MenuWindow::Bestiary => self.bestiary,
         }
     }
 
@@ -920,6 +996,8 @@ impl HudState {
             MenuWindow::Crafting => self.toggle_crafting(),
             MenuWindow::Help => self.toggle_help(),
             MenuWindow::Options => self.toggle_options(),
+            MenuWindow::Companions => self.toggle_companions(),
+            MenuWindow::Bestiary => self.bestiary = !self.bestiary,
         }
     }
 
@@ -1254,7 +1332,24 @@ fn status(f: &mut Frame<'_>, m: &HudModel) {
     // The coins close the strip at the right, always in sight.
     let coins = f.text.t_args("ui.inventory.coins", &[Arg::Str(grouped(m.coins))]);
     let coin_w = coin_tag(f, &coins, (r.x + r.w - pad, ty), lh);
-    let each = (r.x + r.w - pad - coin_w - gap - x0 - 3.0 * gap) / 4.0;
+    // Rest sits between the bars and the coins: sit down, stand up.
+    let rest_w = if m.fallen {
+        0.0
+    } else {
+        let label = f.tr(if m.resting { "ui.rest.stand" } else { "ui.rest.sit" });
+        let rw = f.fonts.measure(Role::Text, f.px(s.small), &label) + pad;
+        let rr = Rect::new(
+            r.x + r.w - pad - coin_w - gap - rw,
+            r.y + pad / 2.0,
+            rw,
+            r.h - pad,
+        );
+        if f.button(rr, &label) {
+            f.actions.push(UiAction::Rest(!m.resting));
+        }
+        rw + gap
+    };
+    let each = (r.x + r.w - pad - coin_w - gap - rest_w - x0 - 3.0 * gap) / 4.0;
     let nlh = f.line_height(Role::Numbers, s.small);
     let mut tip = None;
     for (i, ((v, max), color, key)) in [

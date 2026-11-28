@@ -42,6 +42,12 @@ pub struct TileLook {
     /// Drawn by day instead of `sprite`, unlit.
     #[serde(default)]
     pub day_sprite: Option<String>,
+    /// Drawn instead of `sprite` while it rains.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rain_sprite: Option<String>,
+    /// Drawn instead of `sprite` while it snows.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snow_sprite: Option<String>,
 }
 
 /// How the images of a folder, or one sprite, are laid out (every field
@@ -318,6 +324,8 @@ mod tests {
                     strength: 1.0,
                 }),
                 day_sprite: None,
+                rain_sprite: None,
+                snow_sprite: None,
             },
         );
         assert_eq!(check_tiles(&tiles).len(), 4);

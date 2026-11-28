@@ -1,6 +1,30 @@
-# Mounts and companions (planned)
+# Mounts and companions (companions partly built)
 
 Two kinds of creatures that belong to a player: **mounts** carry them, **companions** fight or work beside them. Both are content; their behaviour is closed blocks.
+
+## Built: tamed companions
+
+The first step ([D69](decisions.md)), with every action in the interface:
+
+```mermaid
+flowchart LR
+    M[Monster with tame] -- weaken, right click, Tame --> T{requirements and chance}
+    T -- fail --> F[it fights back; a bait is spent]
+    T -- success --> C[companion in the list]
+    C -- window P: Call --> O[follows, helps against the target]
+    O -- falls --> R[rests companion_rest_secs]
+    O -- Send back --> C
+    C -- Release, confirmed --> X[gone for good]
+```
+
+- **Taming** is a block on the monster ([`tame`](content/world.md#taming)): requirements the designer picks (level, attribute, skill or profession, title, class, karma, a bait item), a share of HP to weaken it below and a chance. A monster without it cannot be tamed.
+- **The companion** keeps the monster's stats and art, follows its owner, attacks the owner's target, takes threat (monsters may turn on it) and gives its share of XP and the loot to its owner. Players cannot attack it.
+- **Window P** (a menu-bar button after the first tame): each companion with its state (following, ready, resting with a countdown) and **Call**, **Send back** and **Release** (asks once more). One follows at a time.
+- **Limits** in `progression/formulas.ron`: `max_companions` (3) and `companion_rest_secs` (60).
+- **Saved** with the character (sheet v11) by monster id; the one out travels with every seam, portal and instance.
+- Counted as `tames` per monster, so titles, rankings and [server goals](content/characters.md#server-goals) can use it.
+
+Not yet: growth (levels, XP share), loyalty, a name the player gives, behaviour toggles, workers and mercenaries, mounts.
 
 ## Mounts
 
@@ -37,7 +61,7 @@ Two kinds of creatures that belong to a player: **mounts** carry them, **compani
 )
 ```
 
-- **Taming**: a technique with a chance against a monster below a health share; content decides which monsters can be tamed.
+- **Taming**: built as a block on the monster (above), not a technique.
 - **Companions count as threat sources** and share XP; a companion takes a share, so it is not free power.
 - **Workers** gather from nodes for their owner at a slower rate, never while the owner is offline, and count in bot telemetry like a player's own gathering.
 - **Mercenaries** are NPCs: they can have [memory](living-npcs.md) and loyalty, and may leave if unpaid.

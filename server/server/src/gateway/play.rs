@@ -326,6 +326,12 @@ impl Gateway {
                 | ClientMsg::TradeConfirm
                 | ClientMsg::TradeCancel
                 | ClientMsg::Emote { .. }
+                | ClientMsg::Tame { .. }
+                | ClientMsg::Summon { .. }
+                | ClientMsg::Dismiss
+                | ClientMsg::ReleaseCompanion { .. }
+                | ClientMsg::NameCompanion { .. }
+                | ClientMsg::Rest { .. }
                 | ClientMsg::GiveUp),
             ) => {
                 let player = *player;

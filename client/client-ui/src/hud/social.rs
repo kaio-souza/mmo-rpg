@@ -34,6 +34,8 @@ pub struct PlayerMenu {
     pub at: (f32, f32),
     /// They are fallen: Revive comes first.
     pub fallen: bool,
+    /// A monster, not a player: Attack and Tame.
+    pub monster: bool,
 }
 
 /// What the player can do for others: a heal technique known.
@@ -48,6 +50,11 @@ fn acts(party: Option<&PartyModel>, menu: &PlayerMenu, support: Support) -> Vec<
     let member = party.is_some_and(|p| p.members.iter().any(|m| m.id == target));
     let lead = party.is_some_and(|p| p.i_lead);
     let mut out = Vec::new();
+    if menu.monster {
+        out.push((PlayerAct::Attack, "ui.monster.attack"));
+        out.push((PlayerAct::Tame, "ui.monster.tame"));
+        return out;
+    }
     if menu.fallen {
         out.push((PlayerAct::Revive, "ui.player.revive"));
     } else if support.heal {
@@ -190,6 +197,7 @@ pub(super) fn party(f: &mut Frame<'_>, p: &PartyModel) -> Option<PlayerMenu> {
                 name: m.name.clone(),
                 at: f.input.mouse,
                 fallen,
+                monster: false,
             });
         }
         y += row;

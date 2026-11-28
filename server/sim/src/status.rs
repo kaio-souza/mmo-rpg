@@ -150,7 +150,8 @@ pub(crate) fn foes_around(
     let Some(&ah) = z.by_id.get(&att) else {
         return Vec::new();
     };
-    let player = z.world.get::<&PlayerComp>(ah).is_ok();
+    let player =
+        z.world.get::<&PlayerComp>(ah).is_ok() || z.world.get::<&crate::companion::CompanionComp>(ah).is_ok();
     let mut near = Vec::new();
     z.grid.neighbors(center, area, &mut near);
     let mut out: Vec<EntityId> = near
@@ -159,7 +160,8 @@ pub(crate) fn foes_around(
         .filter(|(e, p)| {
             let Some(&h) = z.by_id.get(e) else { return false };
             let alive = z.world.get::<&Fighter>(h).is_ok_and(|f| f.alive());
-            let is_player = z.world.get::<&PlayerComp>(h).is_ok();
+            let is_player = z.world.get::<&PlayerComp>(h).is_ok()
+                || z.world.get::<&crate::companion::CompanionComp>(h).is_ok();
             let is_monster = z.world.get::<&MonsterComp>(h).is_ok();
             alive
                 && if player {

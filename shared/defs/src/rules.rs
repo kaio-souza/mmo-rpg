@@ -48,6 +48,8 @@ pub enum Condition {
     Karma(i32),
     /// This server goal (`goals/<id>.ron`) was reached.
     GoalDone(String),
+    /// Night, day or a weather in the NPC's zone now.
+    Moment(crate::Moment),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,6 +84,11 @@ pub enum Effect {
     Teleport(base::TilePos),
     /// Added to the player's karma (hidden; clamped to the range).
     Karma(i32),
+    /// A barber: the player's hair style becomes this one
+    /// (`appearance.ron`).
+    SetHairStyle(String),
+    /// A barber: the player's hair colour becomes this one.
+    SetHairColor(String),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -107,6 +114,7 @@ pub(crate) enum ConditionFile {
     TechniqueKnown(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::TechniqueRef"))] String),
     Karma(i32),
     GoalDone(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::GoalRef"))] String),
+    Moment(crate::Moment),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -137,6 +145,8 @@ pub(crate) enum EffectFile {
     /// Takes the player to this tile of the world and ends the dialogue.
     Teleport(base::TilePos),
     Karma(i32),
+    SetHairStyle(String),
+    SetHairColor(String),
 }
 
 fn item(names: &Names<'_>, problems: &mut Vec<String>, id: &str, qty: u32) -> Option<ItemId> {
@@ -213,6 +223,7 @@ pub(crate) fn condition(
             }
             Condition::GoalDone(g.clone())
         }
+        ConditionFile::Moment(m) => Condition::Moment(*m),
         ConditionFile::All(v) => Condition::All(list(problems, v)?),
         ConditionFile::Any(v) => Condition::Any(list(problems, v)?),
         ConditionFile::Not(c) => Condition::Not(Box::new(condition(names, problems, c, depth + 1)?)),
@@ -266,6 +277,20 @@ pub(crate) fn effect(names: &Names<'_>, problems: &mut Vec<String>, file: &Effec
         EffectFile::Karma(v) => {
             karma(problems, *v);
             Effect::Karma(*v)
+        }
+        EffectFile::SetHairStyle(id) => {
+            if !names.looks.hair_styles().iter().any(|o| o.id == *id) {
+                problems.push(format!("hair style `{id}` not found in appearance.ron"));
+                return None;
+            }
+            Effect::SetHairStyle(id.clone())
+        }
+        EffectFile::SetHairColor(id) => {
+            if !names.looks.hair_colors().iter().any(|o| o.id == *id) {
+                problems.push(format!("hair colour `{id}` not found in appearance.ron"));
+                return None;
+            }
+            Effect::SetHairColor(id.clone())
         }
         EffectFile::LearnTechnique(name) => match names.techniques.get(name) {
             Some(t) => Effect::LearnTechnique(*t),

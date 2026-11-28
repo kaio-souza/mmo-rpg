@@ -10,13 +10,17 @@ use serde::{Deserialize, Serialize};
 
 /// Counter families the engine knows how to count. Content
 /// declares which are on in `counters.ron`; only those are counted.
-pub const COUNTER_FAMILIES: [&str; 4] = ["kills", "deaths", "quests", "clears"];
+pub const COUNTER_FAMILIES: [&str; 5] = ["kills", "deaths", "quests", "clears", "tames"];
 
 /// What the key of each family names: `kills` counts per monster id and
 /// `quests` per quest id. A family not listed has no key (only its total,
 /// key `""`). The editor offers these ids instead of free typing.
-pub const COUNTER_KEYS: [(&str, &str); 3] =
-    [("kills", "monster"), ("quests", "quest"), ("clears", "dungeon")];
+pub const COUNTER_KEYS: [(&str, &str); 4] = [
+    ("kills", "monster"),
+    ("quests", "quest"),
+    ("clears", "dungeon"),
+    ("tames", "monster"),
+];
 
 /// The content kind the key of `family` names, if it has keys.
 pub fn counter_key_kind(family: &str) -> Option<&'static str> {
@@ -128,6 +132,8 @@ pub struct MonsterDef {
     pub loot_table: Option<LootTableId>,
     /// Stages of the fight, highest threshold first.
     pub phases: Vec<MonsterPhase>,
+    /// Who may tame it and how; `None`: it cannot be tamed.
+    pub tame: Option<crate::tame::Tame>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -191,6 +197,10 @@ pub(crate) struct MonsterFile {
     /// another pace, an area and a status. Highest threshold first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub phases: Vec<MonsterPhase>,
+    /// Who may tame it (requirements, weakened below a share of HP, a
+    /// chance); absent: it cannot be tamed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tame: Option<crate::tame::TameFile>,
 }
 
 fn thirty() -> u32 {
@@ -650,6 +660,9 @@ pub enum TitleBonus {
     /// Phase 10: percent added to a rate while the character's level is at
     /// most the last number (the arrival title: +5% XP up to level 10).
     PercentUntilLevel(PercentBonus, u16, u8),
+    /// A blow that would make the character fall leaves them at 1 HP
+    /// instead, at most once every this many seconds.
+    LastStand(u32),
 }
 
 /// Rates a title can raise by a percent.

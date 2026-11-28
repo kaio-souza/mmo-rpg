@@ -21,7 +21,7 @@ Start here, then read only the page you need.
 | [Crafting with skill](crafting-minigames.md) | Planned: optional crafting minigames judged by the server, masterworks |
 | [Server projects](server-projects.md) | Planned: collective works; delivered items live on in armouries, buildings and the chronicle |
 | [Living NPCs](living-npcs.md) | Sketch: NPC memory, ambitions and roles |
-| [Mounts and companions](mounts-and-companions.md) | Planned: mounts, pets, mercenaries, workers |
+| [Mounts and companions](mounts-and-companions.md) | Built: taming and tamed companions. Planned: growth, mounts, mercenaries, workers |
 | [Dungeons and raids](dungeons-and-raids.md) | Built: instances, dungeons with lockouts and fastest clears, boss phases. Planned: stages, raids, the finder |
 | [Player homes](player-homes.md) | Planned: homes as persistent instances, farming, breeding, carpentry, visits |
 | [Guilds](guilds.md) | Planned: members, ranks, bank, hall, guild wars, alliances |

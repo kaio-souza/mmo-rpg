@@ -79,6 +79,37 @@ pub enum Reward {
     Technique(TechniqueId),
 }
 
+impl Rank {
+    pub const ALL: [Rank; 9] = [
+        Rank::F,
+        Rank::E,
+        Rank::D,
+        Rank::C,
+        Rank::B,
+        Rank::A,
+        Rank::S,
+        Rank::SS,
+        Rank::SSS,
+    ];
+
+    /// 0 for F up to 8 for SSS.
+    pub fn index(self) -> u8 {
+        Rank::ALL
+            .iter()
+            .position(|r| *r == self)
+            .and_then(|i| u8::try_from(i).ok())
+            .unwrap_or(0)
+    }
+
+    /// The rank after this one (SSS stays).
+    pub fn next(self) -> Rank {
+        Rank::ALL
+            .get(usize::from(self.index()).saturating_add(1))
+            .copied()
+            .unwrap_or(self)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuestDef {
     /// File stem; what saves store.
@@ -188,6 +219,8 @@ pub(crate) struct Names<'a> {
     pub monsters: &'a BTreeMap<String, base::MonsterId>,
     /// Server goals a dialogue may wait for (`goals/`).
     pub goals: &'a BTreeMap<String, String>,
+    /// Looks a barber may give.
+    pub looks: &'a crate::appearance::AppearanceDef,
 }
 
 pub(crate) fn parse_quest(

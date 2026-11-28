@@ -69,6 +69,41 @@ pub struct ZoneDef {
     pub portals: Vec<PortalDef>,
     /// A copy per party instead of one shared zone.
     pub instance: Option<InstanceRule>,
+    /// Weather the zone may show, each with its chance per world hour
+    /// (picture only: no rule reads it).
+    pub weather: Vec<WeatherChance>,
+}
+
+/// A kind of weather (picture only). Appended over time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+pub enum Weather {
+    Rain,
+    Snow,
+    Fog,
+}
+
+/// A weather and its chance, in thousandths, for each world hour.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct WeatherChance {
+    pub kind: Weather,
+    pub permille: u16,
+}
+
+/// The weather of a zone in world hour `hour` (hours since the world
+/// began): the same answer everywhere, so no one keeps state for it.
+pub fn weather_at(zone: &str, chances: &[WeatherChance], hour: u64) -> Option<Weather> {
+    let mut roll = u64::from(base::hour_roll(zone, hour));
+    for c in chances {
+        let p = u64::from(c.permille);
+        if roll < p {
+            return Some(c.kind);
+        }
+        roll -= p;
+    }
+    None
 }
 
 /// A rectangle of tiles, corners inclusive, in global coordinates.
@@ -206,6 +241,39 @@ pub struct MonsterSpawn {
     pub count: u16,
     #[serde(default)]
     pub radius: u16,
+    /// Only while this holds (night, rain...): the monster comes when it
+    /// starts and leaves when it ends, unless it is fighting.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub when: Option<Moment>,
+}
+
+/// A moment of the world: part of the day or the weather. Read by
+/// dialogue conditions and monster spawns; appended over time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
+pub enum Moment {
+    Day,
+    Night,
+    Rain,
+    Snow,
+    Fog,
+    /// No weather.
+    Clear,
+}
+
+impl Moment {
+    /// Whether it holds when the day is `night` or not and the weather is
+    /// `weather`.
+    pub fn holds(self, night: bool, weather: Option<Weather>) -> bool {
+        match self {
+            Moment::Day => !night,
+            Moment::Night => night,
+            Moment::Rain => weather == Some(Weather::Rain),
+            Moment::Snow => weather == Some(Weather::Snow),
+            Moment::Fog => weather == Some(Weather::Fog),
+            Moment::Clear => weather.is_none(),
+        }
+    }
 }
 
 fn one() -> u16 {
@@ -282,6 +350,10 @@ pub(crate) struct ZoneFile {
     /// Phase 10: new characters start in this zone.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     starting: bool,
+    /// Weather (picture only) with its chance per world hour; the chances
+    /// add up to 1000 at most, the rest is clear sky.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    weather: Vec<WeatherChance>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -457,6 +529,9 @@ pub(crate) fn parse_zone(
             errors.push(format!("zone.ron: portal {i}: outside the map"));
         }
     }
+    if zone.weather.iter().map(|w| u32::from(w.permille)).sum::<u32>() > 1000 {
+        errors.push("zone.ron: weather chances add up to more than 1000".into());
+    }
     if !errors.is_empty() {
         return Err(errors);
     }
@@ -476,6 +551,7 @@ pub(crate) fn parse_zone(
         starting: zone.starting,
         portals: zone.portals,
         instance: zone.instance,
+        weather: zone.weather,
     })
 }
 
@@ -623,6 +699,24 @@ pub(crate) fn world_problems(zones: &[ZoneDef]) -> Vec<(String, String)> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn weather_is_the_same_for_everyone_and_follows_the_chances() {
+        let chances = [WeatherChance {
+            kind: Weather::Rain,
+            permille: 300,
+        }];
+        let rainy = (0..10_000u64)
+            .filter(|h| weather_at("meadow", &chances, *h) == Some(Weather::Rain))
+            .count();
+        assert!((2_500..3_500).contains(&rainy), "{rainy}");
+        assert_eq!(
+            weather_at("meadow", &chances, 7),
+            weather_at("meadow", &chances, 7)
+        );
+        assert_eq!(weather_at("meadow", &[], 7), None);
+    }
+
     use super::*;
 
     const ZONE: &str = "(origin: (x: -2, y: 5), view_radius: 20, spawn: (x: -1, y: 6))";

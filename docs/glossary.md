@@ -28,6 +28,7 @@
 | **Replay** | A zone's commands recorded tick by tick, re-run to the same state hashes |
 | **Sheet** | A character's saved data (attributes, items, quests...), a versioned blob |
 | **Escrow** | Items and coins held by the server for a recipient, saved atomically |
+| **Companion** | A tamed monster that follows a player and fights beside them ([companions](mounts-and-companions.md)) |
 | **Karma** | A character's hidden morality (-1000 to 1000), moved by dialogues; opens options and titles ([dialogues](content/npcs-and-quests.md)) |
 | **Server goal** | One shared quest for the whole server over a counter, read with `/goals` ([server goals](content/characters.md#server-goals)) |
 | **Dev mode** | `server --dev`: no TLS, login by name, localhost only |

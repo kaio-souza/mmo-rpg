@@ -141,12 +141,13 @@ pub fn command_name(c: &sim::Command) -> String {
         .to_owned()
 }
 
-/// `player`, `npc`, `monster` or `node`.
+/// `player`, `npc`, `monster`, `node` or `companion`.
 pub fn kind_name(k: EntityKind) -> &'static str {
     match k {
         EntityKind::Player => "player",
         EntityKind::Npc => "npc",
         EntityKind::Monster => "monster",
         EntityKind::Node => "node",
+        EntityKind::Companion => "companion",
     }
 }

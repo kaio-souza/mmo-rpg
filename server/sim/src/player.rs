@@ -73,6 +73,11 @@ pub(crate) struct PlayerData {
     pub kept_affinity: Vec<(String, i32)>,
     /// `(shop id, coins paid, unix second the purse opened)`.
     pub shop_sales: Vec<(String, u64, u64)>,
+    /// Tamed monsters kept, by monster id (kept as saved: a monster gone
+    /// from the content stays in the list and cannot be called).
+    pub companions: Vec<crate::types::SavedCompanion>,
+    /// The one that follows, by position in `companions`.
+    pub summoned: Option<u8>,
 }
 
 /// Why a change cannot be done.
@@ -146,6 +151,10 @@ impl PlayerData {
             kept_quests,
             kept_affinity,
             shop_sales: sheet.shop_sales.clone(),
+            companions: sheet.companions.clone(),
+            summoned: sheet
+                .summoned
+                .filter(|i| usize::from(*i) < sheet.companions.len()),
         }
     }
 
@@ -191,6 +200,8 @@ impl PlayerData {
     pub fn export(&self, cat: &ValidatedCatalog, sheet: &mut CharacterSheet) {
         sheet.coins = self.coins;
         sheet.shop_sales = self.shop_sales.clone();
+        sheet.companions = self.companions.clone();
+        sheet.summoned = self.summoned;
         sheet.recipes = self
             .recipes
             .iter()
@@ -436,8 +447,35 @@ impl PlayerData {
         })
     }
 
+    /// The adventurer rank: F, and one rank up for every rank of which
+    /// the character completed `quests_per_rank` quests, in order.
+    pub fn adventurer_rank(&self, cat: &ValidatedCatalog) -> defs::Rank {
+        let need = usize::from(cat.formulas().progression.quests_per_rank.max(1));
+        let mut rank = defs::Rank::F;
+        loop {
+            let done = self
+                .quests
+                .iter()
+                .filter(|q| {
+                    (q.completed || q.completed_at > 0) && cat.quest(q.quest).is_some_and(|d| d.rank == rank)
+                })
+                .count();
+            if done < need || rank.next() == rank {
+                return rank;
+            }
+            rank = rank.next();
+        }
+    }
+
     pub fn start(&mut self, cat: &ValidatedCatalog, quest: QuestId, now: u64) -> Result<(), Fail> {
         if self.status(cat, quest, now) != QuestStatus::NotStarted || cat.quest(quest).is_none() {
+            return Err(Fail::NotPossible);
+        }
+        // A quest above the character's rank waits for them to rise.
+        if cat
+            .quest(quest)
+            .is_some_and(|d| d.rank > self.adventurer_rank(cat))
+        {
             return Err(Fail::NotPossible);
         }
         let completed_at = self.quest_entry(quest).map_or(0, |q| q.completed_at);
