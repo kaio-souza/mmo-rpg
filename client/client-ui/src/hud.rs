@@ -457,6 +457,8 @@ pub struct BestiaryModel {
     pub level: u8,
     pub kills: u64,
     pub tames: u64,
+    /// Details for the tooltip, already written (HP, drops, taming).
+    pub details: Vec<String>,
 }
 
 /// A tamed monster as the companions window shows it.
@@ -618,7 +620,7 @@ pub struct HudState {
     /// Backpack slots as drawn last frame, for a drop between them.
     pub(crate) bag_rects: Vec<Rect>,
     /// First visible row of the windows that scroll (`Scroll::*`).
-    pub(crate) scroll: [usize; 5],
+    pub(crate) scroll: [usize; 6],
     /// `(text, shown at ms)`.
     system: Vec<(String, u64)>,
     /// Each window's fade: open or closing, since when (ms). See `anim`.
@@ -652,6 +654,7 @@ enum Scroll {
     Quests = 2,
     Shop = 3,
     Help = 4,
+    Bestiary = 5,
 }
 const ATTRS: [&str; 6] = ["str", "vit", "agi", "dex", "int", "spi"];
 /// How long a refusal stays over the hotbar.
@@ -859,7 +862,9 @@ impl HudState {
             self.naming = None;
         }
         let open = self.bestiary;
-        if self.animated(f, "bestiary", open, |_, f| bestiary(f, m)) {
+        if self.animated(f, "bestiary", open, |s, f| {
+            bestiary(f, m, &mut s.scroll[Scroll::Bestiary as usize])
+        }) {
             self.bestiary = false;
         }
         let open = self.sheet;

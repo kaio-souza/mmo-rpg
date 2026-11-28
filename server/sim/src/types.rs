@@ -1060,6 +1060,13 @@ pub struct BestiaryView {
     pub level: u8,
     pub kills: u64,
     pub tames: u64,
+    pub hp: u32,
+    /// It attacks first (an aggro radius above 0).
+    pub aggressive: bool,
+    /// Its own loot lines (not the shared table), by item.
+    pub drops: Vec<ItemId>,
+    /// Its content allows taming.
+    pub tameable: bool,
 }
 
 /// A companion as the companions window shows it.

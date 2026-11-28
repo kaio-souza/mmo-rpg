@@ -50,7 +50,7 @@ What the engine does today, configured by [content](content/README.md), and the 
 **Social**
 - Local chat and whispers, reports, mute; emotes with an image.
 - Taming: monsters with a `tame` block (requirements the game chooses, weakened, a chance) become companions that follow, fight beside their owner and rest when they fall; window P calls, sends back and releases them.
-- Companions get a name from their owner (window P). A bestiary (window J) lists every monster defeated or tamed.
+- Companions get a name from their owner (window P). A bestiary (window J, scrolls) lists every monster defeated or tamed, with its HP, whether it attacks first, its drops and whether it can be tamed.
 - Groups of up to 6 sharing XP by contribution; direct trade with confirmations on both sides, saved atomically.
 - Ten languages; each player picks one.
 

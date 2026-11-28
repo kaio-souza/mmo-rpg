@@ -982,6 +982,7 @@ pub fn model(
                 level: b.level,
                 kills: b.kills,
                 tames: b.tames,
+                details: bestiary_details(state, texts, ui_text, b),
             })
             .collect();
         m.resting = s.resting;
@@ -1555,6 +1556,36 @@ fn minimap(state: &WorldState) -> Minimap {
         .chain(goal_dots(state, me.pos, half))
         .collect();
     Minimap { side, tiles, dots }
+}
+
+/// The lines under a monster of the bestiary: HP, whether it attacks
+/// first, what it drops and whether it can be tamed.
+fn bestiary_details(
+    state: &WorldState,
+    texts: &Texts,
+    ui: &UiText,
+    b: &protocol::BestiaryInfo,
+) -> Vec<String> {
+    let mut out = vec![ui.t_args("ui.bestiary.hp", &[Arg::Int(i64::from(b.hp))])];
+    out.push(ui.t(if b.aggressive {
+        "ui.bestiary.aggressive"
+    } else {
+        "ui.bestiary.peaceful"
+    }));
+    let drops: Vec<String> = b
+        .drops
+        .iter()
+        .filter_map(|i| state.item(*i).map(|d| texts.show(&TextRef::new(d.name))))
+        .collect();
+    if !drops.is_empty() {
+        out.push(ui.t_args("ui.bestiary.drops", &[Arg::Str(drops.join(", "))]));
+    }
+    out.push(ui.t(if b.tameable {
+        "ui.bestiary.tameable"
+    } else {
+        "ui.bestiary.not_tameable"
+    }));
+    out
 }
 
 /// The adventurer rank `0..=8` as its letter (F to SSS).

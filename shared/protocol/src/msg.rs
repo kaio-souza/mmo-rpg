@@ -708,6 +708,13 @@ pub struct BestiaryInfo {
     pub level: u8,
     pub kills: u64,
     pub tames: u64,
+    pub hp: u32,
+    /// It attacks first.
+    pub aggressive: bool,
+    /// Items it may drop.
+    pub drops: Vec<ItemId>,
+    /// It can be tamed.
+    pub tameable: bool,
 }
 
 /// A companion as the companions window shows it (protocol 32).

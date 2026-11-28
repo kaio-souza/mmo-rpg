@@ -309,6 +309,10 @@ pub fn player_frames(out: &TickOutput) -> Vec<(PlayerId, Bytes)> {
                     level: b.level,
                     kills: b.kills,
                     tames: b.tames,
+                    hp: b.hp,
+                    aggressive: b.aggressive,
+                    drops: b.drops.clone(),
+                    tameable: b.tameable,
                 })
                 .collect(),
         }));

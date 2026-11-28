@@ -445,6 +445,10 @@ impl Zone {
                     level: d.level,
                     kills,
                     tames,
+                    hp: d.hp,
+                    aggressive: d.aggro_radius > 0,
+                    drops: d.loot.iter().map(|l| l.item).collect(),
+                    tameable: d.tame.is_some(),
                 })
             })
             .collect()

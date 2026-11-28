@@ -99,18 +99,25 @@ pub(super) fn techniques(f: &mut Frame<'_>, m: &HudModel, drag: &mut Option<Drag
 /// Id of the field that names a companion.
 const COMPANION_NAME_FIELD: u32 = 300;
 
-/// The bestiary (B): every monster the character defeated or tamed, with
-/// how many times.
-pub(super) fn bestiary(f: &mut Frame<'_>, m: &HudModel) -> bool {
+/// The bestiary (J): every monster the character defeated or tamed, with
+/// how many times; the list scrolls, and a monster's details show on hover.
+pub(super) fn bestiary(f: &mut Frame<'_>, m: &HudModel, first: &mut usize) -> bool {
     let s = f.theme.sizes.clone();
     let pad = f.px(s.padding);
     let lh = f.line_height(Role::Text, s.small);
     let icon = 2.0 * lh;
     let row = icon + pad / 2.0;
-    let shown = m.bestiary.len().clamp(1, 12) as f32;
     let w = f.px(380.0).min(f.input.screen.0 - 2.0 * pad);
-    let h = f.line_height(Role::Title, s.title) + shown * row + 2.0 * pad;
-    let r = Rect::new((f.input.screen.0 - w) / 2.0, (f.input.screen.1 - h) / 3.0, w, h);
+    let th = f.line_height(Role::Title, s.title);
+    // As tall as the list, at most what the screen leaves.
+    let want = th + m.bestiary.len().max(1) as f32 * row + 3.0 * pad + lh;
+    let h = want.min(f.input.screen.1 - 2.0 * pad - f.px(s.hotbar_slot) - 2.0 * pad);
+    let r = Rect::new(
+        (f.input.screen.0 - w) / 2.0,
+        pad + (f.input.screen.1 - h) / 4.0,
+        w,
+        h,
+    );
     let (y, closed) = window(f, r, "ui.bestiary.title", Some(&key_of(m, MenuWindow::Bestiary)));
     let c = f.theme.colors.clone();
     if m.bestiary.is_empty() {
@@ -125,15 +132,29 @@ pub(super) fn bestiary(f: &mut Frame<'_>, m: &HudModel) -> bool {
         );
         return closed;
     }
-    for (i, b) in m.bestiary.iter().take(12).enumerate() {
-        let top = y + i as f32 * row;
+    let hint = f.tr("ui.bestiary.hint");
+    let area = Rect::new(r.x, y, r.w, r.y + r.h - y - lh - pad);
+    let heights = vec![row; m.bestiary.len()];
+    let shown = scroll_rows(f, area, &heights, first);
+    let mut tip = None;
+    for (n, i) in shown.enumerate() {
+        let Some(b) = m.bestiary.get(i) else { continue };
+        let top = y + n as f32 * row;
+        let rr = Rect::new(r.x + pad / 2.0, top, r.w - pad * 1.5, icon);
+        let hover = rr.contains(f.input.mouse);
+        if hover {
+            f.panel(rr, true);
+            let mut lines = vec![(b.name.clone(), c.highlight)];
+            lines.extend(b.details.iter().map(|l| (l.clone(), c.text)));
+            tip = Some(lines);
+        }
         let ir = Rect::new(r.x + pad, top, icon, icon);
         f.panel(ir, false);
         if let Some(uv) = b.icon {
             f.painter.image(ir.shrink(pad / 4.0), uv, [1.0, 1.0, 1.0, 1.0]);
         }
         let tx = ir.x + icon + pad / 2.0;
-        let tw = r.x + r.w - tx - pad;
+        let tw = r.x + r.w - tx - 2.0 * pad;
         let name = f.tr_args(
             "ui.companions.name",
             &[base::Arg::Str(b.name.clone()), base::Arg::Int(i64::from(b.level))],
@@ -147,6 +168,17 @@ pub(super) fn bestiary(f: &mut Frame<'_>, m: &HudModel) -> bool {
             ],
         );
         f.label_fit(Role::Text, s.small, (tx, top + lh), tw, c.text, &counts);
+    }
+    f.label_fit(
+        Role::Text,
+        s.small,
+        (r.x + pad, r.y + r.h - lh - pad),
+        r.w - 2.0 * pad,
+        c.dim_text,
+        &hint,
+    );
+    if let Some(lines) = tip {
+        overlay::tooltip(f, &lines);
     }
     closed
 }
