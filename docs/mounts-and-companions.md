@@ -24,7 +24,7 @@ flowchart LR
 - **Saved** with the character (sheet v11) by monster id; the one out travels with every seam, portal and instance.
 - Counted as `tames` per monster, so titles, rankings and [server goals](content/characters.md#server-goals) can use it.
 
-Not yet: growth (levels, XP share), loyalty, a name the player gives, behaviour toggles, workers and mercenaries, mounts.
+Not yet: growth (levels, XP share), loyalty, behaviour toggles, workers and mercenaries, mounts. Raising the dead (several at once, temporary or an army) is planned in [necromancy](necromancy.md).
 
 ## Mounts
 

@@ -78,6 +78,7 @@ Order by how many references each opens ([genre references](genre-references.md#
 | G11 | ✅ **Done: karma** ([D67](decisions.md)): hidden, moved by dialogues, read by dialogue conditions and title triggers | an NPC refuses the cruel and a title greets the kind |
 | G12 | ✅ **Done: server goals, first step** ([D68](decisions.md)): `goals/` over a counter, announced by quarters, `/goals`, `GoalDone` in dialogues. *Next: rewards, timers and repeats ([world quests](world-quests.md))* | the whole server hunts 500 wolves together |
 | G13 | ✅ **Done: taming and companions, first step** ([D69](decisions.md)): `tame` on monsters with open requirements, companions that follow and fight, window P. *Next: growth, names, behaviours, mounts ([companions](mounts-and-companions.md))* | a player weakens a wolf, tames it and hunts beside it |
+| G14 | **Raising the dead** ([necromancy](necromancy.md)): corpses, `raise` on monsters, a `Raise` technique effect, many companions at once, temporary ones and a saved army called in groups | a player raises a wolf for two minutes, or keeps a boss in an army for good |
 | G10 | Then the rest of W10 companions (Taming Master, Solo Leveling), W6 crafting minigames and W8/W12 guilds and kingdoms (Overgeared, Moonlight Sculptor) | |
 
 ### Ideas (not scheduled)
@@ -88,4 +89,5 @@ Ideas to make a creator's life easier: sprites baked from voxel and 3D models, a
 
 | Question | Blocks |
 |---|---|
+| ⚠ Open: army companions that grow; group commands in the first version ([necromancy](necromancy.md#open)) | G14 |
 | ⚠ Open: check that overload levels N1 and N2 thin AI and far updates as designed ([runtime](runtime.md)) | crowded zones |

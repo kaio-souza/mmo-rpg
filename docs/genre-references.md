@@ -32,7 +32,7 @@ Distance: 🟢 close (mostly content), 🟡 one or two large mechanics, 🔴 far
 | Overgeared | recipes designed by players, [crafting with skill](crafting-minigames.md), guilds and kingdoms |
 | Log Horizon | [living NPCs](living-npcs.md), [town politics](towns-and-politics.md), large raids |
 | Ark | quests with several outcomes that change the world, territory |
-| Solo Leveling | gates that open in the world (dungeons as instances exist), summons (companions exist; several at once and summoned by a technique are missing) |
+| Solo Leveling | gates that open in the world (dungeons as instances exist), a shadow army raised from the fallen ([planned](necromancy.md) on top of companions) |
 
 ## What repeats
 

@@ -1,6 +1,6 @@
 # Competitors
 
-Who competes with the kit for **creators** (other tools for making MMOs), and with games made with it for **players**. Facts marked ⚠ were not verified; sources at the end (checked 2026-11-27). Related: [genre references](genre-references.md), [roadmap](roadmap.md).
+Who competes with the kit for **creators** (other tools for making MMOs), and with games made with it for **players**. Facts marked ⚠ were not verified; sources at the end (checked 2026-11-27; the kit's own column updated the same day after taming, companions, karma, server goals, rank, bestiary and weather). Related: [genre references](genre-references.md), [roadmap](roadmap.md).
 
 ## Tools (the creator's choice)
 
@@ -15,14 +15,15 @@ Who competes with the kit for **creators** (other tools for making MMOs), and wi
 | Server | Authoritative and **deterministic** with replays; zones over processes, seamless world | Single server ⚠ | Depends on the plugin; several in development | Single server (reviews) | Mature, one process |
 | Item duplication | Items with identity, never cloned; atomic saves | ⚠ | Weak | ⚠ | Varies |
 | Languages | 10, keyed texts, plural rules | ⚠ | Plugins | Your own | Varies |
-| Ready mechanics | Skills by use, classes, titles, rarity and appraisal, signed crafting, five quest objectives, groups, trade, instances and dungeons, boss phases, rankings, unique items, moderation | Combat, event quests, crafting, groups, guilds ⚠ | RPG Maker's turn-based combat | Many systems, some as paid add-ons | The original game's, complete |
+| Ready mechanics | Skills by use, classes (rare ones opened by a title), titles with bonuses and a last stand, rarity and appraisal, signed crafting, five quest objectives, adventurer rank, groups, trade, instances and dungeons, boss phases, rankings, unique items, **taming and companions** (requirements the designer picks), bestiary, hidden karma, **server goals**, rest, barbers, moderation | Combat, event quests, crafting, groups, guilds ⚠ | RPG Maker's turn-based combat | Many systems, some as paid add-ons | The original game's, complete |
+| World rules | Day, night and weather (per zone, the same for everyone) open dialogues and bring or take monsters, all set in the editor |  Day and night ⚠ | Day and night by plugins | Your own code | The original game's |
 | Scripting | None, on purpose: closed blocks ([D5](decisions.md)) | Visual events | JavaScript | C# | Lua, C#… |
-| Mobile | Browser, no touch layout yet ([planned](touch.md)) | ⚠ | Web | Unity builds | Original client |
+| Mobile | Browser; touch planned (landscape, tap to move and a floating stick, [touch](touch.md)) | ⚠ | Web | Unity builds | Original client |
 | Maturity | New: no showcase game, no community | Years, forum, published games | Huge community | One developer, many buyers | Decades |
 
-**Where the kit wins:** a server that does not lose or duplicate items and replays any bug; real isometric view; an editor that cannot break the game; genre mechanics built in; MIT and the browser.
+**Where the kit wins:** a server that does not lose or duplicate items and replays any bug; real isometric view; an editor that cannot break the game; genre mechanics built in (unique classes and relics, server firsts, taming, karma, server goals), each tuned by data instead of code; MIT and the browser.
 
-**Where it loses:** community and maturity; no scripting (a missing mechanic waits for the engine); no showcase game or default art pack; mobile; changing the engine needs Rust.
+**Where it loses:** community and maturity; no scripting (a missing mechanic waits for the engine); no showcase game or default art pack (new windows still use generic icons); no touch controls yet; no player market, mail, bank or guilds; changing the engine needs Rust.
 
 **To compete with Intersect, the direct rival:** prebuilt binaries and the web client in releases (roadmap 3 and 11), a showcase game playable from a link, a larger default art pack, and more condition/effect hooks to cover what events give, without scripts.
 
@@ -46,7 +47,7 @@ None combines an open modern engine, a server that never duplicates items, a sea
 
 ## What would win players over
 
-For players of sandbox and skilling MMOs (UO, mo.ee), in order: a player market and mail (escrow exists), chat channels, farming and more gathering nodes, a bank, guilds (W8), touch controls, and above all one large game made with the kit. A UO-style spiritual successor (own world and names) fits the kit best: isometric view, skills by use, signed crafting; it needs [player homes](player-homes.md), a total skill cap, reputation and player vendors.
+For players of sandbox and skilling MMOs (UO, mo.ee), in order: a player market and mail (escrow exists), chat channels, farming and more gathering nodes, a bank, guilds (W8), touch controls, and above all one large game made with the kit. Pets are no longer missing: taming and companions exist, and an army raised from the fallen is [planned](necromancy.md); what pet players still miss is pets that grow. A UO-style spiritual successor (own world and names) fits the kit best: isometric view, skills by use, signed crafting; it needs [player homes](player-homes.md), a total skill cap, reputation and player vendors.
 
 ## Sources
 
