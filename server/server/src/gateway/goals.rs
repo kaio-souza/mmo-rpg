@@ -160,7 +160,7 @@ mod tests {
         assert_eq!(g.add("cull", 20, 100, 1), (None, false));
         assert_eq!(g.add("cull", 10, 100, 2), (Some(25), false));
         assert_eq!(
-            g.add("cull", 40, 100, 3),
+            g.add("cull", 50, 100, 3),
             (Some(75), false),
             "two quarters: the last told"
         );
