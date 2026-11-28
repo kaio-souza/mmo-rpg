@@ -1,4 +1,4 @@
-# Dungeons and raids (planned)
+# Dungeons and raids (partly built)
 
 Closed places for a group (**dungeon**, up to 6) or many groups (**raid**, up to 40), with their own copy of the map so each party plays its own run.
 
@@ -6,7 +6,7 @@ Closed places for a group (**dungeon**, up to 6) or many groups (**raid**, up to
 
 **In the engine** (steps G5 to G7): portals, the `Teleport` effect, zones marked `instance` that open a copy per party, close when empty, send everyone out on a time limit and save leavers at the exit ([D63](decisions.md)); `dungeons/` with level and group checks at the door, a boss that clears the run, lockouts, `clears` counters and fastest-clear rankings ([world](content/world.md#dungeons), [D64](decisions.md)). What follows is the rest of the plan: stages, phase scripts, raids, the finder.
 
-Zones today are fixed partitions of one open world ([D12](decisions.md)). An **instance** is a new kind of zone:
+Besides the fixed zones of the open world ([D12](decisions.md)), an **instance** is a zone of its own kind:
 
 - Built from a map in `zones/<id>/` marked `instance: true`, never joined by seams.
 - Created on demand by a zone process the gateway picks (the least loaded); closed when empty for `close_after_secs`.
@@ -43,7 +43,7 @@ flowchart LR
 
 ## Bosses with phases: `boss_phases/<id>.ron`
 
-A first step is in the engine: `phases` on a monster ([world](content/world.md#boss-phases), [D62](decisions.md)). The blocks below come with instances.
+A first step is in the engine: `phases` on a monster ([world](content/world.md#boss-phases), [D62](decisions.md)). The blocks below are the next step, now that instances exist.
 
 Closed blocks only: `AtHealth(permille)` → `Summon`, `UseTechnique`, `AreaPattern(shape, delay)`, `Enrage(after_secs)`, `ChangeTiles(layer)`. Area patterns are drawn on the ground before they hit (the client shows the warning), so a raid is about reading and moving, which tile movement suits.
 

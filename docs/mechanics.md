@@ -50,7 +50,7 @@ What the engine does today, configured by [content](content/README.md), and the 
 
 **Accounts and moderation**
 - Accounts with password, TLS, sessions, device tokens; brute-force defence ([security](security.md)).
-- Character creation with appearance; deleting and restoring characters.
+- Character creation with appearance, drawn in layers (body tinted by skin, clothes, hair tinted by its colour); deleting and restoring characters.
 - Roles, mute, suspend, ban, IP ban, audit log; announced restarts; hourly backups ([operations](operations.md)).
 
 ## Possible mechanics (not in the engine)
@@ -66,4 +66,4 @@ Designed for the example game but not built. Each needs engine work before conte
 | World | ranked and hidden quests; karma moved by deeds outside dialogue (killing players, crimes); goals with rewards, timers and repeats; NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
 | Social | group loot rules and shared quests; clans with ranks, storage and alliances; territory war with scheduled sieges; marriage with a shared vault; fame, bounties, mentoring, housing ([homes](player-homes.md): farming, breeding, carpentry); a human check for players who repeat one action for hours |
 | Accounts | second factor (TOTP) at login; a barber to change hair |
-| Presentation | layered character art (body, hair, clothes) recoloured by palette keys; ambient sound layers |
+| Presentation | a look built from parts (clothes chosen apart from the body) with palettes ([character parts](character-parts.md)); ambient sound layers |

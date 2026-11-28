@@ -40,7 +40,7 @@ Small teams and solo developers who want an MMO of the classic kind (Astonia, Ti
 
 - Not a general game engine: no 3D, no physics, no free movement.
 - Not a hosted service: you run your own server ([operations](operations.md)).
-- Not finished: see the [roadmap](roadmap.md) for what is missing (one client per game today, no stable content format version yet).
+- Not finished: see the [roadmap](roadmap.md) for what is missing (no stable content format version yet, no prebuilt binaries).
 
 ## The example game
 

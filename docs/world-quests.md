@@ -73,7 +73,7 @@ Signals are **integers counted by the zones** and summed by the gateway (zones s
 | Kind | New variants |
 |---|---|
 | `Condition` | `Signal(id)`, `TownStat(town, stat, at_least/at_most)`, `FactionStanding(faction, at_least)`, `EventActive(event)`, `Law(town, law)` |
-| `Objective` | `Kill(monster, qty, region?)`, `Reach(region)`, `Patrol(regions)` (visit in any order), `Escort(npc, to: region)` (later), `Donate(town, coins)` |
+| `Objective` | *Built:* `Kill(monster, qty)`, `Reach(pos, radius)`, `Craft(item, qty)` ([quests](content/npcs-and-quests.md#quests)). *Planned:* a `region` on `Kill`, `Reach(region)`, `Patrol(regions)` (visit in any order), `Escort(npc, to: region)` (later), `Donate(town, coins)` |
 | `Effect` / `Reward` | `TownChange(town, stat, delta)`, `FactionChange(faction, delta)`, `StartEvent(event)` |
 
 The same conditions work in dialogues, so an NPC can talk about the wolves only while the signal is high.

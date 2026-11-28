@@ -22,7 +22,7 @@ Start here, then read only the page you need.
 | [Server projects](server-projects.md) | Planned: collective works; delivered items live on in armouries, buildings and the chronicle |
 | [Living NPCs](living-npcs.md) | Sketch: NPC memory, ambitions and roles |
 | [Mounts and companions](mounts-and-companions.md) | Planned: mounts, pets, mercenaries, workers |
-| [Dungeons and raids](dungeons-and-raids.md) | Planned: instanced zones, bosses with phases, lockouts, records |
+| [Dungeons and raids](dungeons-and-raids.md) | Built: instances, dungeons with lockouts and fastest clears, boss phases. Planned: stages, raids, the finder |
 | [Player homes](player-homes.md) | Planned: homes as persistent instances, farming, breeding, carpentry, visits |
 | [Guilds](guilds.md) | Planned: members, ranks, bank, hall, guild wars, alliances |
 | [Kingdoms and nations](kingdoms-and-nations.md) | Planned: towns held by guilds, sieges, kingdoms, vassals, diplomacy |
