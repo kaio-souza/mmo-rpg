@@ -302,15 +302,20 @@ pub struct EconomyFormulas {
     /// By `Rarity` (Common to Mythic), in thousandths added on top: the
     /// weapon's damage or the armor's defense, and the durability of the
     /// piece.
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ByRarity"))]
     pub rarity_power_permille: [u32; 6],
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ByRarity"))]
     pub rarity_durability_permille: [u32; 6],
     /// By `Rarity`, the value of a piece in thousandths of a common one's
     /// 0: no NPC buys it.
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ByRarity"))]
     pub rarity_value_permille: [u32; 6],
     /// By `Rarity`, the chance of a piece rolling one of its item's powers.
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ByRarity"))]
     pub power_chance_permille: [u32; 6],
     /// By `Rarity`, the chance of a piece rolling its item's hidden
     /// attributes at all; each then rolls `min.=max`.
+    #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ByRarity"))]
     pub hidden_chance_permille: [u32; 6],
     /// Mastery of a production class: extra durability of what it crafts,
     /// in hundredths of a percent, `points × DEX × tier / divisor`, capped

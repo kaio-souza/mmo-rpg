@@ -844,3 +844,13 @@ button.danger:hover:not(:disabled) { background: rgba(255, 107, 107, .2); }
 .home-probs.err li::marker { color: var(--err, #f87171); }
 .home-probs.warn li::marker { color: var(--warn, #fbbf24); }
 .home-card { margin-bottom: 14px; }
+
+/* Map painter: the zone as the game draws it (map.js: gamePage, previewCard). */
+.gamewrap { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: #05070a; }
+#mapgame { display: block; width: 100%; cursor: grab; image-rendering: pixelated; }
+#gameinfo { min-height: 20px; margin: 6px 0 4px; font-family: ui-monospace, monospace; }
+#mappreview { display: block; width: 100%; margin-top: 6px; border-radius: 6px; background: #05070a; cursor: zoom-in; image-rendering: pixelated; }
+.tile-key { font-size: 10px; opacity: .6; }
+.rows.fixed .rows-row { grid-template-columns: 140px minmax(0, 220px); }
+.rows.fixed .row-label { color: var(--dim); }
+.rows.fixed .rows-row .unit { display: inline; }

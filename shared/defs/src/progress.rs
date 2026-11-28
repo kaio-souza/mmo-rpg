@@ -85,6 +85,7 @@ pub const MAX_AREA: u16 = 8;
 #[serde(deny_unknown_fields)]
 pub struct MonsterPhase {
     /// HP left, in thousandths of the maximum (500: half), that starts it.
+    #[cfg_attr(feature = "editor", schemars(range(min = 1, max = 1000)))]
     pub below_hp_permille: u16,
     /// Damage of its blows, in thousandths (1000: as usual).
     #[serde(default = "thousand")]
@@ -142,6 +143,8 @@ pub struct MonsterDef {
 pub(crate) struct LootFile {
     #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ItemRef"))]
     pub item: String,
+    /// Thousandths per kill (1 to 1000).
+    #[cfg_attr(feature = "editor", schemars(range(min = 1, max = 1000)))]
     pub chance: u16,
     #[serde(default = "one_one")]
     pub qty: (u16, u16),

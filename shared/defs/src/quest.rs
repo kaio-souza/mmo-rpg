@@ -160,6 +160,7 @@ pub(crate) enum ObjectiveFile {
     Item {
         #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ItemRef"))]
         item: String,
+        #[cfg_attr(feature = "editor", schemars(range(min = 1)))]
         qty: u32,
     },
     Talk {
@@ -170,6 +171,7 @@ pub(crate) enum ObjectiveFile {
     Kill {
         #[cfg_attr(feature = "editor", schemars(with = "crate::editor::MonsterRef"))]
         monster: String,
+        #[cfg_attr(feature = "editor", schemars(range(min = 1)))]
         qty: u32,
     },
     /// Reach a place: within `radius` tiles of `pos`.
@@ -182,6 +184,7 @@ pub(crate) enum ObjectiveFile {
     Craft {
         #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ItemRef"))]
         item: String,
+        #[cfg_attr(feature = "editor", schemars(range(min = 1)))]
         qty: u32,
     },
 }
@@ -196,6 +199,7 @@ pub(crate) enum RewardFile {
     Item {
         #[cfg_attr(feature = "editor", schemars(with = "crate::editor::ItemRef"))]
         item: String,
+        #[cfg_attr(feature = "editor", schemars(range(min = 1)))]
         qty: u32,
     },
     Coins(u64),

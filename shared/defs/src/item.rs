@@ -212,32 +212,39 @@ pub(crate) struct ItemFile {
     #[serde(default)]
     pub rarity: Rarity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub equip: Option<EquipFile>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub hidden: Vec<HiddenRoll>,
     #[serde(default, rename = "use", skip_serializing_if = "Option::is_none")]
     pub use_effect: Option<UseEffect>,
     #[serde(default)]
     pub value: u64,
     #[serde(default)]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub durability: u32,
     #[serde(default)]
     #[cfg_attr(feature = "editor", schemars(with = "crate::editor::IconRef"))]
     pub icon: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub powers: Vec<PowerFile>,
     /// Light around the wearer while equipped, seen by everyone at night:
     /// radius in tiles (how bright, 1 to 16) and color. Any equipment.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub light: Option<ItemLight>,
     /// Durability lost each minute it is equipped (a torch burns down; at
     /// zero it is gone). 0: never. Needs durability.
     #[serde(default)]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub burn: u32,
     /// Only one piece exists on the server at a time (a relic): it does not
     /// drop or get crafted again while it exists; it may again once it
     /// breaks or is sold. Equipment only.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[cfg_attr(feature = "editor", schemars(extend("x-when" = {"kind": ["Weapon", "Armor", "Offhand"]})))]
     pub unique: bool,
 }
 

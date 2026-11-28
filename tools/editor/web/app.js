@@ -1130,6 +1130,9 @@ function renderProblems() {
   }
   const bad = badFields();
   for (const n of document.querySelectorAll("#panel [data-k]")) n.classList.toggle("bad", bad(n.dataset.k));
+  if (r && r.errors.some(unpicked)) {
+    for (const n of document.querySelectorAll("#panel select")) if (n.value === "" && n.options[0]?.value === "" && !n.classList.contains("chip-add")) n.classList.add("bad");
+  }
   renderState();
 }
 
@@ -1151,11 +1154,15 @@ function fileLink(msg) {
 // sentence into keys; a piece without a key stays as written. The leading
 // error/warning and the open file are left out.
 function clip(msg, from) {
+  if (unpicked(msg)) return t("editor.not_picked");
   const parts = from?.[msg] ?? S.saveReport?.parts?.[msg] ?? S.report?.parts?.[msg];
   if (!parts) return msg.replace(/^(error|warning): /, "").replace(S.sel + ": ", "");
   return parts.filter((p, i) => !(i === 0 && (p.key === "error" || p.key === "warning")) && p.text !== S.sel)
     .map(problemPart).join(": ");
 }
+
+// "proficiency `` not found", "loot ``: ...": a name left on "Choose…".
+function unpicked(msg) { return msg.includes("``"); }
 
 function problemPart(p) {
   if (p.text !== undefined) return p.text;
@@ -1287,6 +1294,9 @@ async function submit(write) {
   try {
     const r = await api(write ? "/api/save" : "/api/check", body);
     if (S.sel !== sel) return;
+    // A list still on "Choose…" is not a mistake while the form is being
+    // filled in; saving says so.
+    if (!write && r.report) r.report.errors = r.report.errors.filter((e) => !unpicked(e));
     S.saveReport = r.report;
     if (write && r.ok) {
       S.isNew = false; S.pendingTexts = {};
@@ -1457,8 +1467,18 @@ function structParts(root, r, value, set, top) {
   // the two fields of a counter are drawn together.
   const keyField = Object.keys(r.properties).find((k) => R(root, r.properties[k])["x-ref"] === "counter_key");
   for (const [k, ps] of Object.entries(r.properties)) {
+    // A field only some kinds have (`x-when`: equipment's durability) is
+    // left out for the others, and dropped when the kind changes away.
+    if (!whenOk(ps, value)) continue;
     const v = value[k] !== undefined ? value[k] : defaultOf(root, ps);
     let sub = (nv) => { value[k] = nv; set(value); };
+    if (Object.values(r.properties).some((q) => q["x-when"] && k in q["x-when"])) {
+      sub = (nv) => {
+        value[k] = nv;
+        for (const [q, qs] of Object.entries(r.properties)) if (!whenOk(qs, value)) delete value[q];
+        set(value); redraw();
+      };
+    }
     const ref = R(root, ps)["x-ref"];
     if (ref === "counter_family" && keyField) {
       sub = (nv) => { value[k] = nv; value[keyField] = ""; set(value); redraw(); };
@@ -1484,6 +1504,11 @@ function structParts(root, r, value, set, top) {
       el("div", { class: "card-head" }, el("h3", {}, t("editor.properties"))), grid) : grid);
   }
   return out.concat(groups);
+}
+
+function whenOk(ps, value) {
+  const w = ps["x-when"];
+  return !w || Object.entries(w).every(([f, vs]) => vs.includes(value[f]));
 }
 
 function group(root, k, ps, v, set, top) {
@@ -1682,6 +1707,7 @@ function chipsFit(root, r) {
 function listField(root, r, value, set, k) {
   const list = Array.isArray(value) ? value : [];
   if (chipsFit(root, r)) return chipsField(root, r, list, set);
+  if (r.minItems !== undefined && r.minItems === r.maxItems && isSimple(root, r.items)) return fixedListField(root, r, list, set, k);
   const it = r.items;
   const box = el("div", { class: "list-f" });
   const cols = columns(root, it);
@@ -1724,6 +1750,20 @@ function listField(root, r, value, set, k) {
     set(list); redraw();
   } }, icon("plus", 16), t("editor.add")));
   return box;
+}
+
+// A list of a fixed size (one number per rarity): a row per place, named
+// by the enum the schema points at (`x-by`), with nothing to add or remove.
+function fixedListField(root, r, list, set, k) {
+  const n = r.minItems;
+  while (list.length < n) list.push(defaultOf(root, r.items));
+  if (list.length > n) list.length = n;
+  const names = r["x-by"] ? variants(root, r["x-by"]).map((v) => vlabel(v.name)) : [];
+  const table = el("div", { class: "rows fixed", style: "--cols:2" });
+  list.forEach((item, i) => table.append(el("div", { class: "rows-row" },
+    el("span", { class: "row-label" }, names[i] ?? String(i + 1)),
+    el("div", { class: "cell" }, field(root, r.items, item, (nv) => { list[i] = nv; set(list); }, k)))));
+  return table;
 }
 
 // One item of a list as a sentence: its kind ("Talk to", "Item") and its

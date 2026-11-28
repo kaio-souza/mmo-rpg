@@ -8,6 +8,9 @@
 //!
 //! Reference fields carry `"x-ref": "<kind>"` in the schema so the editor
 //! offers a list of existing ids; text keys carry `"x-ref": "text"`.
+//! A fixed-size table names its rows by an enum (`"x-by"`, see
+//! [`ByRarity`]), and a field only some values of another field use says
+//! so with `"x-when": {"<field>": [values]}` (equipment-only item fields).
 
 use crate::appearance::AppearanceFile;
 use crate::craft::{NodeFile, NodeSpawn, RecipeFile};
@@ -403,6 +406,26 @@ impl JsonSchema for ColorRef {
                 { "type": "integer", "minimum": 0, "maximum": 255 },
                 { "type": "integer", "minimum": 0, "maximum": 255 }
             ]
+        })
+    }
+}
+
+/// Six numbers, one per `Rarity` (Common to Mythic): the form names each
+/// row by its rarity and the list keeps its size.
+pub struct ByRarity;
+
+impl JsonSchema for ByRarity {
+    fn schema_name() -> Cow<'static, str> {
+        "ByRarity".into()
+    }
+    fn inline_schema() -> bool {
+        true
+    }
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let by = generator.subschema_for::<base::Rarity>();
+        json_schema!({
+            "type": "array", "minItems": 6, "maxItems": 6, "x-by": by,
+            "items": { "type": "integer", "format": "uint32", "minimum": 0 }
         })
     }
 }

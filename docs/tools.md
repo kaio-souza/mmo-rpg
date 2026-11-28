@@ -23,7 +23,7 @@ A local web page (`http://127.0.0.1:7878`, local only; the version for a publish
 | Categories | items, NPCs, monsters, quests, dialogues, techniques, classes, titles, shops, recipes, nodes, maps; **Advanced** for formulas, counters, zone files and moderation reasons |
 | Create | starts from a **name** (the id comes from it), empty or as a copy of an existing one |
 | Form | generated from the content type; references are pick lists, never typed ids; errors show on the field half a second later |
-| Map | brush, bucket, rectangle, line, eyedropper; NPCs, monsters, nodes, regions, spawn; undo; a world view to place zones side by side, with the seam band |
+| Map | painted from above with each tile's own picture laid flat; brush (sizes, scatter density), bucket (Shift: every such tile), rectangle (filled or outline), line, eyedropper (Alt + click), tiles on 1–9; NPCs, monsters, nodes, regions, spawn; undo; space or middle button pans; a live isometric preview by the cursor and a full **As in the game** view (Tab) drawn like the replays; a world view to place zones side by side, with the seam band |
 | Dialogue | a map of steps, conditions and effects written as sentences, a clickable preview |
 | Texts | key × language table with "missing" marks; **Languages** manages `locales.ron` |
 | Graphics, Floors and scenery | sprites and icons with previews, PNG upload, `tiles.ron` and `sprites.ron` |

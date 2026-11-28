@@ -1,8 +1,10 @@
 // Map painter of the content editor.
 // Edits zones/<id>/map.ron (tiles), zone.ron (origin, spawn, regions),
 // npcs.ron, monsters.ron and nodes.ron together; the server checks and saves
-// them as one change. Seen from above (not isometric): one square per tile,
-// colored like the tile's sprite in assets/tiles.ron.
+// them as one change. Painted seen from above: one square per tile, drawn
+// with the tile's own picture turned flat (assets/tiles.ron); next to it a
+// live preview, and a full view, draw the zone as the game does
+// (isometric, the replay's renderer).
 //
 // Layout: tools on the left, the canvas in the middle, and on the right
 // what the tool needs (tiles, what to place) plus the lists of what is on
@@ -14,7 +16,14 @@ const M = {
   npc: "", monster: "", node: "", count: 3, radius: 3, region: "Safe",
   tiles: null, colors: {}, down: false, drag: null, hover: null, sel: null,
   undo: [], redo: [], world: null, scroll: null, grid2: null, frame: 0, worldDrag: null, moving: null,
+  // Painting: outline-only rectangles, how much of the brush is painted
+  // (scatter), tiles drawn with their pictures, cells already rolled this stroke.
+  hollow: false, density: 100, tex: true, touched: null,
+  // Panning (space or middle button), the game view's camera and what it shows.
+  space: false, pan: null, cam: null, gameDrag: null, gameHover: null, showRegions: true, showNames: true, focus: null,
 };
+const BRUSHES = [1, 3, 5, 7, 9, 11, 15];
+const DENSITIES = [100, 50, 25, 10, 5];
 // Region kinds of the engine (defs::RegionKind).
 const REGION_KINDS = ["Safe", "Pvp", "Workshop"];
 // When a monster spawn is out (empty: always), and the weathers a zone may have.
@@ -72,13 +81,16 @@ async function loadSiblings(dir, isNew) {
 
 async function mapReady() {
   if (!M.tiles) M.tiles = await api("/api/tiles");
+  // Sprite sizes and anchors, for the flat pictures and the game view.
+  if (!S.art) await loadArt();
+  if (!L.manifest) L.manifest = await api("/api/sprite-manifest");
   S.extra.nodes ||= [];
   const legend = Object.keys(S.value.legend || {});
   if (!legend.includes(M.ch)) M.ch = legend[0] ?? ".";
   M.npc ||= (S.content.ids.npc || [])[0] || "";
   M.monster ||= (S.content.ids.monster || [])[0] || "";
   M.node ||= (S.content.ids.gather_node || [])[0] || "";
-  M.undo = []; M.redo = []; M.sel = null; M.scroll = null;
+  M.undo = []; M.redo = []; M.sel = null; M.scroll = null; M.cam = null; M.focus = null;
   await Promise.all([
     ...Object.values(S.value.legend || {}).map((t) => tileColor(t.floor)),
     loadWorld(),
@@ -227,6 +239,81 @@ async function tileColor(floor) {
   return color;
 }
 
+// A tile seen from above, as a 32×32 picture: a floor's diamond turned
+// into a square, pixel for pixel; a wall (tree, rock, brazier) is its
+// picture made small over its own colour. null until the image loads.
+const TEX = 32;
+function tileTex(floor) {
+  M.texs ||= {};
+  if (floor in M.texs) return M.texs[floor];
+  M.texs[floor] = null;
+  const look = M.tiles?.[floor];
+  if (!look?.sprite || typeof rpImg !== "function") return null;
+  const im = rpImg(look.sprite);
+  const make = () => {
+    const l = layoutOf(look.sprite);
+    if (!l.w) return;
+    const c = document.createElement("canvas");
+    c.width = TEX; c.height = TEX;
+    const g = c.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    if (look.wall) {
+      // The picture cut to what is drawn in it, as big as the square allows.
+      const src = document.createElement("canvas");
+      src.width = l.w; src.height = l.h;
+      const sg = src.getContext("2d");
+      sg.drawImage(im, 0, 0, l.w, l.h, 0, 0, l.w, l.h);
+      const px = sg.getImageData(0, 0, l.w, l.h).data;
+      let bx0 = l.w, by0 = l.h, bx1 = 0, by1 = 0;
+      for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) {
+        if (px[(y * l.w + x) * 4 + 3] > 40) { bx0 = Math.min(bx0, x); by0 = Math.min(by0, y); bx1 = Math.max(bx1, x); by1 = Math.max(by1, y); }
+      }
+      if (bx1 < bx0) { bx0 = 0; by0 = 0; bx1 = l.w - 1; by1 = l.h - 1; }
+      const bw = bx1 - bx0 + 1, bh = by1 - by0 + 1;
+      g.fillStyle = "#1b1f26"; g.fillRect(0, 0, TEX, TEX);
+      const k = Math.min(TEX / bw, TEX / bh);
+      g.drawImage(src, bx0, by0, bw, bh, (TEX - bw * k) / 2, (TEX - bh * k) / 2, bw * k, bh * k);
+      g.strokeStyle = "rgba(0,0,0,.6)"; g.strokeRect(.5, .5, TEX - 1, TEX - 1);
+    } else {
+      const src = document.createElement("canvas");
+      src.width = l.w; src.height = l.h;
+      const sg = src.getContext("2d");
+      sg.drawImage(im, 0, 0, l.w, l.h, 0, 0, l.w, l.h);
+      const from = sg.getImageData(0, 0, l.w, l.h).data;
+      const out = g.createImageData(TEX, TEX);
+      // Square (u, v) to diamond: u - v across, (u + v) / 2 down from the top corner.
+      const [ax, ay] = l.anchor;
+      for (let v = 0; v < TEX; v++) for (let u = 0; u < TEX; u++) {
+        const sx = ax + u - v, sy = ay - RP_TH + ((u + v) >> 1);
+        if (sx < 0 || sy < 0 || sx >= l.w || sy >= l.h) continue;
+        const i = (sy * l.w + sx) * 4, o = (v * TEX + u) * 4;
+        for (let j = 0; j < 4; j++) out.data[o + j] = from[i + j];
+      }
+      g.fillStyle = M.colors[floor] || "#444"; g.fillRect(0, 0, TEX, TEX);
+      const top = document.createElement("canvas");
+      top.width = TEX; top.height = TEX;
+      top.getContext("2d").putImageData(out, 0, 0);
+      g.drawImage(top, 0, 0);
+    }
+    M.texs[floor] = c;
+    schedulePaint();
+  };
+  if (im.complete && im.naturalWidth) make(); else im.addEventListener("load", make, { once: true });
+  return M.texs[floor];
+}
+
+// One tile of the top view: its picture when zoomed in enough, else its colour.
+function drawTile(g, def, x, y, z) {
+  const tex = def && M.tex && z >= 8 ? tileTex(def.floor) : null;
+  if (tex) g.drawImage(tex, x, y, z, z);
+  else { g.fillStyle = def ? (M.colors[def.floor] || "#444") : "#f0f"; g.fillRect(x, y, z, z); }
+  // Blocked but drawn flat (deep water, a fence floor): a dark inner mark.
+  if (def?.blocks_movement && z >= 6 && !(tex && M.tiles?.[def.floor]?.wall)) {
+    g.fillStyle = "rgba(0,0,0,.28)";
+    g.fillRect(x + z * .2, y + z * .2, z * .6, z * .6);
+  }
+}
+
 // What a floor is called on the page: its sprite name, readable.
 function tileName(floor) {
   const s = M.tiles?.[floor]?.sprite;
@@ -354,14 +441,34 @@ document.addEventListener("keydown", (e) => {
   if (mod && k === "z" && !typing) { e.preventDefault(); if (e.shiftKey) redoMap(); else undoMap(); return; }
   if (mod && k === "y" && !typing) { e.preventDefault(); redoMap(); return; }
   if (typing || mod || e.altKey) return;
+  // Space held: the mouse drags the map instead of painting.
+  if (e.key === " ") { e.preventDefault(); if (!M.space) { M.space = true; const c = $("map"); if (c) c.style.cursor = "grab"; } return; }
+  // Tab: between painting and the game view.
+  if (e.key === "Tab" && M.view !== "world") { e.preventDefault(); M.view = M.view === "game" ? "zone" : "game"; redraw(); return; }
+  // 1 to 9: the tiles of the legend, in order.
+  if (/^[1-9]$/.test(e.key) && M.view !== "world") {
+    const ch = Object.keys(S.value.legend || {})[+e.key - 1];
+    if (ch !== undefined) { M.ch = ch; if (!TILE_TOOLS.includes(M.tool)) M.tool = "paint"; redraw(); }
+    return;
+  }
   if ((e.key === "Delete" || e.key === "Backspace") && M.sel) { e.preventDefault(); deleteSel(); return; }
   if (e.key === "Escape" && M.sel) { M.sel = null; redraw(); return; }
+  if (M.view === "game" && (e.key === "+" || e.key === "=" || e.key === "-")) { gameZoom(e.key === "-" ? 1 / 1.25 : 1.25); return; }
+  if (M.view === "game" && e.key === "0") { M.cam = null; paintGame(); return; }
   if (M.view !== "world" && (e.key === "+" || e.key === "=" || e.key === "-")) { setZoom(ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, zoomStep(M.zoom) + (e.key === "-" ? -1 : 1)))]); return; }
   if (M.view !== "world" && e.key === "0") { fitZoom(); return; }
   if (e.key === "\\") { toggleFocus(); return; }
-  if (e.key === "[" || e.key === "]") { M.brush = Math.max(1, Math.min(9, M.brush + (e.key === "]" ? 2 : -2))); redraw(); return; }
+  if (e.key === "[" || e.key === "]") {
+    const i = BRUSHES.indexOf(M.brush) + (e.key === "]" ? 1 : -1);
+    M.brush = BRUSHES[Math.max(0, Math.min(BRUSHES.length - 1, i))] ?? 1; redraw(); return;
+  }
   const tool = TOOLS.find((x) => x.key === k);
-  if (tool) { M.tool = tool.id; M.drag = null; redraw(); }
+  if (tool) { M.tool = tool.id; M.drag = null; if (M.view === "game") M.view = "zone"; redraw(); }
+});
+document.addEventListener("keyup", (e) => {
+  if (e.key !== " " || !M.space) return;
+  M.space = false;
+  const c = $("map"); if (c) c.style.cursor = "";
 });
 
 // ---------- the page ----------
@@ -382,12 +489,14 @@ function toggleFocus() {
 function mapPanel() {
   M.zoom = Math.min(M.zoom, maxZoom());
   const out = el("div", {});
-  const world = M.view === "world";
-  // The two ways to look at a zone, always in sight: its tiles, or where
-  // it sits among the others (how zones are joined).
+  const world = M.view === "world", game = M.view === "game";
+  // The ways to look at a zone, always in sight: its tiles to paint, the
+  // zone as the game draws it, or where it sits among the others.
   out.append(el("div", { class: "mapmodes" },
-    el("button", { class: !world ? "on" : "", onclick: () => { M.view = "zone"; redraw(); } },
+    el("button", { class: !world && !game ? "on" : "", onclick: () => { M.view = "zone"; redraw(); } },
       el("span", { class: "glyph" }, "✎"), t("editor.map.mode_edit")),
+    el("button", { class: game ? "on" : "", title: "Tab", onclick: () => { M.view = "game"; redraw(); } },
+      el("span", { class: "glyph" }, "◇"), t("editor.map.mode_game")),
     el("button", { class: world ? "on" : "", onclick: () => { M.view = "world"; redraw(); } },
       el("span", { class: "glyph" }, "◫"), t("editor.map.mode_world")),
     el("button", { class: "focusbtn", title: "\\", onclick: toggleFocus },
@@ -396,6 +505,11 @@ function mapPanel() {
   if (world) {
     out.append(worldPage());
     setTimeout(paintBigWorld);
+    return out;
+  }
+  if (game) {
+    out.append(gamePage());
+    setTimeout(startGame);
     return out;
   }
   const box = el("div", { class: "mapgrid" });
@@ -461,6 +575,7 @@ function canvasColumn() {
   col.append(el("div", { class: "toolbar mapbar" },
     el("span", { class: "tool-help" }, el("b", {}, t("editor.map." + M.tool)), " · ", t("editor.map.help." + M.tool)),
     el("div", { class: "grow" }),
+    el("label", { class: "check", title: t("editor.map.pictures_hint") }, el("input", { type: "checkbox", checked: M.tex, onchange: (e) => { M.tex = e.target.checked; paint(); } }), t("editor.map.pictures")),
     el("label", { class: "check" }, el("input", { type: "checkbox", checked: M.grid, onchange: (e) => { M.grid = e.target.checked; paint(); } }), t("editor.map.grid")),
     el("label", { class: "check" }, el("input", { type: "checkbox", checked: M.seam, onchange: (e) => { M.seam = e.target.checked; paint(); } }), t("editor.map.seam")),
     el("label", { class: "hint" }, t("editor.map.zoom")), zoom,
@@ -470,7 +585,8 @@ function canvasColumn() {
   canvas.addEventListener("mousedown", onDown);
   canvas.addEventListener("mousemove", onMove);
   canvas.addEventListener("mouseleave", () => { M.hover = null; paint(); });
-  const wrap = el("div", { class: "mapwrap", id: "mapwrap", onscroll: (e) => { M.scroll = { x: e.target.scrollLeft, y: e.target.scrollTop }; } }, canvas);
+  canvas.addEventListener("auxclick", (e) => e.preventDefault());
+  const wrap = el("div", { class: "mapwrap", id: "mapwrap", onscroll: (e) => { M.scroll = { x: e.target.scrollLeft, y: e.target.scrollTop }; schedulePaint(); } }, canvas);
   // On the whole box, not just the canvas: Ctrl + wheel over the dark
   // margin must not zoom the browser page instead.
   wrap.addEventListener("wheel", onWheel, { passive: false });
@@ -482,6 +598,7 @@ function canvasColumn() {
 function sideColumn() {
   const col = el("div", { class: "mapside" });
   col.append(toolOptions());
+  col.append(previewCard());
   col.append(objectLists());
   col.append(zoneCard());
   return col;
@@ -537,15 +654,24 @@ function tilePalette() {
     if (def.blocks_sight) flags.push(el("span", { class: "tag" }, t("editor.map.tag_sight")));
     list.append(el("div", { class: "tile-row" + (M.ch === ch ? " on" : ""), onclick: () => { M.ch = ch; if (M.tool === "pick") M.tool = "paint"; redraw(); } },
       tileThumb(def.floor),
+      Object.keys(legend).indexOf(ch) < 9 ? el("kbd", { class: "tile-key" }, String(Object.keys(legend).indexOf(ch) + 1)) : null,
       el("div", { class: "tile-txt" }, el("b", {}, tileName(def.floor)),
         el("span", { class: "hint" }, `'${ch}' · ${counts[ch] || 0} ${t("editor.map.tiles_n")}`), el("div", {}, ...flags)),
       el("button", { class: "icon-btn", title: t("editor.map.tile_edit"), onclick: (e) => { e.stopPropagation(); editTile(ch); } }, "✎"),
       counts[ch] ? null : el("button", { class: "icon-btn", title: t("editor.remove"), onclick: (e) => { e.stopPropagation(); removeTile(ch); } }, "×")));
   }
   const brush = el("div", { class: "row2" });
-  if (M.tool === "paint") {
-    brush.append(el("label", {}, t("editor.map.brush"),
-      el("select", { onchange: (e) => { M.brush = +e.target.value; } }, [1, 3, 5, 7, 9].map((n) => el("option", { value: n, selected: M.brush === n }, `${n}×${n}`)))));
+  if (M.tool === "paint" || M.tool === "line") {
+    brush.append(el("label", { title: "[ ]" }, t("editor.map.brush"),
+      el("select", { onchange: (e) => { M.brush = +e.target.value; paint(); } }, BRUSHES.map((n) => el("option", { value: n, selected: M.brush === n }, `${n}×${n}`)))));
+  }
+  if (M.tool === "paint" || M.tool === "line" || M.tool === "rect") {
+    brush.append(el("label", { title: t("editor.map.density_hint") }, t("editor.map.density"),
+      el("select", { onchange: (e) => { M.density = +e.target.value; } }, DENSITIES.map((n) => el("option", { value: n, selected: M.density === n }, `${n}%`)))));
+  }
+  if (M.tool === "rect") {
+    brush.append(el("label", { class: "check" }, el("input", { type: "checkbox", checked: M.hollow,
+      onchange: (e) => { M.hollow = e.target.checked; } }), t("editor.map.hollow")));
   }
   return sideCard(t("editor.map.legend"), list,
     el("button", { class: "ghost wide", onclick: () => editTile(null) }, "+ ", t("editor.map.tile_new")),
@@ -993,7 +1119,22 @@ function cell(e) {
 function global(c) { const o = origin(); return { x: c.x + o.x, y: c.y + o.y }; }
 
 function onDown(e) {
+  // Space + drag, or the middle button: move the view.
+  if (e.button === 1 || (e.button === 0 && M.space)) {
+    e.preventDefault();
+    const wrap = $("mapwrap");
+    M.pan = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop };
+    e.currentTarget.style.cursor = "grabbing";
+    return;
+  }
   const c = cell(e);
+  // Alt + click with a tile tool: take the tile under the cursor.
+  if (e.button === 0 && e.altKey && TILE_TOOLS.includes(M.tool)) {
+    e.preventDefault();
+    const ch = Array.from(S.value.rows[c.y] || "")[c.x];
+    if (ch !== undefined) { M.ch = ch; redraw(); }
+    return;
+  }
   M.down = true;
   M.start = c; M.last = c;
   // Right button, any tool: what is placed under the cursor goes away.
@@ -1009,8 +1150,8 @@ function onDown(e) {
   if (tool === "select") { startSelect(c); return; }
   remember();
   const pos = global(c);
-  if (tool === "paint") { M.grid2 = mapRows(); stamp(c); }
-  else if (tool === "fill") { flood(c); commitRows(); M.down = false; }
+  if (tool === "paint") { M.grid2 = mapRows(); M.touched = new Set(); stamp(c); }
+  else if (tool === "fill") { if (e.shiftKey) replaceAll(c); else flood(c); commitRows(); M.down = false; }
   else if (tool === "rect" || tool === "line" || tool === "region") M.drag = { from: c, to: c };
   else if (tool === "npc" && M.npc) { S.extra.npcs.push({ npc: M.npc, pos }); M.sel = { k: "npcs", i: S.extra.npcs.length - 1 }; done(); }
   else if (tool === "monster" && M.monster) {
@@ -1025,6 +1166,14 @@ function onDown(e) {
 function done() { M.down = false; changed(); redraw(); }
 
 function onMove(e) {
+  if (M.pan) {
+    const wrap = $("mapwrap");
+    wrap.scrollLeft = M.pan.sl - (e.clientX - M.pan.x);
+    wrap.scrollTop = M.pan.st - (e.clientY - M.pan.y);
+    M.scroll = { x: wrap.scrollLeft, y: wrap.scrollTop };
+    schedulePaint();
+    return;
+  }
   const c = cell(e);
   M.hover = c;
   if (M.down && M.tool === "paint" && M.grid2) { lineCells(M.last ?? c, c).forEach(stamp); }
@@ -1036,6 +1185,7 @@ function onMove(e) {
 }
 
 function onUp() {
+  if (M.pan) { M.pan = null; const c = $("map"); if (c) c.style.cursor = M.space ? "grab" : ""; return; }
   if (M.drag && M.down) {
     const { from, to } = M.drag;
     if (M.tool === "region" && S.extra.zone) {
@@ -1046,8 +1196,9 @@ function onUp() {
       M.drag = null; M.down = false; changed(); redraw(); return;
     }
     M.grid2 = mapRows();
-    const cells = M.tool === "rect" ? rectCells(from, to) : lineCells(from, to);
-    cells.forEach(M.tool === "line" ? stamp : put);
+    M.touched = new Set();
+    const cells = M.tool === "rect" ? rectCells(from, to, M.hollow) : lineCells(from, to);
+    cells.forEach(M.tool === "line" ? stamp : scatter);
     commitRows();
     M.drag = null;
   }
@@ -1057,6 +1208,7 @@ function onUp() {
 }
 
 function commitRows() {
+  M.touched = null;
   if (!M.grid2) return;
   S.value.rows = M.grid2.map((r) => r.join(""));
   M.grid2 = null;
@@ -1071,9 +1223,28 @@ function put(c) {
   if (g[c.y] && c.x >= 0 && c.x < g[c.y].length) g[c.y][c.x] = M.ch;
 }
 
+// A cell of a stroke, painted or not by the density: each cell is rolled
+// once a stroke, so going over it again does not fill it in. Random only
+// here, in the editor: the map saved is plain tiles.
+function scatter(c) {
+  if (M.density >= 100) { put(c); return; }
+  const key = c.x + "," + c.y;
+  if (M.touched?.has(key)) return;
+  M.touched?.add(key);
+  if (Math.random() * 100 < M.density) put(c);
+}
+
 function stamp(c) {
   const half = (M.brush - 1) / 2;
-  for (let y = c.y - half; y <= c.y + half; y++) for (let x = c.x - half; x <= c.x + half; x++) put({ x, y });
+  for (let y = c.y - half; y <= c.y + half; y++) for (let x = c.x - half; x <= c.x + half; x++) scatter({ x, y });
+}
+
+// Shift + bucket: every tile of that kind in the zone, joined or not.
+function replaceAll(c) {
+  const g = M.grid2 = mapRows();
+  const from = g[c.y]?.[c.x];
+  if (from === undefined || from === M.ch) return;
+  for (const r of g) for (let x = 0; x < r.length; x++) if (r[x] === from) r[x] = M.ch;
 }
 
 // Every cell from a to b: a fast stroke leaves no gaps.
@@ -1084,10 +1255,12 @@ function lineCells(a, b) {
   return out;
 }
 
-function rectCells(a, b) {
+// Every cell of the rectangle, or only its border (walls of a house).
+function rectCells(a, b, hollow) {
   const out = [];
-  for (let y = Math.min(a.y, b.y); y <= Math.max(a.y, b.y); y++)
-    for (let x = Math.min(a.x, b.x); x <= Math.max(a.x, b.x); x++) out.push({ x, y });
+  const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++) if (!hollow || x === x0 || x === x1 || y === y0 || y === y1) out.push({ x, y });
   return out;
 }
 
@@ -1193,6 +1366,280 @@ function resize(w, h, anchor) {
   if (dx || dy) S.extra.zone.origin = { x: S.extra.zone.origin.x - dx, y: S.extra.zone.origin.y - dy };
 }
 
+// ---------- the zone as the game draws it ----------
+//
+// Isometric, with the same sprites, anchors and depth order as the replay
+// screen (replays.js): flat floors first, then walls and beings sorted by
+// depth. The neighbors' tiles show faded around the zone. Used by the
+// preview card while painting and by the full game view.
+
+// The tile at a global place: this zone's (being painted) or a neighbor's.
+function tileAtGlobal(gx, gy) {
+  const o = origin();
+  const rows = M.grid2 ?? M.rowsCache ?? mapRows();
+  const ch = rows[gy - o.y]?.[gx - o.x];
+  if (ch !== undefined) return { def: (S.value.legend || {})[ch], mine: true };
+  for (const z of M.world || []) {
+    const c = z.rows[gy - z.y]?.[gx - z.x];
+    if (c !== undefined) return { def: z.legend[c], mine: false };
+  }
+  return null;
+}
+
+// A placed thing's sprite: the `sprite` of its content file.
+function spriteOf(kind, id) {
+  return S.content.files.find((f) => f.kind === kind && f.id === id)?.brief?.sprite || "";
+}
+
+// Places around a monster spawn where the group's others are drawn: the
+// same every time (no randomness), inside the radius.
+function groupSpots(m) {
+  const n = Math.min(m.count ?? 1, 12), r = m.radius ?? 0;
+  const out = [{ x: m.pos.x, y: m.pos.y, ghost: false }];
+  for (let i = 1; i < n && r > 0; i++) {
+    const a = i * 2.399, d = r * Math.sqrt(i / n);
+    out.push({ x: m.pos.x + Math.round(Math.cos(a) * d), y: m.pos.y + Math.round(Math.sin(a) * d), ghost: true });
+  }
+  return out;
+}
+
+// Draws the scene on a canvas. cam: { k, cx, cy } (iso pixels at the
+// middle). hover: a global tile to mark. Returns the screen mapping.
+function isoScene(canvas, cam, hover) {
+  const g = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height, { k, cx, cy } = cam;
+  const scr = (x, y) => { const [ix, iy] = rpIso(x, y); return [W / 2 + (ix - cx) * k, H / 2 + (iy - cy) * k]; };
+  M.rowsCache = M.grid2 ?? mapRows();
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = "#05070a";
+  g.fillRect(0, 0, W, H);
+  // The tiles in sight: the screen corners turned back into tiles.
+  const back = (px, py) => {
+    const ix = cx + (px - W / 2) / k, iy = cy + (py - H / 2) / k;
+    return [(ix / RP_TW + iy / RP_TH) / 2, (iy / RP_TH - ix / RP_TW) / 2];
+  };
+  const cs = [back(0, 0), back(W, 0), back(0, H), back(W, H)];
+  const x0 = Math.floor(Math.min(...cs.map((c) => c[0]))) - 2, x1 = Math.ceil(Math.max(...cs.map((c) => c[0]))) + 4;
+  const y0 = Math.floor(Math.min(...cs.map((c) => c[1]))) - 2, y1 = Math.ceil(Math.max(...cs.map((c) => c[1]))) + 4;
+  const tall = [];
+  const diamond = (sx, sy, s = 1) => {
+    g.beginPath();
+    g.moveTo(sx, sy - RP_TH * k * s); g.lineTo(sx + RP_TW * k * s, sy); g.lineTo(sx, sy + RP_TH * k * s); g.lineTo(sx - RP_TW * k * s, sy);
+    g.closePath();
+  };
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const at = tileAtGlobal(x, y);
+      if (!at) continue;
+      const [sx, sy] = scr(x, y);
+      if (sx < -64 * k || sx > W + 64 * k || sy < -24 * k || sy > H + 120 * k) continue;
+      const look = at.def && M.tiles?.[at.def.floor];
+      const alpha = at.mine ? 1 : 0.45;
+      if (look?.wall) { tall.push({ d: x + y, wall: look.sprite || "", x, y, def: at.def, alpha }); continue; }
+      if (!(look?.sprite && rpSprite(g, look.sprite, null, sx, sy, k, 0, false, alpha))) {
+        g.globalAlpha = alpha;
+        g.fillStyle = at.def ? (M.colors[at.def.floor] || "#333") : "#f0f";
+        diamond(sx, sy); g.fill();
+        g.globalAlpha = 1;
+      }
+    }
+  }
+  // Regions on the ground, under everything that stands.
+  if (M.showRegions) {
+    for (const r of S.extra.zone?.regions || []) {
+      const p = [scr(r.min.x - .5, r.min.y - .5), scr(r.max.x + .5, r.min.y - .5), scr(r.max.x + .5, r.max.y + .5), scr(r.min.x - .5, r.max.y + .5)];
+      g.beginPath(); p.forEach(([a, b], i) => (i ? g.lineTo(a, b) : g.moveTo(a, b))); g.closePath();
+      g.fillStyle = (REGION_COLORS[r.kind] || "#fff") + "22"; g.fill();
+      g.strokeStyle = REGION_COLORS[r.kind] || "#fff"; g.lineWidth = 2; g.setLineDash([6, 4]); g.stroke(); g.setLineDash([]); g.lineWidth = 1;
+    }
+  }
+  if (hover && tileAtGlobal(hover.x, hover.y)?.mine) {
+    const [sx, sy] = scr(hover.x, hover.y);
+    g.strokeStyle = "#fff"; g.lineWidth = 2; diamond(sx, sy); g.stroke(); g.lineWidth = 1;
+  }
+  // What is placed on the map.
+  const being = (kind, id, pos, extra) => tall.push({ d: pos.x + pos.y + 0.01, x: pos.x, y: pos.y, sprite: spriteOf(kind, id), ...extra });
+  S.extra.npcs.forEach((n) => being("npc", n.npc, n.pos, { label: titleOf("npc", n.npc) || n.npc, color: "#ff8a5c" }));
+  S.extra.nodes.forEach((n) => being("gather_node", n.node, n.pos, { color: "#4fd1c5" }));
+  S.extra.monsters.forEach((m) => groupSpots(m).forEach((p, i) => being("monster", m.monster, p,
+    { label: i ? null : `${titleOf("monster", m.monster) || m.monster} ×${m.count ?? 1}`, color: "#c03cc0", alpha: p.ghost ? 0.5 : 1 })));
+  if (S.extra.zone?.spawn) tall.push({ d: S.extra.zone.spawn.x + S.extra.zone.spawn.y, x: S.extra.zone.spawn.x, y: S.extra.zone.spawn.y, spawn: true });
+  tall.sort((a, b) => a.d - b.d);
+  const labels = [];
+  for (const it of tall) {
+    const [sx, sy] = scr(it.x, it.y);
+    if (sx < -96 * k || sx > W + 96 * k || sy < -24 * k || sy > H + 140 * k) continue;
+    if (it.wall !== undefined) {
+      if (!(it.wall && rpSprite(g, it.wall, null, sx, sy, k, 0, false, it.alpha))) {
+        g.globalAlpha = it.alpha;
+        g.fillStyle = M.colors[it.def?.floor] || "#555";
+        g.fillRect(sx - RP_TW * k * 0.6, sy - 40 * k, RP_TW * k * 1.2, 40 * k);
+        g.globalAlpha = 1;
+      }
+      continue;
+    }
+    if (it.spawn) {
+      const r = S.extra.zone.spawn_radius ?? 0;
+      g.strokeStyle = "#ffe14d"; g.lineWidth = 2;
+      diamond(sx, sy, r + 0.5); g.stroke();
+      g.fillStyle = "#ffe14d"; g.font = `bold ${Math.max(12, 22 * k)}px system-ui`; g.textAlign = "center";
+      g.fillText("★", sx, sy + 6 * k); g.lineWidth = 1;
+      labels.push({ sx, sy, text: t("editor.map.spawn"), color: "#ffe14d" });
+      continue;
+    }
+    if (!(it.sprite && rpSprite(g, it.sprite, null, sx, sy, k, 0, false, it.alpha ?? 1))) {
+      g.globalAlpha = it.alpha ?? 1;
+      g.beginPath(); g.arc(sx, sy - 12 * k, Math.max(3, 10 * k), 0, Math.PI * 2);
+      g.fillStyle = it.color; g.fill(); g.globalAlpha = 1;
+    }
+    if (it.label) labels.push({ sx, sy, text: it.label, color: it.color });
+  }
+  if (M.showNames && k >= 0.4) {
+    g.textAlign = "center";
+    g.font = `${Math.max(11, Math.round(12 * Math.min(k, 1.6)))}px system-ui`;
+    for (const l of labels) {
+      const top = l.sy - 60 * k;
+      g.fillStyle = "rgba(0,0,0,.75)"; g.fillText(l.text, l.sx + 1, top + 1);
+      g.fillStyle = l.color; g.fillText(l.text, l.sx, top);
+    }
+  }
+  g.textAlign = "start";
+  return { scr, back };
+}
+
+// The camera that shows the whole zone on a canvas of W×H.
+function fitCam(W, H) {
+  const o = origin(), { w, h } = mapSize();
+  const [ax] = rpIso(o.x, o.y + h), [bx] = rpIso(o.x + w, o.y);
+  const [, ay] = rpIso(o.x, o.y), [, by] = rpIso(o.x + w, o.y + h);
+  const k = Math.max(0.1, Math.min(4, W / (bx - ax + 64), H / (by - ay + 96)));
+  return { k, cx: (ax + bx) / 2, cy: (ay + by) / 2 };
+}
+
+// ----- preview card: the area under the cursor, live -----
+
+function previewCard() {
+  const c = el("canvas", { id: "mappreview", width: 256, height: 180, title: t("editor.map.preview_open"),
+    ondblclick: () => { M.view = "game"; M.cam = null; redraw(); } });
+  return el("details", { class: "mapcard", open: storeGet("editor.mapPreview") !== "0",
+    ontoggle: (e) => { storeSet("editor.mapPreview", e.target.open ? "1" : "0"); paintPreview(); } },
+  el("summary", {}, "◇ ", t("editor.map.preview")), c, el("p", { class: "hint" }, t("editor.map.preview_hint")));
+}
+
+function paintPreview() {
+  const c = $("mappreview");
+  if (!c || !c.closest("details")?.open || !S.extra?.zone) return;
+  // Follows the cursor; stays on the last place when the mouse leaves.
+  const hv = M.hover && global(M.hover);
+  if (hv && tileAtGlobal(hv.x, hv.y)?.mine) M.focus = hv;
+  const f = M.focus ?? S.extra.zone.spawn;
+  const [cx, cy] = rpIso(f.x, f.y);
+  isoScene(c, { k: 0.75, cx, cy: cy - 12 }, M.hover ? global(M.hover) : null);
+}
+
+// ----- the full game view -----
+
+function gamePage() {
+  const canvas = el("canvas", { id: "mapgame", oncontextmenu: (e) => e.preventDefault() });
+  canvas.addEventListener("mousedown", (e) => { M.gameDrag = { x: e.clientX, y: e.clientY, cx: M.cam.cx, cy: M.cam.cy }; canvas.style.cursor = "grabbing"; });
+  canvas.addEventListener("mousemove", gameMove);
+  canvas.addEventListener("mouseleave", () => { M.gameHover = null; });
+  canvas.addEventListener("dblclick", gameOpenTile);
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    gameZoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, (e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height);
+  }, { passive: false });
+  window.onmouseup = () => { M.gameDrag = null; canvas.style.cursor = ""; };
+  const check = (key, label) => el("label", { class: "check" }, el("input", { type: "checkbox", checked: M[key],
+    onchange: (e) => { M[key] = e.target.checked; paintGame(); } }), label);
+  return el("div", {},
+    el("div", { class: "toolbar mapbar" },
+      el("span", { class: "tool-help" }, t("editor.map.game_hint")),
+      el("div", { class: "grow" }),
+      check("showRegions", t("editor.map.list_regions")),
+      check("showNames", t("editor.map.names")),
+      el("button", { class: "sm", title: "0", onclick: () => { M.cam = null; paintGame(); } }, t("editor.map.fit")),
+      el("button", { class: "sm primary", title: "Tab", onclick: () => { M.view = "zone"; redraw(); } }, "✎ ", t("editor.map.mode_edit"))),
+    el("div", { class: "gamewrap" }, canvas),
+    el("div", { id: "gameinfo", class: "hint" }, t("editor.map.hover_hint_game")));
+}
+
+function startGame() {
+  const c = $("mapgame");
+  if (!c) return;
+  const loop = () => {
+    // Stops by itself when the view is left; ~12 frames a second plays water and fire.
+    if (!$("mapgame") || M.view !== "game") return;
+    paintGame();
+    setTimeout(() => requestAnimationFrame(loop), 80);
+  };
+  loop();
+}
+
+function paintGame() {
+  const c = $("mapgame");
+  if (!c) return;
+  const box = c.parentElement;
+  const W = box.clientWidth, H = Math.max(320, window.innerHeight - c.getBoundingClientRect().top - 40);
+  if (c.width !== W) c.width = W;
+  if (c.height !== H) c.height = H;
+  if (!M.cam) M.cam = fitCam(W, H);
+  c._view = isoScene(c, M.cam, M.gameHover);
+}
+
+function gameTile(e) {
+  const c = e.currentTarget, v = c._view;
+  if (!v) return null;
+  const r = c.getBoundingClientRect();
+  const [x, y] = v.back((e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height);
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+function gameMove(e) {
+  const d = M.gameDrag;
+  if (d) {
+    M.cam.cx = d.cx - (e.clientX - d.x) / M.cam.k;
+    M.cam.cy = d.cy - (e.clientY - d.y) / M.cam.k;
+    return;
+  }
+  const p = gameTile(e);
+  M.gameHover = p;
+  const box = $("gameinfo");
+  if (!box || !p) return;
+  const at = tileAtGlobal(p.x, p.y);
+  if (!at?.mine) { box.textContent = t("editor.map.hover_hint_game"); return; }
+  const o = origin();
+  const parts = [`(${p.x}, ${p.y})`, at.def ? tileName(at.def.floor) : "?"];
+  if (at.def?.blocks_movement) parts.push(t("editor.map.tag_blocks"));
+  const h = hit({ x: p.x - o.x, y: p.y - o.y });
+  if (h) parts.push(h.k === "spawn" ? t("editor.map.spawn") : h.k === "regions" ? vlabel(listOf(h.k)[h.i].kind) : "●");
+  box.textContent = parts.join(" · ");
+}
+
+// Zooms the game view by f keeping the point (px, py) of the canvas still.
+function gameZoom(f, px, py) {
+  const c = $("mapgame");
+  if (!c || !M.cam) return;
+  px ??= c.width / 2; py ??= c.height / 2;
+  const k = Math.max(0.1, Math.min(4, M.cam.k * f));
+  const ix = M.cam.cx + (px - c.width / 2) / M.cam.k, iy = M.cam.cy + (py - c.height / 2) / M.cam.k;
+  M.cam = { k, cx: ix - (px - c.width / 2) / k, cy: iy - (py - c.height / 2) / k };
+}
+
+// Double click: back to painting, centred on that tile.
+function gameOpenTile(e) {
+  const p = gameTile(e);
+  if (!p || !tileAtGlobal(p.x, p.y)?.mine) return;
+  const o = origin();
+  M.view = "zone";
+  const z = Math.max(M.zoom, 16);
+  M.zoom = Math.min(ZOOMS[zoomStep(z)], maxZoom());
+  M.scroll = { x: (p.x - o.x + PAD) * M.zoom - 400, y: (p.y - o.y + PAD) * M.zoom - 300 };
+  M.hover = { x: p.x - o.x, y: p.y - o.y };
+  redraw();
+}
+
 // ---------- drawing ----------
 
 function schedulePaint() {
@@ -1231,10 +1678,7 @@ function paintNeighbors(g, w, h) {
     g.globalAlpha = .5;
     for (let gy = Math.max(n.y, o.y - PAD); gy < Math.min(n.y + n.h, o.y + h + PAD); gy++) {
       for (let gx = Math.max(n.x, o.x - PAD); gx < Math.min(n.x + n.w, o.x + w + PAD); gx++) {
-        const d = n.legend[n.rows[gy - n.y]?.[gx - n.x]];
-        g.fillStyle = d ? (M.colors[d.floor] || "#444") : "#f0f";
-        g.fillRect((gx - o.x) * z, (gy - o.y) * z, z, z);
-        if (d?.blocks_movement && z >= 6) { g.fillStyle = "rgba(0,0,0,.4)"; g.fillRect((gx - o.x) * z + z * .2, (gy - o.y) * z + z * .2, z * .6, z * .6); }
+        drawTile(g, n.legend[n.rows[gy - n.y]?.[gx - n.x]], (gx - o.x) * z, (gy - o.y) * z, z);
       }
     }
     g.globalAlpha = 1;
@@ -1273,15 +1717,16 @@ function paint() {
   g.translate(PAD * z, PAD * z);
   paintNeighbors(g, rows[0]?.length ?? 0, rows.length);
   const legend = S.value.legend || {};
-  rows.forEach((r, y) => r.forEach((ch, x) => {
-    const def = legend[ch];
-    g.fillStyle = def ? (M.colors[def.floor] || "#444") : "#f0f";
-    g.fillRect(x * z, y * z, z, z);
-    if (def?.blocks_movement && z >= 6) {
-      g.fillStyle = "rgba(0,0,0,.28)";
-      g.fillRect(x * z + z * .2, y * z + z * .2, z * .6, z * .6);
-    }
-  }));
+  // Only the tiles in sight of the scrolled box are drawn.
+  const wrap = $("mapwrap");
+  const vx0 = wrap ? Math.max(0, Math.floor((wrap.scrollLeft - c.offsetLeft) / z) - PAD - 1) : 0;
+  const vy0 = wrap ? Math.max(0, Math.floor((wrap.scrollTop - c.offsetTop) / z) - PAD - 1) : 0;
+  const vx1 = wrap ? vx0 + Math.ceil(wrap.clientWidth / z) + 3 : Infinity;
+  const vy1 = wrap ? vy0 + Math.ceil(wrap.clientHeight / z) + 3 : Infinity;
+  for (let y = vy0; y < Math.min(rows.length, vy1); y++) {
+    const r = rows[y];
+    for (let x = vx0; x < Math.min(r.length, vx1); x++) drawTile(g, legend[r[x]], x * z, y * z, z);
+  }
   if (M.grid && z >= 8) {
     g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = 1;
     g.beginPath();
@@ -1316,13 +1761,19 @@ function paint() {
     const b = global({ x: Math.max(from.x, to.x), y: Math.max(from.y, to.y) });
     if (M.tool === "region") rect(a, b, REGION_COLORS[M.region], true);
     else {
-      const cells = M.tool === "rect" ? rectCells(from, to) : lineCells(from, to);
+      const cells = M.tool === "rect" ? rectCells(from, to, M.hollow) : lineCells(from, to);
       const def = legend[M.ch];
-      g.fillStyle = def ? M.colors[def.floor] || "#888" : "#888";
-      g.globalAlpha = .7;
+      g.globalAlpha = .75;
       const half = M.tool === "line" ? (M.brush - 1) / 2 : 0;
-      for (const p of cells) g.fillRect((p.x - half) * z, (p.y - half) * z, z * (half * 2 + 1), z * (half * 2 + 1));
+      for (const p of cells) {
+        for (let yy = p.y - half; yy <= p.y + half; yy++) for (let xx = p.x - half; xx <= p.x + half; xx++) drawTile(g, def, xx * z, yy * z, z);
+      }
       g.globalAlpha = 1;
+      // Size while dragging: how many tiles across and down.
+      const n = `${Math.abs(to.x - from.x) + 1}×${Math.abs(to.y - from.y) + 1}`;
+      g.font = "bold 12px system-ui";
+      g.fillStyle = "rgba(0,0,0,.75)"; g.fillRect(to.x * z + z + 4, to.y * z - 4, g.measureText(n).width + 8, 16);
+      g.fillStyle = "#fff"; g.fillText(n, to.x * z + z + 8, to.y * z + 8);
     }
   }
   const label = (a, text) => {
@@ -1360,9 +1811,18 @@ function paint() {
     dot(s, "#ffe14d", t("editor.map.spawn"), sel("spawn", 0));
   }
   const h = M.hover;
-  if (h && rows[h.y]?.[h.x] !== undefined && !M.drag) {
+  if (h && rows[h.y]?.[h.x] !== undefined && !M.drag && !M.pan && !M.space) {
+    const b = M.tool === "paint" || M.tool === "line" ? M.brush : 1, half = (b - 1) / 2;
+    // A tile tool shows what it will paint, faded, under the cursor.
+    if (TILE_TOOLS.includes(M.tool) && !M.down) {
+      g.globalAlpha = .55;
+      for (let yy = h.y - half; yy <= h.y + half; yy++) for (let xx = h.x - half; xx <= h.x + half; xx++) {
+        if (rows[yy]?.[xx] !== undefined) drawTile(g, legend[M.ch], xx * z, yy * z, z);
+      }
+      g.globalAlpha = 1;
+    }
     g.strokeStyle = "#fff";
-    const b = M.tool === "paint" ? M.brush : 1, half = (b - 1) / 2;
     g.strokeRect((h.x - half) * z + .5, (h.y - half) * z + .5, z * b - 1, z * b - 1);
   }
+  paintPreview();
 }
