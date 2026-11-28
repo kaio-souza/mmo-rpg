@@ -738,6 +738,7 @@ pub fn sheet_to_sim(name: base::CharacterName, saved: &persistence::SavedSheet) 
                 techniques: p.techniques.clone(),
                 titles: p.titles.clone(),
                 counters: p.counters.clone(),
+                karma: p.karma,
             }
         },
         items: saved.items.iter().map(item_to_sim).collect(),
@@ -799,6 +800,7 @@ pub fn sheet_to_saved(sheet: &sim::CharacterSheet) -> persistence::SavedSheet {
                 techniques: p.techniques.clone(),
                 titles: p.titles.clone(),
                 counters: p.counters.clone(),
+                karma: p.karma,
             }
         },
         items: sheet.items.iter().map(item_to_saved).collect(),

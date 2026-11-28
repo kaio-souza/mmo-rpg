@@ -1107,3 +1107,19 @@ async fn dungeon_clears_and_lockouts() {
     );
     assert!(r.lockouts(150).await.unwrap().is_empty(), "over");
 }
+
+#[tokio::test]
+async fn server_goals_are_saved_and_updated() {
+    let r = repo();
+    assert!(r.server_goals().await.unwrap().is_empty());
+    r.save_server_goals(vec![("cull".into(), 40, None), ("feast".into(), 3, None)])
+        .await
+        .unwrap();
+    r.save_server_goals(vec![("cull".into(), 100, Some(77))])
+        .await
+        .unwrap();
+    assert_eq!(
+        r.server_goals().await.unwrap(),
+        vec![("cull".to_owned(), 100, Some(77)), ("feast".to_owned(), 3, None)]
+    );
+}

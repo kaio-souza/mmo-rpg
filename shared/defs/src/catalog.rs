@@ -61,6 +61,8 @@ pub struct Catalog {
     pub(crate) rankings: BTreeMap<String, String>,
     /// `dungeons/`.
     pub(crate) dungeons: BTreeMap<String, String>,
+    /// `goals/`: server goals.
+    pub(crate) goals: BTreeMap<String, String>,
     /// `counters.ron` and the three formula files.
     pub(crate) counters: Option<String>,
     pub(crate) progression_formulas: Option<String>,
@@ -122,6 +124,8 @@ pub struct ValidatedCatalog {
     rankings: Vec<crate::RankingDef>,
     /// Sorted by id.
     dungeons: Vec<crate::DungeonDef>,
+    /// Server goals, sorted by id.
+    goals: Vec<crate::GoalDef>,
     /// Sprite names used by NPCs, monsters and equipment, sorted; entity
     /// `appearance` and equipment visuals are the position + 1 (0: none).
     sprites: Vec<String>,
@@ -471,6 +475,7 @@ impl Catalog {
             recipes: &recipe_ids,
             techniques: &tech_ids,
             monsters: &monster_ids,
+            goals: &self.goals,
         };
         let key =
             |problems: &mut Vec<ContentProblem>, k: String, problem: &dyn Fn(String) -> ContentProblem| {
@@ -830,6 +835,22 @@ impl Catalog {
                 |path, message| p.push(ContentProblem::File { path, message }),
             )
         };
+        let goals = {
+            let p = &mut problems;
+            let (monsters, quests, dungeon_files) = (&self.monsters, &self.quests, &self.dungeons);
+            crate::goal::validate_goals(
+                &self.goals,
+                &keys,
+                &phase4.counters,
+                |family, key| match progress::counter_key_kind(family) {
+                    Some("monster") => monsters.contains_key(key),
+                    Some("quest") => quests.contains_key(key),
+                    Some("dungeon") => dungeon_files.contains_key(key),
+                    _ => false,
+                },
+                |path, message| p.push(ContentProblem::File { path, message }),
+            )
+        };
         for zone in &zones {
             for (i, spawn) in zone.nodes.iter().enumerate() {
                 if !node_ids.contains_key(&spawn.node) {
@@ -1007,6 +1028,7 @@ impl Catalog {
             emotes,
             rankings,
             dungeons,
+            goals,
             sprites: sprites.into_iter().collect(),
             icons: icons.into_iter().collect(),
             hash: hash.finish(),
@@ -1930,6 +1952,11 @@ impl ValidatedCatalog {
         &self.rankings
     }
 
+    /// Server goals, sorted by id.
+    pub fn goals(&self) -> &[crate::GoalDef] {
+        &self.goals
+    }
+
     pub fn emotes(&self) -> impl Iterator<Item = (EmoteId, &EmoteDef)> {
         self.emotes
             .iter()
@@ -2227,6 +2254,15 @@ impl Catalog {
                 TitleTriggerFile::Level(l) => TitleTrigger::Level(l),
                 TitleTriggerFile::Counter { family, key, at } => TitleTrigger::Counter { family, key, at },
                 TitleTriggerFile::Attribute(a, v) => TitleTrigger::Attribute(a, v),
+                TitleTriggerFile::Karma(v) => {
+                    if !(-crate::KARMA_MAX..=crate::KARMA_MAX).contains(&v) {
+                        err(
+                            path.clone(),
+                            format!("karma {v} must be -{0} to {0}", crate::KARMA_MAX),
+                        );
+                    }
+                    TitleTrigger::Karma(v)
+                }
                 TitleTriggerFile::Proficiency(p, v) => match prof_ids.get(&p) {
                     Some(&id) => TitleTrigger::Proficiency(id, v),
                     None => {

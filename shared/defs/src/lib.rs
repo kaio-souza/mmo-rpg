@@ -18,6 +18,7 @@ mod economy;
 pub mod editor;
 mod emote;
 mod formulas;
+mod goal;
 mod item;
 mod load;
 mod locales;
@@ -42,6 +43,7 @@ pub use economy::{
 };
 pub use emote::{DEFAULT_EMOTE_COOLDOWN_TICKS, EmoteDef, emote_name_key};
 pub use formulas::{Attributes, CombatFormulas, EconomyFormulas, Formulas, ProgressionFormulas};
+pub use goal::{GoalDef, goal_desc_key, goal_name_key};
 pub use item::{
     Binding, Equip, HiddenRoll, ItemDef, ItemLight, MAX_LIGHT_RADIUS, MAX_STACK, UseEffect, item_desc_key,
     item_name_key,
@@ -58,7 +60,7 @@ pub use progress::{
 };
 pub use quest::{MAX_OBJECTIVES, Objective, QuestDef, Rank, Reward, quest_desc_key, quest_name_key};
 pub use rank::{MAX_RANKING_SIZE, RankBy, RankingDef, ranking_name_key};
-pub use rules::{AFFINITY_MAX, Condition, Effect, MAX_EFFECTS, QuestStatus};
+pub use rules::{AFFINITY_MAX, Condition, Effect, KARMA_MAX, MAX_EFFECTS, QuestStatus};
 pub use sound::{
     DEFAULT_MUSIC_FADE, EventSounds, FULL_VOLUME, MAX_SOUND_VARIANTS, MUSIC_SCREENS, SOUND_LICENSES,
     SOUND_SAMPLE_RATE, ScreenMusic, SoundConfig, SoundEvent, SoundFile, ZoneMusic,

@@ -17,6 +17,8 @@ struct Who<'a> {
     sheet: &'a progression::ProgressionSheet,
     /// The zone's unix second (cooldown of repeatable quests).
     now: u64,
+    /// Server goals reached.
+    goals_done: &'a std::collections::BTreeSet<String>,
 }
 
 fn holds(cat: &ValidatedCatalog, who: Who<'_>, npc: NpcId, c: &Condition) -> bool {
@@ -32,6 +34,8 @@ fn holds(cat: &ValidatedCatalog, who: Who<'_>, npc: NpcId, c: &Condition) -> boo
         Condition::Not(c) => !holds(cat, who, npc, c),
         Condition::RecipeKnown(r) => data.knows_recipe(*r),
         Condition::TechniqueKnown(t) => who.sheet.technique(*t).is_some(),
+        Condition::Karma(min) => who.sheet.karma >= *min,
+        Condition::GoalDone(g) => who.goals_done.contains(g),
     }
 }
 
@@ -97,6 +101,7 @@ impl Zone {
             data: &p.data,
             sheet: &p.growth.sheet,
             now: self.now_unix,
+            goals_done: &self.goals_done,
         };
         let shown = visible(cat, who, npc, node);
         let out = DialogueOut::Show {
@@ -152,6 +157,7 @@ impl Zone {
             data: &current,
             sheet: &sheet,
             now: self.now_unix,
+            goals_done: &self.goals_done,
         };
         if chosen.when.as_ref().is_some_and(|c| !holds(cat, who, npc, c)) {
             return Err(Refusal::RequirementsNotMet);
@@ -160,8 +166,10 @@ impl Zone {
         // Techniques live in the sheet: taught once the rest succeeded.
         let mut taught = Vec::new();
         let mut teleport = None;
+        let mut karma = 0i32;
         for effect in &chosen.effects {
             match effect {
+                Effect::Karma(d) => karma = karma.saturating_add(*d),
                 Effect::LearnTechnique(t) => taught.push(*t),
                 Effect::Teleport(p) => teleport = Some(*p),
                 Effect::CompleteQuest(q) => {
@@ -187,6 +195,9 @@ impl Zone {
             p.dirty_stats |= data.recipes != current.recipes;
             p.data = data;
         }
+        if karma != 0 {
+            p.growth.sheet.change_karma(karma);
+        }
         for t in taught {
             if progression::learn_technique(&mut p.growth.sheet, t).is_some() {
                 p.dirty_stats = true;
@@ -206,6 +217,7 @@ impl Zone {
             data: &p.data,
             sheet: &p.growth.sheet,
             now: self.now_unix,
+            goals_done: &self.goals_done,
         };
         let shown = visible(cat, who, npc, next_node);
         let out = DialogueOut::Show {
@@ -244,7 +256,7 @@ impl Zone {
                 data.learn(*r);
             }
             // Applied by `choose` on the sheet.
-            Effect::LearnTechnique(_) | Effect::Teleport(_) => {}
+            Effect::LearnTechnique(_) | Effect::Teleport(_) | Effect::Karma(_) => {}
             Effect::StartQuest(q) => data.start(cat, *q, self.now_unix).map_err(fail)?,
             Effect::CompleteQuest(q) => data.complete(cat, *q, self.now_unix).map_err(fail)?,
             Effect::Affinity(d) => data.change_affinity(npc, *d),

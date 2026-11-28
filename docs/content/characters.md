@@ -55,6 +55,7 @@ A blow (`damage_permille` above 0) may also carry `area: 2` (every monster withi
 | `Counter(family: "kills", key: "wolf", at: 100)` (empty key: family total) | `MaxHp(n)`, `MaxVigor(n)` |
 | `Proficiency("sword", 50)` | `Percent(Damage | Xp | MaxMp, n)` |
 | `Attribute(Str, 30)` (base value) | `PercentUntilLevel(Xp, 5, 10)` |
+| `Karma(300)` at least; `Karma(-300)` at most (the cruel) | |
 | | `Special("faith", n)` |
 
 A title that `replaces` others removes them when earned, and they are never earned again while it is owned. Titles also serve as class requirements and show identity.
@@ -72,6 +73,16 @@ A title that `replaces` others removes them when earned, and they are never earn
 ```
 
 The gateway builds them from the saved characters at most every 5 minutes; characters at zero are left out.
+
+## Server goals
+
+`goals/<id>.ron` is one shared quest for the whole server ([D68](../decisions.md)): every count of a declared [counter](#counters) by any player adds to it. Texts: `goal.<id>.name` and `goal.<id>.desc`.
+
+```ron
+(family: "kills", key: "wolf", target: 500)   // empty key: the whole family
+```
+
+The whole server hears at 25, 50 and 75 % and when it is reached; then it is done for good and stops counting. Players read them with `/goals`. A reached goal opens dialogue options with `GoalDone("<id>")`. Counting starts when the goal enters the content (earlier kills do not count). Rewards, time limits and goals that come back are [world quests](../world-quests.md) work.
 
 ## Special attributes
 

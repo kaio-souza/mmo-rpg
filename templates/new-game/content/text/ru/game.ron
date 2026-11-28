@@ -9,6 +9,8 @@
     "item.wolf_pelt.desc": "Густой серый мех. Скорняки за него платят.",
     "item.wolf_pelt.name": "Волчья шкура",
     "monster.wolf.name": "Волк",
+    "goal.wolf_hunt.name": "Большая волчья охота",
+    "goal.wolf_hunt.desc": "Всем миром охотимся на 500 волков, чтобы дороги стали безопасными.",
     "proficiency.unarmed.name": "Безоружный бой",
     "item.rusty_sword.name": "Ржавый меч",
     "item.rusty_sword.desc": "Старый клинок, всё ещё достаточно острый.",

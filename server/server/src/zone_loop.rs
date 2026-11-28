@@ -261,6 +261,9 @@ impl ZoneTask {
         if !self.out.released.is_empty() {
             let _ = tx.send(FromZone::Released(std::mem::take(&mut self.out.released)));
         }
+        if !self.out.goals.is_empty() {
+            let _ = tx.send(FromZone::Goals(std::mem::take(&mut self.out.goals)));
+        }
         if !self.out.clears.is_empty() {
             let _ = tx.send(FromZone::Clears(std::mem::take(&mut self.out.clears)));
         }

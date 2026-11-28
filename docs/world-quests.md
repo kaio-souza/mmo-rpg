@@ -2,6 +2,8 @@
 
 Quests written in the editor that **the state of the world switches on and off**. Nothing is generated: the quest, its texts and its rewards are ordinary content with fixed ids ([D6](decisions.md)). What is new is *when* a quest is offered, *who pays* its reward and *when it is withdrawn*.
 
+The first step is built: [server goals](content/characters.md#server-goals), one shared target over a counter that the gateway sums for every zone ([D68](decisions.md)).
+
 The pattern comes from the Questless study (a persistent signal → patience → a funder escrows the reward → the quest is posted with its reason → it withdraws itself when the signal is gone), applied to the world instead of production. NPC shops already restock on their own, so supply quests are **not** a goal.
 
 ## The loop

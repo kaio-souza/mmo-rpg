@@ -186,6 +186,8 @@ pub(crate) struct Names<'a> {
     pub techniques: &'a BTreeMap<String, TechniqueId>,
     /// Monsters a quest may ask to defeat.
     pub monsters: &'a BTreeMap<String, base::MonsterId>,
+    /// Server goals a dialogue may wait for (`goals/`).
+    pub goals: &'a BTreeMap<String, String>,
 }
 
 pub(crate) fn parse_quest(

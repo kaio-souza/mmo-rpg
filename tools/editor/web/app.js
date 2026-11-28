@@ -242,6 +242,7 @@ const CATS = [
   { id: "special_attribute", kinds: ["special_attribute"] },
   { id: "ranking", kinds: ["ranking"] },
   { id: "dungeon", kinds: ["dungeon"] },
+  { id: "goal", kinds: ["goal"] },
   { id: "map", kinds: ["map"] },
   { id: "shop", kinds: ["shop"] },
   { id: "recipe", kinds: ["recipe"] },
@@ -409,7 +410,7 @@ const SECTIONS = [
   ["world", ["map", "npc", "monster", "gather_node", "shop", "dungeon"]],
   ["items", ["item", "recipe", "loot_table"]],
   ["progress", ["technique", "proficiency", "class", "title", "special_attribute", "ranking"]],
-  ["story", ["quest", "dialogue", "emote"]],
+  ["story", ["quest", "dialogue", "emote", "goal"]],
   ["system", ["advanced"]],
 ];
 

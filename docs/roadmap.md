@@ -18,6 +18,7 @@ The engine runs a complete game (the Riftara example: seven zones, combat, class
 | 8 | **Full world measured**: 2000 bots with combat spread over the example's zones | the targets in [performance](performance.md) are measured |
 | 9 | **`pack`**: grid and palette checks, cut CJK fonts, `assets.pak` | releases ship one checked file |
 | 11 | **Browser client in releases**: `mmo publish` writes the web folder (page, `.wasm`, `game.bundle`) beside the desktop package. *The client already builds for the browser ([web](web.md))* | a game is playable from a link |
+| 12 | **Touch and phones**: gestures, touch sizes in the theme, on-screen buttons, small-screen layout, steps T1 to T4 ([touch](touch.md)) | the template is playable on a phone in the browser |
 | 10 | **Layered characters**: body, hair and clothes recoloured by palette keys. *Engine done (body, clothes and hair layers tinted by skin and hair colours); first art in review in `testes-arte/layers-v1/`. Next: [character parts](character-parts.md), a look built from parts (body, hair, clothes) each with its options and palette, a "Character" screen in the editor, and the MVP tops, trousers and shoes as options* | a character's look is combinations, not one sprite each |
 
 ### The editor on a published game
@@ -74,6 +75,8 @@ Order by how many references each opens ([genre references](genre-references.md#
 | G7 | ✅ **Done: instances, step 3: `dungeons/` content and its editor form** ([dungeons](content/world.md#dungeons), [D64](decisions.md)). *Next for dungeons: stages, raids, the finder ([dungeons](dungeons-and-raids.md))* (party size, level, time limit, entrance, rewards), lockouts per character, fastest clears as a ranking | a designer makes a dungeon in the editor and a party clears it |
 | G8 | ✅ **Done: items unique per server** ([items](content/items-and-economy.md#items), [D65](decisions.md)) | a relic exists once |
 | G9 | ✅ **Done: example in the style of The Gamer** (`examples/everyday-system/`), content only, with an instant dungeon | a player grows every attribute and skill by use and earns titles for it |
+| G11 | ✅ **Done: karma** ([D67](decisions.md)): hidden, moved by dialogues, read by dialogue conditions and title triggers | an NPC refuses the cruel and a title greets the kind |
+| G12 | ✅ **Done: server goals, first step** ([D68](decisions.md)): `goals/` over a counter, announced by quarters, `/goals`, `GoalDone` in dialogues. *Next: rewards, timers and repeats ([world quests](world-quests.md))* | the whole server hunts 500 wolves together |
 | G10 | Then W10 companions (Taming Master, Solo Leveling), W6 crafting minigames and W8/W12 guilds and kingdoms (Overgeared, Moonlight Sculptor) | |
 
 ### Ideas (not scheduled)
@@ -85,4 +88,5 @@ Ideas to make a creator's life easier: sprites baked from voxel and 3D models, a
 | Question | Blocks |
 |---|---|
 | ⚠ Open: one home per character or per account; visits while the owner is offline ([homes](player-homes.md#open)) | W13 |
+| ⚠ Open: a virtual stick besides tap to move; portrait or landscape only ([touch](touch.md#open)) | T4 |
 | ⚠ Open: check that overload levels N1 and N2 thin AI and far updates as designed ([runtime](runtime.md)) | crowded zones |

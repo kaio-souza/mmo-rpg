@@ -18,6 +18,7 @@ Everything in `content/` is a RON file. The editor writes these files for you; t
 | `special_attributes/<id>.ron` | an attribute earned by deeds or a class | [characters](characters.md#special-attributes) |
 | `counters.ron` | the event families counted per character | [characters](characters.md#counters) |
 | `rankings/<id>.ron` | a public ranking (`/ranking`) | [characters](characters.md#rankings) |
+| `goals/<id>.ron` | a server goal: one quest the whole server works on (`/goals`) | [characters](characters.md#server-goals) |
 | `dungeons/<id>.ron` | the rules of an instance zone | [world](world.md#dungeons) |
 | `appearance/appearance.ron` | bodies, skins, hair styles and colours offered at creation | [characters](characters.md#appearance) |
 | `progression/formulas.ron`, `combat/formulas.ron` | level curve, points, death, day length; hit and crit numbers | [characters](characters.md#formulas) |

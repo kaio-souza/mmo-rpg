@@ -1,12 +1,21 @@
 # MMO Kit
 
-A kit for building 2D isometric, tile-based MMOs in Rust: an authoritative server, a client for Linux and Windows, a local web editor and tools. A game is a folder of data; nobody writes code to make one. MIT licensed ([LICENSE](LICENSE)).
+A kit for building 2D isometric, tile-based MMOs in Rust: an authoritative server, a client for Linux, Windows and the browser, a local web editor and tools. A game is a folder of data; nobody writes code to make one. MIT licensed ([LICENSE](LICENSE)).
 
 ![The new-game template running: a player on the meadow, wolves to the west, the HUD with status, quests, minimap and hotbar](docs/images/game.png)
 
 | The editor: painting a map | Editing an item | Editing a monster |
 |---|---|---|
 | ![Map screen of the editor with the meadow zone, its tiles, safe region, spawn and wolf groups](docs/images/editor-map.png) | ![Item screen of the editor showing the health potion, its texts in 10 languages and where it comes from](docs/images/editor-item.png) | ![Monster screen of the editor showing the wolf's stats and where it stands](docs/images/editor-monster.png) |
+
+## What your game can do
+
+- **Combat:** attributes and formulas, critical hits, line of sight, threat; techniques with cooldowns, costs, healing, revival and buffs; poison, stun and slow; area attacks; bosses that change pattern by phase; PvP only where a region allows it.
+- **Progression:** levels and attribute points, skills that grow by use, techniques that level up, classes in four tiers, titles that give bonuses or teach techniques, special attributes.
+- **Items and economy:** items that can never be duplicated, six rarities, hidden rolls revealed by appraisal, powers, durability and repair, gathering, crafting signed by its maker, NPC shops, money sinks.
+- **World:** one open world of zones joined without loading screens; NPCs with dialogues and affinity; talk, deliver, kill, travel and craft quests with markers; portals; dungeons as instances with lockouts; day and night, light and fog.
+- **Social:** chat and whispers, emotes, groups that share XP, direct trades checked on both sides.
+- **What game-world stories need:** titles, classes and relics unique per server (passed to an heir), rare classes opened by a deed, server firsts and rankings, announcements to everyone, hidden karma, and **server goals** the whole world works on together. See which [manhwa and light-novel games](docs/genre-references.md) the kit can make, and the full list in [mechanics](docs/mechanics.md).
 
 ## Why this kit
 
@@ -54,13 +63,13 @@ A kit for building 2D isometric, tile-based MMOs in Rust: an authoritative serve
 
 ### Easy to own
 
-- **Pure Rust:** nothing to install but Rust; one server binary; a client for Linux and Windows.
+- **Pure Rust:** nothing to install but Rust; one server binary; a client for Linux and Windows, and the same client in the browser ([web](docs/web.md)).
 - **Your game stays yours:** it lives in its own folder, apart from the kit, so the kit can be updated without touching it.
 - **Art by name, with a safety net:** replace a picture by dropping a file with the same name and the client shows it within a second; missing art never blocks the game, a generic shape stands in.
 - **Saves that survive updates:** character data is versioned and migrated, so a new version never breaks saved characters.
 - **Guarded code:** CI checks that each part depends only on what it is allowed to, and audits dependencies.
 - **Content only grows:** updates add classes, titles, quests and items without taking anything from players.
-- **MIT licence**, and a complete example game, [Riftara](examples/riftara/README.md) (7 zones, 24 classes, 53 items, 16 quests), to learn from.
+- **MIT licence**, and a complete example game, [Riftara](examples/riftara/README.md) (7 zones, 24 classes, 53 items, 16 quests), to learn from, and a small one in the style of The Gamer ([`examples/everyday-system/`](examples/everyday-system/)).
 
 ## Try it in five steps
 

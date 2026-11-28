@@ -9,6 +9,8 @@
     "item.wolf_pelt.desc": "Pelo grueso y gris. Los curtidores lo pagan.",
     "item.wolf_pelt.name": "Piel de lobo",
     "monster.wolf.name": "Lobo",
+    "goal.wolf_hunt.name": "La gran caza de lobos",
+    "goal.wolf_hunt.desc": "Juntos, todo el mundo caza 500 lobos para que los caminos sean seguros.",
     "proficiency.unarmed.name": "Desarmado",
     "item.rusty_sword.name": "Espada oxidada",
     "item.rusty_sword.desc": "Una hoja vieja, aún bastante afilada.",

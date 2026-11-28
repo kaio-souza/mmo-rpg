@@ -231,6 +231,9 @@ pub enum ClientMsg {
     },
     /// Protocol 28: `/firsts`, the server firsts so far (System lines).
     ServerFirsts,
+    /// Protocol 31: `/goals`, the server goals and how far the server got
+    /// (System lines).
+    ServerGoals,
 }
 
 /// Id of a ranking of `content/rankings/` (`hunters`).

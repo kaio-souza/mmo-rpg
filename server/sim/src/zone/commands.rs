@@ -75,6 +75,9 @@ impl Zone {
                 parcel,
             } => self.deliver(*player, *escrow, parcel, out),
             Command::Evict { to } => crate::portal::evict(self, *to, out),
+            Command::GoalsDone { ids } => {
+                self.goals_done = ids.iter().cloned().collect();
+            }
             Command::TakenItems { keys } => {
                 let cat = &self.content.catalog;
                 self.taken_items = keys
@@ -183,6 +186,18 @@ impl Zone {
                         player: *player,
                         reason,
                     }));
+                // An answer may move karma: titles that read it are checked.
+                if let Some(&h) = self.by_player.get(player) {
+                    let content = self.content.clone();
+                    if let Ok(p) = self.world.query_one_mut::<&mut PlayerComp>(h) {
+                        let titles = p.growth.check_titles(&content.catalog);
+                        if !titles.is_empty() {
+                            p.dirty_stats = true;
+                            fight::refresh_player(self, h);
+                            fight::announce(self, *player, &titles, out);
+                        }
+                    }
+                }
             }
             Command::OpenShop { player, target } => {
                 if let Err(reason) = self.open_shop(*player, *target) {

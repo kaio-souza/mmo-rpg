@@ -9,6 +9,8 @@
     "item.wolf_pelt.desc": (text: "Thick grey fur. Tanners pay for it.", note: "Item description.", max_chars: 160),
     "item.wolf_pelt.name": (text: "Wolf pelt", note: "Item name.", max_chars: 40),
     "monster.wolf.name": (text: "Wolf", note: "Monster name.", max_chars: 30),
+    "goal.wolf_hunt.name": (text: "The Great Wolf Hunt", note: "Name of a server goal: a quest the whole server works on together.", max_chars: 40),
+    "goal.wolf_hunt.desc": (text: "Together, the whole world hunts 500 wolves to make the roads safe.", note: "Description of a server goal, shown by /goals.", max_chars: 160),
     "proficiency.unarmed.name": (text: "Unarmed", note: "Proficiency name.", max_chars: 30),
     "item.rusty_sword.name": (text: "Rusty sword", note: "Item name.", max_chars: 40),
     "item.rusty_sword.desc": (text: "An old blade, still sharp enough.", note: "Item description.", max_chars: 160),

@@ -155,6 +155,8 @@ pub struct Zone {
     /// Unique items that exist somewhere on the server (`Command::TakenItems`
     /// plus those made here since): never made again.
     pub(crate) taken_items: std::collections::BTreeSet<base::ItemId>,
+    /// Server goals reached (`Command::GoalsDone`).
+    pub(crate) goals_done: std::collections::BTreeSet<String>,
     /// Teleports asked this tick (a dialogue), done after movement.
     pub(crate) teleports: Vec<(PlayerId, TilePos)>,
     replay: ReplayLog,
@@ -203,6 +205,7 @@ impl Zone {
             early_taken: BTreeMap::new(),
             teleports: Vec::new(),
             taken_items: std::collections::BTreeSet::new(),
+            goals_done: std::collections::BTreeSet::new(),
             replay: ReplayLog::new(def.name.clone(), catalog.content_hash(), seed),
             rng: Rng64::new(seed),
             item_ids: None,

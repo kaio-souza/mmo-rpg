@@ -148,6 +148,7 @@ impl Gateway {
             ClientMsg::Admin(cmd) => self.on_admin(c, cmd),
             ClientMsg::Ranking { id } => self.on_ranking(c, id),
             ClientMsg::ServerFirsts => self.on_firsts(c),
+            ClientMsg::ServerGoals => self.on_goals_asked(c),
             _ => self.fail(c, ErrorCode::InvalidMessage),
         }
     }

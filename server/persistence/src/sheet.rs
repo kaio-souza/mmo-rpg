@@ -8,7 +8,7 @@ use crate::RepoError;
 use serde::{Deserialize, Serialize};
 
 /// Version written by this build.
-pub const SHEET_VERSION: u16 = 9;
+pub const SHEET_VERSION: u16 = 10;
 
 /// The current sheet. Name and position live in columns, not here.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -51,6 +51,8 @@ pub struct SavedProgress {
     pub techniques: Vec<(String, u8, u64)>,
     pub titles: Vec<String>,
     pub counters: Vec<(String, String, u64)>,
+    /// Hidden morality (sheet v10); 0 for older sheets.
+    pub karma: i32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -199,6 +201,21 @@ struct SheetV9 {
     progress: Vec<(String, Vec<u32>)>,
 }
 
+/// Version 10: karma, the hidden morality. Frozen.
+#[derive(Serialize, Deserialize)]
+struct SheetV10 {
+    v9: SheetV9,
+    karma: i32,
+}
+
+impl From<SheetV10> for SavedSheet {
+    fn from(v: SheetV10) -> Self {
+        let mut s = SavedSheet::from(v.v9);
+        s.progress.karma = v.karma;
+        s
+    }
+}
+
 impl From<SheetV9> for SavedSheet {
     fn from(v: SheetV9) -> Self {
         let mut s = SavedSheet::from(v.v8);
@@ -343,6 +360,7 @@ impl From<SheetV3> for SavedSheet {
                 techniques: v.techniques,
                 titles: v.titles,
                 counters: v.counters,
+                karma: 0,
             },
             items: v
                 .items
@@ -472,7 +490,11 @@ pub(crate) fn encode(sheet: &SavedSheet) -> Result<(u16, Vec<u8>), RepoError> {
             .map(|q| (q.quest.clone(), q.progress.clone()))
             .collect(),
     };
-    postcard::to_stdvec(&v9)
+    let v10 = SheetV10 {
+        v9,
+        karma: sheet.progress.karma,
+    };
+    postcard::to_stdvec(&v10)
         .map(|b| (SHEET_VERSION, b))
         .map_err(|e| RepoError::Corrupt(e.to_string()))
 }
@@ -506,6 +528,9 @@ pub(crate) fn decode(version: u16, bytes: &[u8]) -> Result<SavedSheet, RepoError
         9 => postcard::from_bytes::<SheetV9>(bytes)
             .map(SavedSheet::from)
             .map_err(|e| RepoError::Corrupt(format!("sheet v9: {e}"))),
+        10 => postcard::from_bytes::<SheetV10>(bytes)
+            .map(SavedSheet::from)
+            .map_err(|e| RepoError::Corrupt(format!("sheet v10: {e}"))),
         v => Err(RepoError::Corrupt(format!("unknown sheet version {v}"))),
     }
 }
@@ -552,6 +577,7 @@ mod tests {
                 techniques: vec![("double_cut".into(), 2, 5)],
                 titles: vec!["wolf_bane".into()],
                 counters: vec![("kills".into(), "wolf".into(), 9)],
+                karma: -42,
             },
             items: vec![SavedItem {
                 id: 77,
@@ -572,7 +598,7 @@ mod tests {
             shop_sales: vec![("village_store".into(), 1200, 1_700_000_100)],
         };
         let (v, bytes) = encode(&s).unwrap();
-        assert_eq!(v, 9);
+        assert_eq!(v, 10);
         assert_eq!(decode(v, &bytes).unwrap(), s);
     }
 

@@ -238,6 +238,7 @@ mod tests {
                 id: Some(crate::RankingId::try_from("hunters").unwrap()),
             },
             ClientMsg::ServerFirsts,
+            ClientMsg::ServerGoals,
         ] {
             roundtrip(m, MAX_CLIENT_FRAME);
         }

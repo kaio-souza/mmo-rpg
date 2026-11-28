@@ -54,6 +54,8 @@ pub struct ProgressionSheet {
     pub techniques: Vec<Technique>,
     /// Sorted.
     pub titles: Vec<TitleId>,
+    /// Hidden morality, `-KARMA_MAX..=KARMA_MAX`; never shown to the player.
+    pub karma: i32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,7 +97,16 @@ impl ProgressionSheet {
             proficiencies: Vec::new(),
             techniques: Vec::new(),
             titles: Vec::new(),
+            karma: 0,
         }
+    }
+
+    /// Adds to karma, kept inside its range.
+    pub fn change_karma(&mut self, delta: i32) {
+        self.karma = self
+            .karma
+            .saturating_add(delta)
+            .clamp(-defs::KARMA_MAX, defs::KARMA_MAX);
     }
 
     pub fn proficiency(&self, id: ProficiencyId) -> u8 {
@@ -418,6 +429,8 @@ pub fn check_titles_except(
             TitleTrigger::Counter { family, key, at } => counter(family, key) >= *at,
             TitleTrigger::Proficiency(p, v) => s.proficiency(*p) >= *v,
             TitleTrigger::Attribute(a, v) => s.attributes.get(*a) >= *v,
+            TitleTrigger::Karma(v) if *v < 0 => s.karma <= *v,
+            TitleTrigger::Karma(v) => s.karma >= *v,
         };
         if ok {
             earned.push(id);

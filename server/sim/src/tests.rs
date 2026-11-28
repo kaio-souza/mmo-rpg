@@ -1074,3 +1074,59 @@ fn a_brazier_out_of_reach_is_refused() {
     assert_eq!(out.refused, vec![(PlayerId::new(1), Refusal::TooFar)]);
     assert!(out.tiles.is_empty());
 }
+
+/// Karma: a dialogue effect moves it, a condition reads it, a title is
+/// earned by it at once, and it is saved.
+#[test]
+fn karma_moves_opens_and_earns_a_title() {
+    let mut files = quest_files();
+    for (path, text) in &mut files {
+        if path.starts_with("text/") {
+            *text = text.replace(
+                "\"npc.elder.name\": \"Elder\",",
+                "\"npc.elder.name\": \"Elder\", \"title.merciful.name\": \"Merciful\", \
+                 \"title.merciful.desc\": \"-\",",
+            );
+        }
+    }
+    files.push(("titles/merciful.ron".into(), "(trigger: Karma(10))".into()));
+    if let Some(d) = files.iter_mut().find(|(p, _)| p == "npcs/dialogues/elder.ron") {
+        d.1 = r#"(
+            start: "greeting",
+            nodes: {
+                "greeting": (
+                    text: "npc.elder.greeting",
+                    options: [
+                        (text: "npc.elder.option.about", next: "greeting",
+                         when: Not(Karma(10)), effects: [Karma(15)]),
+                        (text: "npc.elder.option.bye", when: Karma(10)),
+                    ],
+                ),
+            },
+        )"#
+        .into();
+    }
+    let mut run = Run {
+        zone: Zone::new(content_from(files), ZoneId::new(0), 42).unwrap(),
+        out: TickOutput::default(),
+    };
+    run.tick(&[enter(1, "Ana", p(3, 3))]);
+    let npc = run
+        .out
+        .entities
+        .iter()
+        .find(|e| e.kind == EntityKind::Npc)
+        .map(|e| e.id)
+        .unwrap();
+    assert_eq!(shown(run.tick(&[talk(npc)])), 1, "only the kind deed");
+    assert_eq!(shown(run.tick(&[choose(0)])), 1, "now only the karma door");
+    run.tick(&[Command::Leave {
+        player: PlayerId::new(1),
+    }]);
+    let (_, sheet, _) = &run.out.left[0];
+    assert_eq!(sheet.progress.karma, 15);
+    assert!(
+        sheet.progress.titles.contains(&"merciful".to_owned()),
+        "earned on the answer"
+    );
+}

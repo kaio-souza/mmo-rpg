@@ -17,6 +17,7 @@ mod chunks;
 mod dungeon;
 mod escrow;
 mod feats;
+mod goals;
 mod instance;
 mod maintenance;
 mod play;
@@ -298,6 +299,8 @@ pub struct Gateway {
     rankings: feats::RankingCache,
     /// Who holds each unique title and class (`title:<id>`, `class:<id>`).
     holders: BTreeMap<String, CharacterId>,
+    /// How far the server got in each goal.
+    goals: goals::Goals,
     /// Instance copies in use.
     instances: instance::Instances,
     /// Dungeon lockouts running: `(character, dungeon)` → unix second.
@@ -358,6 +361,7 @@ impl Gateway {
             chat_history: chat::History::default(),
             rankings: feats::RankingCache::default(),
             holders: BTreeMap::new(),
+            goals: goals::Goals::default(),
             instances: instance::Instances::default(),
             lockouts: BTreeMap::new(),
             next_heir_check: 0,
@@ -378,6 +382,7 @@ impl Gateway {
             Err(e) => warn!(error = %e, "cannot read the saved login waits"),
         }
         self.load_holders().await;
+        self.load_goals().await;
         self.load_lockouts().await;
         let mut second = tokio::time::interval(Duration::from_secs(1));
         loop {
@@ -400,6 +405,7 @@ impl Gateway {
             }
         }
         self.save_login_blocks();
+        self.save_goals();
         self.shutdown().await;
     }
 
@@ -661,6 +667,7 @@ impl Gateway {
         self.attempts.forget_old(unix);
         // Saved within a second of a change: a crash loses little.
         self.save_login_blocks();
+        self.save_goals();
         self.registrations.forget_old(now);
         self.pump_queue();
         self.send_queue_positions();

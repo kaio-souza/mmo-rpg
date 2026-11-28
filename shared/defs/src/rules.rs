@@ -12,6 +12,8 @@ const MAX_DEPTH: u32 = 8;
 pub const MAX_EFFECTS: usize = 16;
 /// Affinity runs from -100 to 100.
 pub const AFFINITY_MAX: i32 = 100;
+/// Karma, the hidden morality of a character, runs from -1000 to 1000.
+pub const KARMA_MAX: i32 = 1000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[cfg_attr(feature = "editor", derive(schemars::JsonSchema))]
@@ -42,6 +44,10 @@ pub enum Condition {
     RecipeKnown(RecipeId),
     /// The player already knows this technique.
     TechniqueKnown(TechniqueId),
+    /// The player's karma is at least this much (`Not` for at most).
+    Karma(i32),
+    /// This server goal (`goals/<id>.ron`) was reached.
+    GoalDone(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,6 +80,8 @@ pub enum Effect {
     /// Takes the player to this tile of the world (any zone) and ends the
     /// dialogue: a ferryman, a gate keeper.
     Teleport(base::TilePos),
+    /// Added to the player's karma (hidden; clamped to the range).
+    Karma(i32),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -97,6 +105,8 @@ pub(crate) enum ConditionFile {
     Not(Box<ConditionFile>),
     RecipeKnown(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::RecipeRef"))] String),
     TechniqueKnown(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::TechniqueRef"))] String),
+    Karma(i32),
+    GoalDone(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::GoalRef"))] String),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -126,6 +136,7 @@ pub(crate) enum EffectFile {
     LearnTechnique(#[cfg_attr(feature = "editor", schemars(with = "crate::editor::TechniqueRef"))] String),
     /// Takes the player to this tile of the world and ends the dialogue.
     Teleport(base::TilePos),
+    Karma(i32),
 }
 
 fn item(names: &Names<'_>, problems: &mut Vec<String>, id: &str, qty: u32) -> Option<ItemId> {
@@ -150,6 +161,12 @@ fn quest(names: &Names<'_>, problems: &mut Vec<String>, id: &str) -> Option<Ques
 fn affinity(problems: &mut Vec<String>, v: i32) {
     if !(-AFFINITY_MAX..=AFFINITY_MAX).contains(&v) {
         problems.push(format!("affinity {v} must be -{AFFINITY_MAX} to {AFFINITY_MAX}"));
+    }
+}
+
+pub(crate) fn karma(problems: &mut Vec<String>, v: i32) {
+    if !(-KARMA_MAX..=KARMA_MAX).contains(&v) {
+        problems.push(format!("karma {v} must be -{KARMA_MAX} to {KARMA_MAX}"));
     }
 }
 
@@ -184,6 +201,17 @@ pub(crate) fn condition(
         ConditionFile::Affinity(v) => {
             affinity(problems, *v);
             Condition::Affinity(*v)
+        }
+        ConditionFile::Karma(v) => {
+            karma(problems, *v);
+            Condition::Karma(*v)
+        }
+        ConditionFile::GoalDone(g) => {
+            if !names.goals.contains_key(g) {
+                problems.push(format!("goal `{g}` not found"));
+                return None;
+            }
+            Condition::GoalDone(g.clone())
         }
         ConditionFile::All(v) => Condition::All(list(problems, v)?),
         ConditionFile::Any(v) => Condition::Any(list(problems, v)?),
@@ -235,6 +263,10 @@ pub(crate) fn effect(names: &Names<'_>, problems: &mut Vec<String>, file: &Effec
             }
         },
         EffectFile::Teleport(p) => Effect::Teleport(*p),
+        EffectFile::Karma(v) => {
+            karma(problems, *v);
+            Effect::Karma(*v)
+        }
         EffectFile::LearnTechnique(name) => match names.techniques.get(name) {
             Some(t) => Effect::LearnTechnique(*t),
             None => {

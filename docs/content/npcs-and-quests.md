@@ -39,8 +39,11 @@ An option shows only when its `when` holds; choosing it runs its `effects` in or
 | `QuestReady(id)` objectives done | `TopUpItem(item, qty)` gives only what is missing |
 | `Affinity(n)` with this NPC | `Affinity(n)` adds to it |
 | `RecipeKnown(id)`, `TechniqueKnown(id)` | `LearnRecipe(id)`, `LearnTechnique(id)` |
-| | `Teleport((x: 300, y: 12))`: to a tile of the world; ends the dialogue |
+| `Karma(n)` at least (`Not(Karma(n))`: below) | `Karma(n)` adds to it (hidden from the player) |
+| `GoalDone(id)` a [server goal](characters.md#server-goals) was reached | `Teleport((x: 300, y: 12))`: to a tile of the world; ends the dialogue |
 | `All([...])`, `Any([...])`, `Not(...)` | |
+
+**Karma** is a character's hidden morality, -1000 to 1000, starting at 0 ([D67](../decisions.md)). Only dialogue effects move it; it is never shown, so a player learns of it through what opens and closes: an option, a title with a `Karma` trigger, and through that title a class.
 
 The editor shows the dialogue as a map of steps, writes conditions and effects as sentences, and has a preview you click through.
 

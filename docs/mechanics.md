@@ -35,7 +35,8 @@ What the engine does today, configured by [content](content/README.md), and the 
 - Off-hand items and items that light their wearer and burn while equipped (a torch).
 
 **World**
-- NPCs with dialogue graphs built from conditions and effects; affinity per NPC.
+- NPCs with dialogue graphs built from conditions and effects; affinity per NPC; karma, a hidden morality that dialogues move and that opens options and titles.
+- Server goals: one shared quest the whole server works on, announced at each quarter and at the end, read with `/goals`; a reached goal opens dialogue options.
 - Quests: talk, deliver, kill, travel and craft objectives, item, coin and technique rewards, repeatable quests with a cooldown, quest log, markers and a pointer to the goal.
 - Zones joined by seams into one open world, in one process or many; a starting zone; safe respawn.
 - Portals and NPC teleports; instance zones (a copy per party) and dungeons with level and group checks, a boss that clears the run, lockouts and fastest-clear rankings.
@@ -62,7 +63,7 @@ Designed for the example game but not built. Each needs engine work before conte
 | Progression | class change after level 30 within the tree; titles that give a penalty instead of a bonus; attributes earned by deeds; adventurer rank; bestiary, collections |
 | Items | enhancement +1 to +15 with protection stones; dismantling equipment; carry weight limits; dimensional storage; exclusive items created by legendary classes |
 | Economy | regional markets plus a global auction; buy orders; mail |
-| World | ranked and hidden quests; karma (hidden morality that opens or closes titles and quests); NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
+| World | ranked and hidden quests; karma moved by deeds outside dialogue (killing players, crimes); goals with rewards, timers and repeats; NPC routines; weather; field bosses, invasions, rifts; travel and discovery; factions, server projects, story chapters |
 | Social | group loot rules and shared quests; clans with ranks, storage and alliances; territory war with scheduled sieges; marriage with a shared vault; fame, bounties, mentoring, housing ([homes](player-homes.md): farming, breeding, carpentry); a human check for players who repeat one action for hours |
 | Accounts | second factor (TOTP) at login; a barber to change hair |
 | Presentation | layered character art (body, hair, clothes) recoloured by palette keys; ambient sound layers |

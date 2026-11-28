@@ -44,6 +44,7 @@ impl Growth {
             sheet.max_level = s.max_level.max(s.level);
             sheet.attributes = s.attributes;
             sheet.free_points = s.free_points;
+            sheet.karma = s.karma.clamp(-defs::KARMA_MAX, defs::KARMA_MAX);
             match s.class.as_deref().map(|c| (c, cat.class_by_name(c))) {
                 Some((_, Some((id, _)))) => sheet.class = Some(id),
                 Some((name, None)) => kept.class = Some(name.to_owned()),
@@ -129,6 +130,7 @@ impl Growth {
                 .filter_map(|t| Some(cat.title(*t)?.id.clone()))
                 .collect(),
             counters: self.counters.clone(),
+            karma: s.karma,
         };
         out.proficiencies.extend(self.kept.proficiencies.iter().cloned());
         out.techniques.extend(self.kept.techniques.iter().cloned());

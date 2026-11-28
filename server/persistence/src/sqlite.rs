@@ -185,6 +185,13 @@ const MIGRATIONS: &[&str] = &[
         until INTEGER NOT NULL,
         PRIMARY KEY (character_id, dungeon)
     );",
+    // Server goals: what the whole server added so far, and when it was
+    // reached (NULL: not yet).
+    "CREATE TABLE server_goals (
+        id TEXT PRIMARY KEY,
+        progress INTEGER NOT NULL,
+        done_at INTEGER
+    );",
 ];
 
 /// `name_key` of a deleted character: no valid name starts with `#`.
@@ -1195,6 +1202,57 @@ impl SqliteRepo {
                 )
                 .map_err(db)?;
             Ok(n == 1)
+        })
+        .await
+    }
+
+    /// Every server goal saved: id, progress, unix second it was reached.
+    pub async fn server_goals(&self) -> Result<Vec<(String, u64, Option<u64>)>, RepoError> {
+        self.run(move |c| {
+            let mut st = c
+                .prepare("SELECT id, progress, done_at FROM server_goals ORDER BY id")
+                .map_err(db)?;
+            let rows = st
+                .query_map([], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, i64>(1)?,
+                        r.get::<_, Option<i64>>(2)?,
+                    ))
+                })
+                .map_err(db)?;
+            let mut out = Vec::new();
+            for row in rows {
+                let (id, progress, done) = row.map_err(db)?;
+                out.push((
+                    id,
+                    u64::try_from(progress).unwrap_or(0),
+                    done.map(|d| u64::try_from(d).unwrap_or(0)),
+                ));
+            }
+            Ok(out)
+        })
+        .await
+    }
+
+    /// Writes the state of server goals (`(id, progress, done_at)`), in one
+    /// transaction.
+    pub async fn save_server_goals(&self, goals: Vec<(String, u64, Option<u64>)>) -> Result<(), RepoError> {
+        self.run(move |c| {
+            let tx = c.transaction().map_err(db)?;
+            for (id, progress, done) in &goals {
+                tx.execute(
+                    "INSERT INTO server_goals (id, progress, done_at) VALUES (?1, ?2, ?3)
+                     ON CONFLICT(id) DO UPDATE SET progress = excluded.progress, done_at = excluded.done_at",
+                    params![
+                        id,
+                        i64::try_from(*progress).unwrap_or(i64::MAX),
+                        done.map(|d| i64::try_from(d).unwrap_or(i64::MAX))
+                    ],
+                )
+                .map_err(db)?;
+            }
+            tx.commit().map_err(db)
         })
         .await
     }

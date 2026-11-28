@@ -597,6 +597,9 @@ pub enum TitleTrigger {
     /// A base attribute (points spent and given by level, without
     /// equipment) reaches this value.
     Attribute(Attribute, u16),
+    /// Karma reaches this value: at least it when positive or zero, at
+    /// most it when negative (a title for the cruel).
+    Karma(i32),
 }
 
 /// What earns a title, as written in `titles/<id>.ron`. New triggers are
@@ -621,6 +624,8 @@ pub(crate) enum TitleTriggerFile {
     ),
     /// A base attribute (without equipment) reaches this value.
     Attribute(Attribute, u16),
+    /// Karma reaches this value (negative: at most it).
+    Karma(i32),
 }
 
 /// What a title gives while owned: every owned title counts, always

@@ -1,6 +1,6 @@
 # Genre references
 
-Stories about game worlds (Korean web novels and manhwa, Japanese light novels) that people ask the kit to make. For each one: what defines its game and what the engine still lacks. They are **references for mechanics only**: an example inspired by one has its own world, names and characters, and copies nothing (see [contributing](contributing.md)).
+Stories about game worlds (Korean web novels and manhwa, Japanese light novels) that people ask the kit to make. For each one: what defines its game and what the engine still lacks. Who competes for the same players and creators: [competitors](competitors.md). They are **references for mechanics only**: an example inspired by one has its own world, names and characters, and copies nothing (see [contributing](contributing.md)).
 
 Distance: 🟢 close (mostly content), 🟡 one or two large mechanics, 🔴 far (several roadmap items), ⚫ does not fit.
 
@@ -23,7 +23,7 @@ Distance: 🟢 close (mostly content), 🟡 one or two large mechanics, 🔴 far
 | Legendary Moonlight Sculptor | objects players place that buff an area, ranked quests, kingdoms |
 | Sword Art Online | raid bosses, optional permanent death, houses |
 | Second Life Ranker, Tower of God | floors as [instances](dungeons-and-raids.md) exist; trials per floor (stages) are next |
-| Omniscient Reader | world events with goals for the whole server (W2, W4) |
+| Omniscient Reader | server goals exist (`/goals`); missing: timed scenarios with rewards and penalties (W2, W4) |
 
 ## Far
 

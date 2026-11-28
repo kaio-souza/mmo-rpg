@@ -417,6 +417,7 @@ fn cleared(z: &mut Zone, d: &defs::DungeonDef, out: &mut TickOutput) {
     let secs = z.tick.0 / base::TICKS_PER_SECOND;
     let players: Vec<(PlayerId, hecs::Entity)> = z.by_player.iter().map(|(p, h)| (*p, *h)).collect();
     for &(player, h) in &players {
+        crate::server_goal::contribute(z, "clears", &d.id, 1, out);
         let changes = match z.world.query_one_mut::<&mut PlayerComp>(h) {
             Ok(p) => {
                 p.growth.count(cat, "clears", &d.id, 1);
@@ -511,6 +512,10 @@ pub(crate) fn announce(z: &Zone, player: PlayerId, changes: &[Change], out: &mut
 fn reward(z: &mut Zone, h: hecs::Entity, xp: u64, monster: &str, out: &mut TickOutput) {
     let content = z.content.clone();
     let cat = &content.catalog;
+    if !z.world.contains(h) {
+        return;
+    }
+    crate::server_goal::contribute(z, "kills", monster, 1, out);
     let Ok((p, f)) = z.world.query_one_mut::<(&mut PlayerComp, &Fighter)>(h) else {
         return;
     };
@@ -956,6 +961,9 @@ pub(crate) fn die(z: &mut Zone, h: hecs::Entity, out: &mut TickOutput) {
     let spawn = z.spawn_point(EntityId::new(0));
     let spot = z.nearest_free(spawn);
     let now_unix = z.now_unix;
+    if z.world.get::<&PlayerComp>(h).is_ok() {
+        crate::server_goal::contribute(z, "deaths", "", 1, out);
+    }
     let Ok((fi, p, body)) = z
         .world
         .query_one_mut::<(&mut Fighter, &mut PlayerComp, &mut Body)>(h)

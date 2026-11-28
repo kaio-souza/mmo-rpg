@@ -738,6 +738,20 @@ impl Repository {
         }
     }
 
+    /// Every server goal saved: id, progress, unix second it was reached.
+    pub async fn server_goals(&self) -> Result<Vec<(String, u64, Option<u64>)>, RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.server_goals().await,
+        }
+    }
+
+    /// Writes the state of server goals (`(id, progress, done_at)`).
+    pub async fn save_server_goals(&self, goals: Vec<(String, u64, Option<u64>)>) -> Result<(), RepoError> {
+        match self {
+            Repository::Sqlite(r) => r.save_server_goals(goals).await,
+        }
+    }
+
     /// Every server first: key, character name, unix second, oldest first.
     pub async fn server_firsts(&self) -> Result<Vec<(String, CharacterName, u64)>, RepoError> {
         match self {

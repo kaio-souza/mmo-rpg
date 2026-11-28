@@ -13,6 +13,7 @@ Start here, then read only the page you need.
 | [Assets](assets.md) | Images, animation strips, tiles, icons, themes, fonts, sounds |
 | [Client](client.md) | Screens, controls, chat commands, what the client keeps |
 | [Browser client](web.md) | Build the client for the browser, serve it, and the server's WebSocket port |
+| [Touch and phones](touch.md) | Planned: gestures, touch sizes, on-screen buttons and a small-screen layout |
 | [Character parts](character-parts.md) | Planned: a look built from parts and colours, and its editor screen |
 | [Mechanics](mechanics.md) | What the engine does today, and the mechanics a game could add later |
 | [World quests](world-quests.md) | Planned: quests the world switches on and off, funded and withdrawn by signals |
@@ -26,6 +27,7 @@ Start here, then read only the page you need.
 | [Guilds](guilds.md) | Planned: members, ranks, bank, hall, guild wars, alliances |
 | [Kingdoms and nations](kingdoms-and-nations.md) | Planned: towns held by guilds, sieges, kingdoms, vassals, diplomacy |
 | [Genre references](genre-references.md) | Stories about game worlds, and what the engine lacks to make an example of each |
+| [Competitors](competitors.md) | Other MMO-making tools and the games a kit game competes with |
 | [Creator tools](creator-tools.md) | Ideas: sprites baked from voxel and 3D, sound generator, one-click translation, wizards and helpers |
 | [Translation](translation.md) | How texts are translated: rules, glossary, tone per language |
 | [Tools](tools.md) | Editor, `validate`, `admin`, `bots`, `replay`, `pack` |

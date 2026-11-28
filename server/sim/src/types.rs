@@ -54,6 +54,8 @@ pub struct SavedProgress {
     pub titles: Vec<String>,
     /// Declared counters: `(family, key, value)`.
     pub counters: Vec<(String, String, u64)>,
+    /// Hidden morality (sheet v10); 0 for older sheets.
+    pub karma: i32,
 }
 
 /// An item with identity as saved. The record of an item, not
@@ -409,6 +411,11 @@ pub enum Command {
     Evict {
         to: TilePos,
     },
+    /// Server goals reached so far (`goals/<id>.ron` ids): no longer
+    /// counted, and `GoalDone` holds for them.
+    GoalsDone {
+        ids: Vec<String>,
+    },
 }
 
 /// What custody holds, in saved form (rule 4). Each piece keeps
@@ -630,6 +637,9 @@ pub struct TickOutput {
     pub released: Vec<String>,
     /// Dungeon runs cleared this tick (its boss died), in order.
     pub clears: Vec<ClearOut>,
+    /// What this tick added to each server goal not reached yet:
+    /// `(goal id, count)`, in the order first counted.
+    pub goals: Vec<(String, u64)>,
 }
 
 /// A dungeon run cleared: who was inside and how long the run took.
@@ -747,6 +757,7 @@ impl TickOutput {
         self.claims.clear();
         self.clears.clear();
         self.released.clear();
+        self.goals.clear();
     }
 }
 

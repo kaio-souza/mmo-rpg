@@ -35,7 +35,7 @@ Clicking a creature's body or its feet picks it: left click attacks a monster or
 |---|---|---|
 | `/w NAME TEXT` | everyone | whisper |
 | `/report NAME` | everyone | report a player's recent chat to moderators |
-| `/ranking [ID]`, `/firsts` | everyone | the game's rankings; the server firsts so far |
+| `/ranking [ID]`, `/firsts`, `/goals` | everyone | the game's rankings; the server firsts so far; the server goals and how far the server got |
 | `/emote NAME` or `/e NAME`; `/emote` lists them | everyone | play an emote |
 | `/invite NAME`, `/accept`, `/decline`, `/leave`, `/partykick NAME`, `/lead NAME` | everyone | groups (up to 6) |
 | `/trade NAME`, `/offer SLOT QTY ... [coins N]`, `/confirm`, `/cancel` | everyone | direct trade (also through the trade window) |

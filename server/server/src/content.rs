@@ -48,6 +48,8 @@ pub struct ContentFrames {
     pub instances: BTreeMap<base::ZoneId, (defs::InstanceRule, base::ZoneId)>,
     /// Dungeons (lockouts, clears, `/firsts`).
     pub dungeons: Vec<defs::DungeonDef>,
+    /// Server goals (`/goals`, announcements).
+    pub goals: Vec<defs::GoalDef>,
 }
 
 /// `allow_missing_text` (dev only): a key missing in a locale shows the
@@ -105,6 +107,7 @@ pub fn frames_with_part(content: &Content, part_size: usize) -> Result<ContentFr
         unique: crate::gateway::unique_keys(catalog),
         instances: crate::gateway::instance_rules(catalog),
         dungeons: catalog.dungeons().to_vec(),
+        goals: catalog.goals().to_vec(),
     })
 }
 

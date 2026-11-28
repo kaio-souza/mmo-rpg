@@ -20,7 +20,7 @@ const MAP: &str = r#####"(
     ],
 )"#####;
 
-const KEYS: [&str; 49] = [
+const KEYS: [&str; 51] = [
     "item.bread.name",
     "item.bread.desc",
     "item.tonic.name",
@@ -70,6 +70,8 @@ const KEYS: [&str; 49] = [
     "technique.bolt.desc",
     "technique.costly.name",
     "technique.costly.desc",
+    "goal.wolf_cull.name",
+    "goal.wolf_cull.desc",
 ];
 
 fn content() -> Arc<Content> {
@@ -166,6 +168,10 @@ fn content() -> Arc<Content> {
             "(tier: 1, level: 5, auto_points: (str: 2, vit: 1))",
         ),
         ("counters.ron", "[\"kills\", \"deaths\"]"),
+        (
+            "goals/wolf_cull.ron",
+            "(family: \"kills\", key: \"wolf\", target: 100)",
+        ),
         (
             "titles/wolf_bane.ron",
             "(trigger: Counter(family: \"kills\", key: \"wolf\", at: 1), announce: First, unique: Some((heir_after_days: 7)))",
@@ -891,4 +897,32 @@ fn a_boss_changes_phase_below_half_and_slows() {
             .status(defs::StatusKind::Slow, now)
             .is_some()
     );
+}
+
+/// Kills the wolf by hand; the goal counts of the tick it died in.
+fn kill_wolf(r: &mut Run) -> Vec<(String, u64)> {
+    let wolf = r.monster("wolf").unwrap();
+    r.tick(&[Command::Attack {
+        player: P1,
+        target: wolf,
+    }]);
+    for _ in 0..600 {
+        r.tick(&[]);
+        if r.out.combat.iter().any(|c| c.target == wolf && c.killed) {
+            return r.out.goals.clone();
+        }
+    }
+    panic!("the wolf never died");
+}
+
+#[test]
+fn a_kill_feeds_the_server_goal_until_it_is_reached() {
+    let mut r = Run::new();
+    r.tick(&[enter_at(1, TilePos::new(11, 4), None)]);
+    assert_eq!(kill_wolf(&mut r), vec![("wolf_cull".to_owned(), 1)]);
+    r.run(101);
+    r.tick(&[Command::GoalsDone {
+        ids: vec!["wolf_cull".into()],
+    }]);
+    assert!(kill_wolf(&mut r).is_empty(), "a reached goal is not counted");
 }

@@ -136,6 +136,7 @@ pub fn parse(line: &str) -> Typed {
             _ => Typed::Usage(USAGE_RANKING),
         },
         "firsts" if args.is_empty() => Typed::Send(ClientMsg::ServerFirsts),
+        "goals" if args.is_empty() => Typed::Send(ClientMsg::ServerGoals),
         "kick" => match (name(0), args.len()) {
             (Some(name), 1) => admin(AdminCommand::Kick { name }),
             _ => Typed::Usage(USAGE_KICK),
@@ -314,6 +315,7 @@ mod tests {
             })
         );
         assert_eq!(parse("/firsts"), Typed::Send(ClientMsg::ServerFirsts));
+        assert_eq!(parse("/goals"), Typed::Send(ClientMsg::ServerGoals));
         assert_eq!(parse("/ranking a b"), Typed::Usage(USAGE_RANKING));
         assert_eq!(parse("/dance"), Typed::Unknown("/dance".into()));
     }

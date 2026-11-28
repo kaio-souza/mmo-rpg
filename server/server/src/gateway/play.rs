@@ -26,6 +26,7 @@ impl Gateway {
                     },
                 );
                 self.send_taken_items(Some(zone));
+                self.send_goals_done(Some(zone));
                 self.on_instance_up(zone);
                 self.pump_queue();
             }
@@ -214,6 +215,7 @@ impl Gateway {
             FromZone::Claims(claims) => self.on_claims(claims),
             FromZone::Clears(clears) => self.on_clears(clears),
             FromZone::Released(keys) => self.on_released(keys),
+            FromZone::Goals(counts) => self.on_goal_counts(counts),
             FromZone::Failure { players } => {
                 for player in players {
                     // The zone already forgot this player: no Leave, no save.

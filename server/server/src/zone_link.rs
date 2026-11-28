@@ -118,6 +118,8 @@ pub enum FromZone {
     Clears(Vec<sim::ClearOut>),
     /// Unique items that left the game (`item:<id>`).
     Released(Vec<String>),
+    /// What the zone's players added to server goals: `(goal id, count)`.
+    Goals(Vec<(String, u64)>),
 }
 
 pub struct GatewayEnd {

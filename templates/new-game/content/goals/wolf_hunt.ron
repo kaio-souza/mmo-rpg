@@ -1,0 +1,2 @@
+// A server goal: every wolf any player defeats counts for the whole server.
+(family: "kills", key: "wolf", target: 500)

@@ -9,6 +9,8 @@
     "item.wolf_pelt.desc": "Dickes graues Fell. Gerber zahlen dafür.",
     "item.wolf_pelt.name": "Wolfsfell",
     "monster.wolf.name": "Wolf",
+    "goal.wolf_hunt.name": "Die große Wolfsjagd",
+    "goal.wolf_hunt.desc": "Gemeinsam jagt die ganze Welt 500 Wölfe, damit die Wege sicher werden.",
     "proficiency.unarmed.name": "Waffenlos",
     "item.rusty_sword.name": "Rostiges Schwert",
     "item.rusty_sword.desc": "Eine alte Klinge, noch scharf genug.",

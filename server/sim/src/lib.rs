@@ -24,6 +24,7 @@ mod portal;
 mod replay;
 mod scratch;
 mod seam;
+mod server_goal;
 mod shop;
 mod social;
 mod status;
