@@ -832,3 +832,13 @@ button.danger:hover:not(:disabled) { background: rgba(255, 107, 107, .2); }
 .home-t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-ok { display: flex; align-items: center; gap: 8px; color: var(--ok, #4ade80); margin: 0 0 16px; }
 .lf-more { display: block; margin: 2px 0 6px; font-size: 12px; }
+
+/* The game's home. */
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.home-cat { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: none; border: 1px solid var(--line, rgba(255,255,255,.08)); color: var(--text); cursor: pointer; text-align: left; }
+.home-cat:hover { background: var(--panel-2, rgba(255,255,255,.05)); }
+.home-probs { margin: 6px 0 0; padding-left: 18px; }
+.home-probs li { margin: 4px 0; }
+.home-probs.err li::marker { color: var(--err, #f87171); }
+.home-probs.warn li::marker { color: var(--warn, #fbbf24); }
+.home-card { margin-bottom: 14px; }

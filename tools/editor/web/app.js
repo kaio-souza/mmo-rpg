@@ -6,7 +6,7 @@
 
 const S = {
   ui: {}, uiLocale: "en", meta: null, content: null, schemas: {}, texts: [], art: null,
-  view: "content", cat: "item", sel: null, value: null, raw: null, kind: null, isNew: false,
+  view: "home", cat: "item", sel: null, value: null, raw: null, kind: null, isNew: false,
   extra: null, original: "", pendingTexts: {}, saveReport: null, filter: "",
   textLocale: "pt-BR", textFilter: "missing", artKind: "sprite", artFolder: null,
   checking: false, saving: false, checkTimer: 0,
@@ -70,6 +70,7 @@ const ICONS = {
   arrow: '<path d="M7 17 17 7M9 7h8v8"/>',
   chevron: '<path d="M6 9l6 6 6-6"/>',
   upload: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
+  home: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
   cube: '<path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/>',
   tiles: '<path d="M12 3l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/>',
   crown: '<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/><path d="M5 19h14"/>',
@@ -406,6 +407,7 @@ function draw() {
   else if (S.view === "economy") { drawEconomySide(); drawEconomy(); }
   else if (S.view === "moderation") { drawModerationSide(); drawModeration(); }
   else if (S.view === "replays") { drawReplaysSide(); drawReplays(); }
+  else if (S.view === "home") { drawHomeSide(); drawHome(); }
   else { drawSide(); drawPanel(); }
 }
 
@@ -435,6 +437,8 @@ function drawRail() {
     el("button", { class: "ghost", onclick: newGame, title: t("editor.launch.new_game") }, icon("plus", 15),
       el("span", {}, t("editor.launch.new_game")))));
   const nav = el("nav", { class: "rail-nav" });
+  nav.append(railBtn("home", t("editor.home.title"), S.view === "home", () => go("home"),
+    S.report.errors.length ? el("span", { class: "badge err" }, S.report.errors.length) : null));
   const all = cats();
   for (const [sec, ids] of SECTIONS) {
     const here = all.filter((c) => ids.includes(c.id));
@@ -875,6 +879,62 @@ function idOfPath(kind, path) {
 
 // ---------- the open file ----------
 
+// The game's home, the first page: every problem of the content, the
+// texts still missing, every category at a glance, and what was opened last.
+function drawHomeSide() {
+  const side = $("side");
+  side.replaceChildren(el("div", { class: "side-head" }, el("h2", {}, t("editor.home.title"))),
+    el("p", { class: "hint side-hint" }, t("editor.home.hint")));
+}
+
+function drawHome() {
+  const p = $("panel");
+  p.replaceChildren();
+  const page = el("div", { class: "page home" });
+  const errs = S.report.errors, warns = S.report.warnings || [];
+  const missing = Object.keys(S.report.missing).length;
+  // What blocks the game first, then what only needs a look.
+  const probs = el("section", { class: "card home-card" },
+    el("div", { class: "card-head" }, el("h3", {}, t("editor.home.problems")), el("span", { class: "n" }, errs.length + warns.length)));
+  if (!errs.length && !warns.length) probs.append(el("p", { class: "home-ok" }, icon("check", 16), t("editor.home.no_problems")));
+  for (const [list, cls] of [[errs, "err"], [warns, "warn"]]) {
+    if (list.length) probs.append(el("ul", { class: "home-probs " + cls },
+      list.slice(0, 30).map((m) => el("li", {}, clip(m), fileLink(m)))));
+  }
+  page.append(el("div", { class: "home-head" },
+    el("div", { class: "empty-ic" }, icon("home", 32)),
+    el("div", {}, el("h2", {}, t("editor.home.title")), el("p", { class: "hint" }, t("editor.home.hint")))), probs);
+  if (missing) {
+    page.append(el("section", { class: "card home-card" },
+      el("div", { class: "card-head" }, el("h3", {}, t("editor.home.texts")), el("span", { class: "n" }, missing)),
+      el("p", { class: "hint" }, fmtN("editor.home.texts_missing", missing)),
+      el("button", { onclick: () => go("texts") }, icon("globe", 15), t("editor.texts"))));
+  }
+  // Every category: how many, and how many with a problem.
+  const grid = el("div", { class: "home-grid" });
+  for (const [sec, ids] of SECTIONS) {
+    for (const c of cats().filter((x) => ids.includes(x.id))) {
+      const files = filesOf(c);
+      const bad = files.filter((f) => fileState(f.path, f.kind, f.id) === "err").length;
+      grid.append(el("button", { class: "home-cat", onclick: () => goCat(c.id), title: t("editor.section." + sec) },
+        icon(c.id, 20), el("span", { class: "home-t" }, catLabel(c)),
+        bad ? el("span", { class: "badge err" }, bad) : el("span", { class: "n" }, files.length)));
+    }
+  }
+  page.append(el("section", { class: "card home-card" },
+    el("div", { class: "card-head" }, el("h3", {}, t("editor.home.content"))), grid));
+  const byPath = new Map(S.content.files.map((f) => [f.path, f]));
+  const recent = recentPaths().map((x) => byPath.get(x)).filter(Boolean).map(entryOf).slice(0, 10);
+  if (recent.length) {
+    page.append(el("section", { class: "card home-card" },
+      el("div", { class: "card-head" }, el("h3", {}, t("editor.home.recent"))),
+      el("div", { class: "home-list" }, recent.map((e) => el("button", { class: "home-row", onclick: () => open(e.path) },
+        thumb(e.title, e.pic, 28, e.kind), el("span", { class: "home-t" }, e.title),
+        el("span", { class: "chip" }, t("editor.kind." + e.kind)))))));
+  }
+  p.append(page);
+}
+
 // The files opened last, newest first (this browser only).
 function recentPaths() {
   try { return JSON.parse(storeGet("editor-ui.recent") || "[]"); } catch (_) { return []; }
@@ -1081,7 +1141,7 @@ function fileLink(msg) {
   let path = m[1];
   if (/^zones\/[^/]+$/.test(path)) path += "/map.ron";
   if (!path.endsWith(".ron")) return null;
-  const here = path === S.sel || (S.kind === "map" && path.startsWith(S.sel.replace(/map\.ron$/, "")));
+  const here = S.sel && (path === S.sel || (S.kind === "map" && path.startsWith(S.sel.replace(/map\.ron$/, ""))));
   if (here || !S.content.files.some((f) => f.path === path)) return null;
   return el("button", { class: "link sm", onclick: () => open(path) }, t("editor.open"), " →");
 }
@@ -1368,6 +1428,12 @@ const FIELD_GROUPS = {
     ["crit", ["crit_base_permille", "crit_per_dex_permille", "crit_max_permille", "crit_damage_permille"]],
     ["damage", ["attribute_coef_permille", "prof_damage_divisor", "level_diff_step_permille", "level_diff_cap_permille", "pvp_damage_permille", "unarmed_damage", "unarmed_attack_ticks"]],
     ["pace", ["global_cooldown_ticks", "support_per_point_permille"]],
+  ],
+  economy_formulas: [
+    ["shops", ["sell_permille", "buy_permille", "npc_buy_max", "appraise_permille"]],
+    ["wear", ["repair_permille", "repair_max_loss_permille", "durability_per_hit", "death_durability_permille", "warn_durability_permille"]],
+    ["crafting", ["craft_xp_permille", "craft_quality_permille", "craft_quality_per_point_permille", "craft_quality_per_dex_permille", "craft_quality_max_permille", "gather_cooldown_ticks", "mastery_divisor", "mastery_max"]],
+    ["rarity", ["rarity_power_permille", "rarity_durability_permille", "rarity_value_permille", "power_chance_permille", "hidden_chance_permille"]],
   ],
 };
 
